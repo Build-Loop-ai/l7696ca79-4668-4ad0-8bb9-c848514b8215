@@ -1,247 +1,142 @@
-export interface Language {
-  code: string;
-  name: string;
-  nativeName: string;
-  transcriberLang: string;
-  voices: Voice[];
-}
+// ElevenLabs Premium Multilingual Voices
+// All voices support 29 languages using eleven_multilingual_v2 model
 
 export interface Voice {
   id: string;
   name: string;
-  provider: 'azure' | '11labs' | 'playht';
+  provider: '11labs';
   gender: 'male' | 'female';
   description: string;
   recommended?: boolean;
 }
 
-export const SUPPORTED_LANGUAGES: Language[] = [
+export interface Language {
+  code: string;
+  name: string;
+  nativeName: string;
+  transcriberLang: string;
+}
+
+// Premium ElevenLabs voices - all work in 29 languages
+export const ELEVENLABS_VOICES: Voice[] = [
+  // FEMALE VOICES
   {
-    code: 'nl-NL',
-    name: 'Dutch',
-    nativeName: 'Nederlands',
-    transcriberLang: 'nl',
-    voices: [
-      { id: 'nl-NL-ColetteNeural', name: 'Colette', provider: 'azure', gender: 'female', description: 'Warm, professional Dutch female', recommended: true },
-      { id: 'nl-NL-FennaNeural', name: 'Fenna', provider: 'azure', gender: 'female', description: 'Friendly, natural Dutch female' },
-      { id: 'nl-NL-MaartenNeural', name: 'Maarten', provider: 'azure', gender: 'male', description: 'Clear, professional Dutch male', recommended: true },
-    ]
+    id: 'EXAVITQu4vr4xnSDxMaL',
+    name: 'Sarah',
+    provider: '11labs',
+    gender: 'female',
+    description: 'Warm, soft, professional - ideal for healthcare',
+    recommended: true,
   },
   {
-    code: 'nl-BE',
-    name: 'Dutch (Belgium)',
-    nativeName: 'Vlaams',
-    transcriberLang: 'nl-BE',
-    voices: [
-      { id: 'nl-BE-DenaNeural', name: 'Dena', provider: 'azure', gender: 'female', description: 'Natural Flemish female', recommended: true },
-      { id: 'nl-BE-ArnaudNeural', name: 'Arnaud', provider: 'azure', gender: 'male', description: 'Professional Flemish male' },
-    ]
+    id: '9BWtsMINqrJLrRacOk9x',
+    name: 'Aria',
+    provider: '11labs',
+    gender: 'female',
+    description: 'Expressive, calm with mature quality',
   },
   {
-    code: 'en-US',
-    name: 'English (US)',
-    nativeName: 'English',
-    transcriberLang: 'en-US',
-    voices: [
-      { id: 'en-US-AriaNeural', name: 'Aria', provider: 'azure', gender: 'female', description: 'Warm, conversational American', recommended: true },
-      { id: 'en-US-JennyNeural', name: 'Jenny', provider: 'azure', gender: 'female', description: 'Friendly, professional female' },
-      { id: 'en-US-GuyNeural', name: 'Guy', provider: 'azure', gender: 'male', description: 'Confident, professional male', recommended: true },
-      { id: 'rachel', name: 'Rachel', provider: '11labs', gender: 'female', description: 'Premium natural voice (ElevenLabs)' },
-      { id: 'adam', name: 'Adam', provider: '11labs', gender: 'male', description: 'Professional confident (ElevenLabs)' },
-    ]
+    id: 'cgSgspJ2msm6clMCkdW9',
+    name: 'Jessica',
+    provider: '11labs',
+    gender: 'female',
+    description: 'Expressive, youthful and engaging',
   },
   {
-    code: 'en-GB',
-    name: 'English (UK)',
-    nativeName: 'English (British)',
-    transcriberLang: 'en-GB',
-    voices: [
-      { id: 'en-GB-SoniaNeural', name: 'Sonia', provider: 'azure', gender: 'female', description: 'Professional British female', recommended: true },
-      { id: 'en-GB-RyanNeural', name: 'Ryan', provider: 'azure', gender: 'male', description: 'Confident British male', recommended: true },
-    ]
+    id: 'XrExE9yKIg1WjnnlVkGX',
+    name: 'Matilda',
+    provider: '11labs',
+    gender: 'female',
+    description: 'Warm, professional alto voice',
   },
   {
-    code: 'de-DE',
-    name: 'German',
-    nativeName: 'Deutsch',
-    transcriberLang: 'de',
-    voices: [
-      { id: 'de-DE-KatjaNeural', name: 'Katja', provider: 'azure', gender: 'female', description: 'Warm professional German female', recommended: true },
-      { id: 'de-DE-ConradNeural', name: 'Conrad', provider: 'azure', gender: 'male', description: 'Clear professional German male', recommended: true },
-    ]
+    id: 'pFZP5JQG7iQjIQuC4Bku',
+    name: 'Lily',
+    provider: '11labs',
+    gender: 'female',
+    description: 'Warm British clarity, velvety tone',
   },
   {
-    code: 'fr-FR',
-    name: 'French',
-    nativeName: 'Français',
-    transcriberLang: 'fr',
-    voices: [
-      { id: 'fr-FR-DeniseNeural', name: 'Denise', provider: 'azure', gender: 'female', description: 'Elegant French female', recommended: true },
-      { id: 'fr-FR-HenriNeural', name: 'Henri', provider: 'azure', gender: 'male', description: 'Professional French male', recommended: true },
-    ]
+    id: 'XB0fDUnXU5powFXDhCwa',
+    name: 'Charlotte',
+    provider: '11labs',
+    gender: 'female',
+    description: 'Seductive, Swedish accent',
+  },
+  
+  // MALE VOICES
+  {
+    id: 'nPczCjzI2devNBz1zQrb',
+    name: 'Brian',
+    provider: '11labs',
+    gender: 'male',
+    description: 'Deep, resonant, professional - ideal for business',
+    recommended: true,
   },
   {
-    code: 'es-ES',
-    name: 'Spanish (Spain)',
-    nativeName: 'Español',
-    transcriberLang: 'es',
-    voices: [
-      { id: 'es-ES-ElviraNeural', name: 'Elvira', provider: 'azure', gender: 'female', description: 'Warm Spanish female', recommended: true },
-      { id: 'es-ES-AlvaroNeural', name: 'Alvaro', provider: 'azure', gender: 'male', description: 'Professional Spanish male', recommended: true },
-    ]
+    id: 'onwK4e9ZLuTAKqWW03F9',
+    name: 'Daniel',
+    provider: '11labs',
+    gender: 'male',
+    description: 'Authoritative, broadcast quality',
   },
   {
-    code: 'es-MX',
-    name: 'Spanish (Mexico)',
-    nativeName: 'Español (México)',
-    transcriberLang: 'es-419',
-    voices: [
-      { id: 'es-MX-DaliaNeural', name: 'Dalia', provider: 'azure', gender: 'female', description: 'Friendly Mexican Spanish female', recommended: true },
-      { id: 'es-MX-JorgeNeural', name: 'Jorge', provider: 'azure', gender: 'male', description: 'Professional Mexican Spanish male' },
-    ]
+    id: 'JBFqnCBsd6RMkjVDRZzb',
+    name: 'George',
+    provider: '11labs',
+    gender: 'male',
+    description: 'Warm British, captivating storyteller',
   },
   {
-    code: 'it-IT',
-    name: 'Italian',
-    nativeName: 'Italiano',
-    transcriberLang: 'it',
-    voices: [
-      { id: 'it-IT-ElsaNeural', name: 'Elsa', provider: 'azure', gender: 'female', description: 'Warm Italian female', recommended: true },
-      { id: 'it-IT-DiegoNeural', name: 'Diego', provider: 'azure', gender: 'male', description: 'Professional Italian male', recommended: true },
-    ]
+    id: 'cjVigY5qzO86Huf0OWal',
+    name: 'Eric',
+    provider: '11labs',
+    gender: 'male',
+    description: 'Smooth friendly tenor, great for agents',
   },
   {
-    code: 'pt-BR',
-    name: 'Portuguese (Brazil)',
-    nativeName: 'Português',
-    transcriberLang: 'pt-BR',
-    voices: [
-      { id: 'pt-BR-FranciscaNeural', name: 'Francisca', provider: 'azure', gender: 'female', description: 'Warm Brazilian female', recommended: true },
-      { id: 'pt-BR-AntonioNeural', name: 'Antonio', provider: 'azure', gender: 'male', description: 'Professional Brazilian male', recommended: true },
-    ]
+    id: 'TX3LPaxmHKxFdv7VOQHJ',
+    name: 'Liam',
+    provider: '11labs',
+    gender: 'male',
+    description: 'Articulate, young adult energy',
   },
   {
-    code: 'pl-PL',
-    name: 'Polish',
-    nativeName: 'Polski',
-    transcriberLang: 'pl',
-    voices: [
-      { id: 'pl-PL-ZofiaNeural', name: 'Zofia', provider: 'azure', gender: 'female', description: 'Warm Polish female', recommended: true },
-      { id: 'pl-PL-MarekNeural', name: 'Marek', provider: 'azure', gender: 'male', description: 'Professional Polish male', recommended: true },
-    ]
-  },
-  {
-    code: 'ja-JP',
-    name: 'Japanese',
-    nativeName: '日本語',
-    transcriberLang: 'ja',
-    voices: [
-      { id: 'ja-JP-NanamiNeural', name: 'Nanami', provider: 'azure', gender: 'female', description: 'Professional Japanese female', recommended: true },
-      { id: 'ja-JP-KeitaNeural', name: 'Keita', provider: 'azure', gender: 'male', description: 'Professional Japanese male', recommended: true },
-    ]
-  },
-  {
-    code: 'ko-KR',
-    name: 'Korean',
-    nativeName: '한국어',
-    transcriberLang: 'ko',
-    voices: [
-      { id: 'ko-KR-SunHiNeural', name: 'SunHi', provider: 'azure', gender: 'female', description: 'Warm Korean female', recommended: true },
-      { id: 'ko-KR-InJoonNeural', name: 'InJoon', provider: 'azure', gender: 'male', description: 'Professional Korean male', recommended: true },
-    ]
-  },
-  {
-    code: 'zh-CN',
-    name: 'Chinese (Mandarin)',
-    nativeName: '中文',
-    transcriberLang: 'zh-CN',
-    voices: [
-      { id: 'zh-CN-XiaoxiaoNeural', name: 'Xiaoxiao', provider: 'azure', gender: 'female', description: 'Warm Mandarin female', recommended: true },
-      { id: 'zh-CN-YunxiNeural', name: 'Yunxi', provider: 'azure', gender: 'male', description: 'Professional Mandarin male', recommended: true },
-    ]
-  },
-  {
-    code: 'tr-TR',
-    name: 'Turkish',
-    nativeName: 'Türkçe',
-    transcriberLang: 'tr',
-    voices: [
-      { id: 'tr-TR-EmelNeural', name: 'Emel', provider: 'azure', gender: 'female', description: 'Warm Turkish female', recommended: true },
-      { id: 'tr-TR-AhmetNeural', name: 'Ahmet', provider: 'azure', gender: 'male', description: 'Professional Turkish male', recommended: true },
-    ]
-  },
-  {
-    code: 'ru-RU',
-    name: 'Russian',
-    nativeName: 'Русский',
-    transcriberLang: 'ru',
-    voices: [
-      { id: 'ru-RU-SvetlanaNeural', name: 'Svetlana', provider: 'azure', gender: 'female', description: 'Professional Russian female', recommended: true },
-      { id: 'ru-RU-DmitryNeural', name: 'Dmitry', provider: 'azure', gender: 'male', description: 'Professional Russian male', recommended: true },
-    ]
-  },
-  {
-    code: 'sv-SE',
-    name: 'Swedish',
-    nativeName: 'Svenska',
-    transcriberLang: 'sv',
-    voices: [
-      { id: 'sv-SE-SofieNeural', name: 'Sofie', provider: 'azure', gender: 'female', description: 'Warm Swedish female', recommended: true },
-      { id: 'sv-SE-MattiasNeural', name: 'Mattias', provider: 'azure', gender: 'male', description: 'Professional Swedish male', recommended: true },
-    ]
-  },
-  {
-    code: 'da-DK',
-    name: 'Danish',
-    nativeName: 'Dansk',
-    transcriberLang: 'da',
-    voices: [
-      { id: 'da-DK-ChristelNeural', name: 'Christel', provider: 'azure', gender: 'female', description: 'Warm Danish female', recommended: true },
-      { id: 'da-DK-JeppeNeural', name: 'Jeppe', provider: 'azure', gender: 'male', description: 'Professional Danish male', recommended: true },
-    ]
-  },
-  {
-    code: 'no-NO',
-    name: 'Norwegian',
-    nativeName: 'Norsk',
-    transcriberLang: 'no',
-    voices: [
-      { id: 'nb-NO-PernilleNeural', name: 'Pernille', provider: 'azure', gender: 'female', description: 'Warm Norwegian female', recommended: true },
-      { id: 'nb-NO-FinnNeural', name: 'Finn', provider: 'azure', gender: 'male', description: 'Professional Norwegian male', recommended: true },
-    ]
-  },
-  {
-    code: 'fi-FI',
-    name: 'Finnish',
-    nativeName: 'Suomi',
-    transcriberLang: 'fi',
-    voices: [
-      { id: 'fi-FI-NooraNeural', name: 'Noora', provider: 'azure', gender: 'female', description: 'Warm Finnish female', recommended: true },
-      { id: 'fi-FI-HarriNeural', name: 'Harri', provider: 'azure', gender: 'male', description: 'Professional Finnish male', recommended: true },
-    ]
-  },
-  {
-    code: 'ar-SA',
-    name: 'Arabic',
-    nativeName: 'العربية',
-    transcriberLang: 'ar',
-    voices: [
-      { id: 'ar-SA-ZariyahNeural', name: 'Zariyah', provider: 'azure', gender: 'female', description: 'Professional Arabic female', recommended: true },
-      { id: 'ar-SA-HamedNeural', name: 'Hamed', provider: 'azure', gender: 'male', description: 'Professional Arabic male', recommended: true },
-    ]
-  },
-  {
-    code: 'hi-IN',
-    name: 'Hindi',
-    nativeName: 'हिन्दी',
-    transcriberLang: 'hi',
-    voices: [
-      { id: 'hi-IN-SwaraNeural', name: 'Swara', provider: 'azure', gender: 'female', description: 'Warm Hindi female', recommended: true },
-      { id: 'hi-IN-MadhurNeural', name: 'Madhur', provider: 'azure', gender: 'male', description: 'Professional Hindi male', recommended: true },
-    ]
+    id: 'iP95p4xoKVk53GoZ742B',
+    name: 'Chris',
+    provider: '11labs',
+    gender: 'male',
+    description: 'Casual, conversational American',
   },
 ];
 
+// Supported languages for transcription
+export const SUPPORTED_LANGUAGES: Language[] = [
+  { code: 'nl-NL', name: 'Dutch', nativeName: 'Nederlands', transcriberLang: 'nl' },
+  { code: 'nl-BE', name: 'Dutch (Belgium)', nativeName: 'Vlaams', transcriberLang: 'nl-BE' },
+  { code: 'en-US', name: 'English (US)', nativeName: 'English', transcriberLang: 'en-US' },
+  { code: 'en-GB', name: 'English (UK)', nativeName: 'English (British)', transcriberLang: 'en-GB' },
+  { code: 'de-DE', name: 'German', nativeName: 'Deutsch', transcriberLang: 'de' },
+  { code: 'fr-FR', name: 'French', nativeName: 'Français', transcriberLang: 'fr' },
+  { code: 'es-ES', name: 'Spanish (Spain)', nativeName: 'Español', transcriberLang: 'es' },
+  { code: 'es-MX', name: 'Spanish (Mexico)', nativeName: 'Español (México)', transcriberLang: 'es-419' },
+  { code: 'it-IT', name: 'Italian', nativeName: 'Italiano', transcriberLang: 'it' },
+  { code: 'pt-BR', name: 'Portuguese (Brazil)', nativeName: 'Português', transcriberLang: 'pt-BR' },
+  { code: 'pl-PL', name: 'Polish', nativeName: 'Polski', transcriberLang: 'pl' },
+  { code: 'ja-JP', name: 'Japanese', nativeName: '日本語', transcriberLang: 'ja' },
+  { code: 'ko-KR', name: 'Korean', nativeName: '한국어', transcriberLang: 'ko' },
+  { code: 'zh-CN', name: 'Chinese (Mandarin)', nativeName: '中文', transcriberLang: 'zh-CN' },
+  { code: 'tr-TR', name: 'Turkish', nativeName: 'Türkçe', transcriberLang: 'tr' },
+  { code: 'ru-RU', name: 'Russian', nativeName: 'Русский', transcriberLang: 'ru' },
+  { code: 'sv-SE', name: 'Swedish', nativeName: 'Svenska', transcriberLang: 'sv' },
+  { code: 'da-DK', name: 'Danish', nativeName: 'Dansk', transcriberLang: 'da' },
+  { code: 'no-NO', name: 'Norwegian', nativeName: 'Norsk', transcriberLang: 'no' },
+  { code: 'fi-FI', name: 'Finnish', nativeName: 'Suomi', transcriberLang: 'fi' },
+  { code: 'ar-SA', name: 'Arabic', nativeName: 'العربية', transcriberLang: 'ar' },
+  { code: 'hi-IN', name: 'Hindi', nativeName: 'हिन्दी', transcriberLang: 'hi' },
+];
+
+// Default greetings per language
 export const DEFAULT_GREETINGS: Record<string, string> = {
   'nl-NL': 'Hallo, u spreekt met de virtuele assistent van {businessName}. Hoe kan ik u helpen?',
   'nl-BE': 'Goedendag, u spreekt met de virtuele assistent van {businessName}. Hoe kan ik u helpen?',
@@ -267,15 +162,55 @@ export const DEFAULT_GREETINGS: Record<string, string> = {
   'hi-IN': 'नमस्ते, आप {businessName} के वर्चुअल असिस्टेंट से बात कर रहे हैं। मैं आपकी कैसे मदद कर सकता हूं?',
 };
 
+// Utility functions
 export function getLanguageByCode(code: string): Language | undefined {
-  return SUPPORTED_LANGUAGES.find(lang => lang.code === code);
+  return SUPPORTED_LANGUAGES.find((lang) => lang.code === code);
 }
 
-export function getRecommendedVoice(language: Language): Voice | undefined {
-  return language.voices.find(v => v.recommended) || language.voices[0];
+export function getVoiceById(id: string): Voice | undefined {
+  return ELEVENLABS_VOICES.find((voice) => voice.id === id);
+}
+
+export function getRecommendedVoice(gender?: 'male' | 'female'): Voice {
+  const filtered = gender 
+    ? ELEVENLABS_VOICES.filter(v => v.gender === gender && v.recommended)
+    : ELEVENLABS_VOICES.filter(v => v.recommended);
+  return filtered[0] || ELEVENLABS_VOICES[0];
+}
+
+export function getVoicesByGender(gender: 'male' | 'female'): Voice[] {
+  return ELEVENLABS_VOICES.filter(v => v.gender === gender);
 }
 
 export function getDefaultGreeting(languageCode: string, businessName: string): string {
   const template = DEFAULT_GREETINGS[languageCode] || DEFAULT_GREETINGS['en-US'];
-  return template.replace('{businessName}', businessName);
+  return template.replace('{businessName}', businessName || 'our clinic');
+}
+
+// For backward compatibility
+export function migrateOldVoiceId(oldId: string): string {
+  const migrations: Record<string, string> = {
+    // Dutch Azure voices -> ElevenLabs
+    'nl-NL-ColetteNeural': 'EXAVITQu4vr4xnSDxMaL', // Sarah
+    'nl-NL-FennaNeural': '9BWtsMINqrJLrRacOk9x', // Aria
+    'nl-NL-MaartenNeural': 'nPczCjzI2devNBz1zQrb', // Brian
+    // English Azure voices -> ElevenLabs
+    'en-US-AriaNeural': '9BWtsMINqrJLrRacOk9x', // Aria
+    'en-US-JennyNeural': 'EXAVITQu4vr4xnSDxMaL', // Sarah
+    'en-US-GuyNeural': 'nPczCjzI2devNBz1zQrb', // Brian
+    'en-GB-SoniaNeural': 'pFZP5JQG7iQjIQuC4Bku', // Lily
+    // German Azure voices -> ElevenLabs
+    'de-DE-KatjaNeural': 'EXAVITQu4vr4xnSDxMaL', // Sarah
+    'de-DE-ConradNeural': 'onwK4e9ZLuTAKqWW03F9', // Daniel
+    // French Azure voices -> ElevenLabs
+    'fr-FR-DeniseNeural': 'XrExE9yKIg1WjnnlVkGX', // Matilda
+    'fr-FR-HenriNeural': 'JBFqnCBsd6RMkjVDRZzb', // George
+    // Legacy ElevenLabs IDs
+    'rachel': 'EXAVITQu4vr4xnSDxMaL',
+    'adam': 'nPczCjzI2devNBz1zQrb',
+    'bella': 'cgSgspJ2msm6clMCkdW9',
+    'josh': 'TX3LPaxmHKxFdv7VOQHJ',
+  };
+  
+  return migrations[oldId] || oldId;
 }

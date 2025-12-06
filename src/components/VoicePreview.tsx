@@ -1,143 +1,121 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Square, Loader2, Volume2, User, Check, Star } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Play, Square, User, Volume2, Loader2, Star, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { 
-  SUPPORTED_LANGUAGES, 
-  DEFAULT_GREETINGS,
-  getLanguageByCode, 
+import {
+  Voice,
+  ELEVENLABS_VOICES,
+  SUPPORTED_LANGUAGES,
+  getLanguageByCode,
   getRecommendedVoice,
-  type Voice as VoiceConfig,
-  type Language 
+  getDefaultGreeting,
+  migrateOldVoiceId,
 } from "@/lib/voice-config";
-
-// Legacy voices for backward compatibility
-export interface Voice {
-  id: string;
-  name: string;
-  description: string;
-  gender: "male" | "female";
-  tone: "professional" | "friendly" | "warm";
-}
-
-export const AVAILABLE_VOICES: Voice[] = [
-  {
-    id: "rachel",
-    name: "Rachel",
-    description: "Warm and friendly, perfect for customer service",
-    gender: "female",
-    tone: "friendly",
-  },
-  {
-    id: "adam",
-    name: "Adam",
-    description: "Professional and clear, ideal for business",
-    gender: "male",
-    tone: "professional",
-  },
-  {
-    id: "bella",
-    name: "Bella",
-    description: "Empathetic and caring, great for healthcare",
-    gender: "female",
-    tone: "warm",
-  },
-  {
-    id: "josh",
-    name: "Josh",
-    description: "Confident and energetic",
-    gender: "male",
-    tone: "friendly",
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 interface VoiceCardProps {
-  voice: VoiceConfig;
-  selected: boolean;
-  onSelect: () => void;
+  voice: Voice;
+  isSelected: boolean;
   isPlaying: boolean;
+  isLoading: boolean;
+  onSelect: () => void;
   onPlay: () => void;
   onStop: () => void;
 }
 
-function VoiceCard({
+const VoiceCard: React.FC<VoiceCardProps> = ({
   voice,
-  selected,
-  onSelect,
+  isSelected,
   isPlaying,
+  isLoading,
+  onSelect,
   onPlay,
   onStop,
-}: VoiceCardProps) {
+}) => {
   return (
     <button
       onClick={onSelect}
       className={cn(
         "relative flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all text-left w-full",
-        selected
+        isSelected
           ? "border-primary bg-primary/5 ring-1 ring-primary"
           : "border-border hover:border-primary/50 hover:bg-muted/50"
       )}
     >
       {/* Selection indicator */}
-      {selected && (
+      {isSelected && (
         <div className="absolute top-2 right-2">
           <Check className="h-5 w-5 text-primary" />
         </div>
       )}
       
-      {/* Voice avatar */}
-      <div className={cn(
-        "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
-        voice.gender === "female" 
-          ? "bg-pink-100 text-pink-600" 
-          : "bg-blue-100 text-blue-600"
-      )}>
+      {voice.recommended && (
+        <Badge
+          variant="secondary"
+          className="absolute -top-2 left-4 bg-amber-100 text-amber-700 border-amber-200 text-xs"
+        >
+          <Star className="h-3 w-3 mr-1 fill-amber-500" />
+          Recommended
+        </Badge>
+      )}
+
+      <div
+        className={cn(
+          "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
+          voice.gender === "female"
+            ? "bg-pink-100 text-pink-600"
+            : "bg-blue-100 text-blue-600"
+        )}
+      >
         <User className="h-5 w-5" />
       </div>
-      
-      {/* Voice info */}
+
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-foreground">{voice.name}</span>
-          {voice.recommended && (
-            <Badge variant="secondary" className="text-xs">
-              <Star className="h-3 w-3 mr-1" />
-              Recommended
-            </Badge>
-          )}
+        <div className="flex items-center gap-2">
+          <h4 className="font-medium text-sm">{voice.name}</h4>
+          <Badge variant="outline" className="text-xs capitalize">
+            {voice.gender}
+          </Badge>
         </div>
-        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
           {voice.description}
         </p>
-        <Badge variant="outline" className="mt-2 text-xs capitalize">
-          {voice.provider === "11labs" ? "ElevenLabs" : voice.provider}
-        </Badge>
       </div>
-      
-      {/* Preview button */}
+
       <Button
         variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0 shrink-0"
+        size="icon"
+        className="shrink-0 h-8 w-8"
         onClick={(e) => {
           e.stopPropagation();
           isPlaying ? onStop() : onPlay();
         }}
+        disabled={isLoading}
       >
-        {isPlaying ? (
-          <Square className="w-4 h-4 text-primary" />
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : isPlaying ? (
+          <Square className="h-4 w-4 fill-current" />
         ) : (
-          <Play className="w-4 h-4" />
+          <Volume2 className="h-4 w-4" />
         )}
       </Button>
     </button>
   );
-}
+};
 
 interface VoicePreviewProps {
   selectedVoice: string;
-  onSelectVoice: (voiceId: string, provider: 'azure' | '11labs' | 'playht') => void;
+  onSelectVoice: (voiceId: string, provider: '11labs') => void;
   selectedLanguage?: string;
   onSelectLanguage?: (languageCode: string) => void;
   greeting?: string;
@@ -151,233 +129,246 @@ export function VoicePreview({
   onSelectVoice,
   selectedLanguage = "en-US",
   onSelectLanguage,
-  greeting = "Hello! Thank you for calling. How can I help you today?",
+  greeting,
   onGreetingChange,
   businessName = "our business",
   showLanguageSelector = true,
 }: VoicePreviewProps) {
-  const [playingVoice, setPlayingVoice] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  const [loadingVoiceId, setLoadingVoiceId] = useState<string | null>(null);
+  const [genderFilter, setGenderFilter] = useState<"all" | "female" | "male">("all");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Use useMemo to ensure language and voices update correctly
-  const currentLanguage = useMemo(() => getLanguageByCode(selectedLanguage), [selectedLanguage]);
-  const voices = useMemo(() => currentLanguage?.voices || [], [currentLanguage]);
+  const currentLanguage = useMemo(
+    () => getLanguageByCode(selectedLanguage),
+    [selectedLanguage]
+  );
 
-  // Auto-select recommended voice when language changes
+  // Migrate old voice ID if necessary
+  const currentVoiceId = useMemo(() => migrateOldVoiceId(selectedVoice), [selectedVoice]);
+
+  const filteredVoices = useMemo(() => {
+    if (genderFilter === "all") return ELEVENLABS_VOICES;
+    return ELEVENLABS_VOICES.filter((v) => v.gender === genderFilter);
+  }, [genderFilter]);
+
+  // Auto-select recommended voice if none selected or invalid
   useEffect(() => {
-    if (currentLanguage && voices.length > 0) {
-      const currentVoiceExists = voices.find(v => v.id === selectedVoice);
-      if (!currentVoiceExists) {
-        const recommendedVoice = getRecommendedVoice(currentLanguage);
-        if (recommendedVoice) {
-          onSelectVoice(recommendedVoice.id, recommendedVoice.provider);
-        }
-      }
+    const validVoice = ELEVENLABS_VOICES.find(v => v.id === currentVoiceId);
+    if (!validVoice) {
+      const recommended = getRecommendedVoice();
+      onSelectVoice(recommended.id, '11labs');
+    } else if (currentVoiceId !== selectedVoice) {
+      // Update to migrated voice ID
+      onSelectVoice(currentVoiceId, '11labs');
     }
-  }, [selectedLanguage, currentLanguage, voices, selectedVoice, onSelectVoice]);
+  }, [currentVoiceId, selectedVoice, onSelectVoice]);
 
-  const handleLanguageChange = (languageCode: string) => {
-    if (onSelectLanguage) {
-      onSelectLanguage(languageCode);
-    }
+  const handleLanguageChange = (langCode: string) => {
+    onSelectLanguage?.(langCode);
     
-    // Auto-select recommended voice for new language
-    const lang = getLanguageByCode(languageCode);
-    if (lang) {
-      const recommended = getRecommendedVoice(lang);
-      if (recommended) {
-        onSelectVoice(recommended.id, recommended.provider);
-      }
-      
-      // Update greeting if handler provided
-      if (onGreetingChange) {
-        const defaultGreeting = DEFAULT_GREETINGS[languageCode]?.replace("{businessName}", businessName) || greeting;
-        onGreetingChange(defaultGreeting);
-      }
+    // Update greeting to default for new language
+    if (onGreetingChange) {
+      const newGreeting = getDefaultGreeting(langCode, businessName);
+      onGreetingChange(newGreeting);
     }
   };
 
-  const handleVoiceSelect = (voice: VoiceConfig) => {
-    onSelectVoice(voice.id, voice.provider);
-  };
-
-  const handlePlay = async (voiceId: string, voicesToSearch?: VoiceConfig[]) => {
-    // Cancel any currently playing voice first
-    if ("speechSynthesis" in window) {
-      speechSynthesis.cancel();
-    }
-    
-    setIsLoading(true);
-    setPlayingVoice(voiceId);
-
-    try {
-      // Use browser's speech synthesis for demo
-      if ("speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(greeting);
-        
-        // Wait for voices to load
-        let synthVoices = speechSynthesis.getVoices();
-        if (synthVoices.length === 0) {
-          await new Promise<void>((resolve) => {
-            speechSynthesis.onvoiceschanged = () => {
-              synthVoices = speechSynthesis.getVoices();
-              resolve();
-            };
-            // Timeout fallback
-            setTimeout(resolve, 500);
-          });
-        }
-        
-        // Try to find a matching voice for the language
-        const voiceList = voicesToSearch || voices;
-        const voice = voiceList.find((v) => v.id === voiceId);
-        const langCode = selectedLanguage.split('-')[0];
-        
-        // Get all browser voices that match the language
-        const langVoices = synthVoices.filter((v) => 
-          v.lang.toLowerCase().startsWith(langCode.toLowerCase())
-        );
-        
-        // Debug: log available voices for this language
-        console.log(`Browser voices for ${langCode}:`, langVoices.map(v => ({ name: v.name, lang: v.lang })));
-        
-        // Try to find a voice that matches gender
-        let matchingVoice: SpeechSynthesisVoice | undefined;
-        if (voice && langVoices.length > 0) {
-          // First, try to pick a distinct voice based on index in voice list
-          const voiceIndex = voiceList.findIndex(v => v.id === voiceId);
-          
-          if (voice.gender === 'male') {
-            // For male: look for voices with male-sounding names or use different index
-            const maleVoices = langVoices.filter(v => {
-              const name = v.name.toLowerCase();
-              // Common male indicators in voice names
-              return name.includes('male') || 
-                     name.includes('guy') || 
-                     name.includes('david') ||
-                     name.includes('mark') ||
-                     name.includes('daniel') ||
-                     name.includes('thomas') ||
-                     name.includes('xander') ||
-                     name.includes('frank') ||
-                     // Dutch male names
-                     name.includes('maarten') ||
-                     name.includes('ruben') ||
-                     name.includes('willem');
-            });
-            matchingVoice = maleVoices[0];
-            
-            // If no explicit male voice, use second half of available voices
-            if (!matchingVoice && langVoices.length > 1) {
-              matchingVoice = langVoices[Math.floor(langVoices.length / 2) + (voiceIndex % Math.ceil(langVoices.length / 2))];
-            }
-          } else {
-            // For female: use first voices, try to differentiate by index
-            const femaleIndex = voiceIndex % Math.max(1, Math.ceil(langVoices.length / 2));
-            matchingVoice = langVoices[femaleIndex];
-          }
-        }
-        
-        // Fallback to first matching language voice
-        if (!matchingVoice && langVoices.length > 0) {
-          matchingVoice = langVoices[0];
-        }
-        
-        if (matchingVoice) {
-          utterance.voice = matchingVoice;
-          console.log(`Using voice: ${matchingVoice.name} for ${voice?.name} (${voice?.gender})`);
-        }
-        
-        // Use pitch to further differentiate voices
-        if (voice) {
-          // Male voices: lower pitch, Female voices: vary pitch slightly
-          if (voice.gender === 'male') {
-            utterance.pitch = 0.85;
-          } else {
-            // Different female voices get slightly different pitches
-            const femaleIndex = voiceList.filter(v => v.gender === 'female').findIndex(v => v.id === voiceId);
-            utterance.pitch = 1.0 + (femaleIndex * 0.08); // 1.0, 1.08, 1.16, etc.
-          }
-        }
-        
-        utterance.lang = selectedLanguage;
-        utterance.onend = () => {
-          setPlayingVoice(null);
-        };
-        
-        speechSynthesis.speak(utterance);
-      } else {
-        setTimeout(() => setPlayingVoice(null), 3000);
-      }
-    } catch (error) {
-      console.error("Error playing voice:", error);
-      setPlayingVoice(null);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleVoiceSelect = (voice: Voice) => {
+    onSelectVoice(voice.id, '11labs');
   };
 
   const handleStop = () => {
-    if ("speechSynthesis" in window) {
-      speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
-    setPlayingVoice(null);
+    window.speechSynthesis?.cancel();
+    setPlayingVoiceId(null);
+    setLoadingVoiceId(null);
+  };
+
+  const handlePlay = async (voice: Voice) => {
+    handleStop();
+    setLoadingVoiceId(voice.id);
+
+    const textToSpeak =
+      greeting || getDefaultGreeting(selectedLanguage, businessName);
+
+    try {
+      // Try to use the edge function for real ElevenLabs preview
+      const { data, error } = await supabase.functions.invoke("test-voice", {
+        body: {
+          voiceId: voice.id,
+          text: textToSpeak,
+          language: selectedLanguage,
+        },
+      });
+
+      if (!error && data?.audioContent) {
+        // Play the actual ElevenLabs audio
+        const audioBlob = base64ToBlob(data.audioContent, "audio/mpeg");
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          setPlayingVoiceId(null);
+          URL.revokeObjectURL(audioUrl);
+        };
+
+        audio.onerror = () => {
+          setPlayingVoiceId(null);
+          URL.revokeObjectURL(audioUrl);
+          // Fallback to browser TTS
+          playBrowserTTS(voice, textToSpeak);
+        };
+
+        setLoadingVoiceId(null);
+        setPlayingVoiceId(voice.id);
+        await audio.play();
+        return;
+      }
+    } catch (e) {
+      console.log("ElevenLabs preview not available, using browser TTS");
+    }
+
+    // Fallback to browser TTS
+    playBrowserTTS(voice, textToSpeak);
+  };
+
+  const playBrowserTTS = (voice: Voice, text: string) => {
+    setLoadingVoiceId(null);
+
+    if (!window.speechSynthesis) {
+      console.error("Speech synthesis not supported");
+      setPlayingVoiceId(null);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const langCode = selectedLanguage.split("-")[0];
+    utterance.lang = selectedLanguage;
+
+    // Wait for voices to load
+    let synthVoices = window.speechSynthesis.getVoices();
+    
+    const langVoices = synthVoices.filter((v) =>
+      v.lang.toLowerCase().startsWith(langCode.toLowerCase())
+    );
+
+    if (langVoices.length > 0) {
+      // Use voice index to pick different browser voices
+      const voiceIndex = ELEVENLABS_VOICES.findIndex((v) => v.id === voice.id);
+      const selectedBrowserVoice = langVoices[voiceIndex % langVoices.length];
+      if (selectedBrowserVoice) {
+        utterance.voice = selectedBrowserVoice;
+      }
+    }
+
+    // Use pitch to differentiate voices
+    if (voice.gender === "male") {
+      utterance.pitch = 0.8;
+      utterance.rate = 0.95;
+    } else {
+      // Vary female voices
+      const femaleIndex = ELEVENLABS_VOICES.filter(v => v.gender === 'female').findIndex(v => v.id === voice.id);
+      utterance.pitch = 1.0 + (femaleIndex * 0.1);
+      utterance.rate = 1.0;
+    }
+
+    utterance.onend = () => setPlayingVoiceId(null);
+    utterance.onerror = () => setPlayingVoiceId(null);
+
+    setPlayingVoiceId(voice.id);
+    window.speechSynthesis.speak(utterance);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Language Selector */}
       {showLanguageSelector && (
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-foreground">Language</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {SUPPORTED_LANGUAGES.map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => handleLanguageChange(lang.code)}
-                className={cn(
-                  "px-3 py-2 rounded-lg border text-sm transition-all text-left",
-                  selectedLanguage === lang.code
-                    ? "border-primary bg-primary/5 text-foreground"
-                    : "border-border hover:border-primary/50 text-muted-foreground hover:text-foreground"
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Language</label>
+          <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select language">
+                {currentLanguage && (
+                  <span className="flex items-center gap-2">
+                    <span>{currentLanguage.nativeName}</span>
+                    <span className="text-muted-foreground">({currentLanguage.name})</span>
+                  </span>
                 )}
-              >
-                <div className="font-medium truncate">{lang.nativeName}</div>
-                <div className="text-xs text-muted-foreground truncate">{lang.name}</div>
-              </button>
-            ))}
-          </div>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <SelectItem key={lang.code} value={lang.code}>
+                  <span className="flex items-center gap-2">
+                    <span>{lang.nativeName}</span>
+                    <span className="text-muted-foreground">({lang.name})</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            All voices are multilingual and speak {SUPPORTED_LANGUAGES.length}+ languages naturally
+          </p>
         </div>
       )}
 
-      {/* Voice Selection */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">
-          Voice {currentLanguage ? `for ${currentLanguage.name}` : ""}
-        </label>
-        <div key={selectedLanguage} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {voices.map((voice) => (
-            <VoiceCard
-              key={`${selectedLanguage}-${voice.id}`}
-              voice={voice}
-              selected={selectedVoice === voice.id}
-              onSelect={() => handleVoiceSelect(voice)}
-              isPlaying={playingVoice === voice.id}
-              onPlay={() => handlePlay(voice.id, voices)}
-              onStop={handleStop}
-            />
+      {/* Gender Filter */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">Filter:</span>
+        <div className="flex gap-1">
+          {(["all", "female", "male"] as const).map((filter) => (
+            <Button
+              key={filter}
+              variant={genderFilter === filter ? "default" : "outline"}
+              size="sm"
+              onClick={() => setGenderFilter(filter)}
+              className="capitalize"
+            >
+              {filter === "all" ? "All Voices" : filter}
+            </Button>
           ))}
         </div>
       </div>
-      
-      {isLoading && (
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Loading voice preview...</span>
-        </div>
-      )}
+
+      {/* Voice Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {filteredVoices.map((voice) => (
+          <VoiceCard
+            key={voice.id}
+            voice={voice}
+            isSelected={currentVoiceId === voice.id}
+            isPlaying={playingVoiceId === voice.id}
+            isLoading={loadingVoiceId === voice.id}
+            onSelect={() => handleVoiceSelect(voice)}
+            onPlay={() => handlePlay(voice)}
+            onStop={handleStop}
+          />
+        ))}
+      </div>
+
+      {/* Info */}
+      <p className="text-xs text-muted-foreground text-center">
+        Powered by ElevenLabs Multilingual v2 • Click the speaker icon to preview
+      </p>
     </div>
   );
+}
+
+// Utility function to convert base64 to blob
+function base64ToBlob(base64: string, mimeType: string): Blob {
+  const byteCharacters = atob(base64);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
 }
 
 export default VoicePreview;
