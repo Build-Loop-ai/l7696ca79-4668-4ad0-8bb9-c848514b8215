@@ -30,16 +30,20 @@ interface SetupChecklistProps {
   hasAssistant: boolean;
   hasPhoneNumber: boolean;
   hasTestCall: boolean;
+  onCreateAssistant?: () => void;
   onGetPhoneNumber: () => void;
   onTestCall: () => void;
+  isCreatingAssistant?: boolean;
 }
 
 export function SetupChecklist({
   hasAssistant,
   hasPhoneNumber,
   hasTestCall,
+  onCreateAssistant,
   onGetPhoneNumber,
   onTestCall,
+  isCreatingAssistant,
 }: SetupChecklistProps) {
   const [hoveredStep, setHoveredStep] = useState<string | null>(null);
 
@@ -47,10 +51,12 @@ export function SetupChecklist({
     {
       id: "assistant",
       title: "AI Receptionist Created",
-      description: "Your AI is configured and ready to go",
-      helpText: "✓ Completed during onboarding",
+      description: hasAssistant ? "Your AI is configured and ready to go" : "Create your AI receptionist",
+      helpText: hasAssistant ? "✓ Completed during onboarding" : "One click to activate your AI",
       icon: Mic,
       completed: hasAssistant,
+      action: hasAssistant ? undefined : onCreateAssistant,
+      actionLabel: isCreatingAssistant ? "Creating..." : "Create AI",
     },
     {
       id: "phone",

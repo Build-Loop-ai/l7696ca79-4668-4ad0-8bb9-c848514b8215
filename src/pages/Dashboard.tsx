@@ -32,6 +32,7 @@ import { format, isToday, parseISO } from "date-fns";
 import { SetupChecklist } from "@/components/dashboard/SetupChecklist";
 import { PhoneNumberDialog } from "@/components/dashboard/PhoneNumberDialog";
 import { TestCallDialog } from "@/components/dashboard/TestCallDialog";
+import { toast } from "sonner";
 
 interface CallLog {
   id: string;
@@ -117,6 +118,7 @@ const Dashboard = () => {
   // Dialog state
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [showTestDialog, setShowTestDialog] = useState(false);
+  const [isCreatingAssistant, setIsCreatingAssistant] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -270,6 +272,30 @@ const Dashboard = () => {
     setHasTestCall(true);
   };
 
+  const handleCreateAssistant = async () => {
+    if (!organizationId) return;
+    
+    setIsCreatingAssistant(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-vapi-assistant", {
+        body: { organizationId },
+      });
+
+      if (error) throw error;
+
+      if (data?.assistantId) {
+        setHasAssistant(true);
+        setAssistantId(data.assistantId);
+        toast.success("AI Receptionist created successfully!");
+      }
+    } catch (error: any) {
+      console.error("Error creating assistant:", error);
+      toast.error(error.message || "Failed to create AI assistant");
+    } finally {
+      setIsCreatingAssistant(false);
+    }
+  };
+
   // Check if setup is complete
   const setupComplete = hasAssistant && hasPhoneNumber && hasTestCall;
 
@@ -314,8 +340,10 @@ const Dashboard = () => {
           hasAssistant={hasAssistant}
           hasPhoneNumber={hasPhoneNumber}
           hasTestCall={hasTestCall}
+          onCreateAssistant={handleCreateAssistant}
           onGetPhoneNumber={() => setShowPhoneDialog(true)}
           onTestCall={() => setShowTestDialog(true)}
+          isCreatingAssistant={isCreatingAssistant}
         />
       )}
 
