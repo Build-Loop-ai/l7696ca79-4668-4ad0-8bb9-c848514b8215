@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -15,9 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Phone, Loader2, CheckCircle2, AlertCircle, Sparkles, Copy } from "lucide-react";
+import { Phone, Loader2, CheckCircle2, AlertCircle, Sparkles, Copy, Globe, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getAvailableCountries, getCountryByCode, type PhoneCountry } from "@/lib/phone-countries";
+import { formatPhoneNumber } from "@/lib/phone-utils";
 
 interface PhoneNumberDialogProps {
   open: boolean;
@@ -26,19 +29,6 @@ interface PhoneNumberDialogProps {
   onSuccess?: (phoneNumber: string) => void;
 }
 
-const COUNTRY_OPTIONS = [
-  { code: "31", country: "Netherlands", flag: "🇳🇱" },
-  { code: "49", country: "Germany", flag: "🇩🇪" },
-  { code: "33", country: "France", flag: "🇫🇷" },
-  { code: "44", country: "United Kingdom", flag: "🇬🇧" },
-  { code: "1", country: "United States", flag: "🇺🇸" },
-  { code: "34", country: "Spain", flag: "🇪🇸" },
-  { code: "39", country: "Italy", flag: "🇮🇹" },
-  { code: "32", country: "Belgium", flag: "🇧🇪" },
-  { code: "43", country: "Austria", flag: "🇦🇹" },
-  { code: "41", country: "Switzerland", flag: "🇨🇭" },
-];
-
 export function PhoneNumberDialog({
   open,
   onOpenChange,
@@ -46,10 +36,14 @@ export function PhoneNumberDialog({
   onSuccess,
 }: PhoneNumberDialogProps) {
   const { toast } = useToast();
-  const [selectedCountry, setSelectedCountry] = useState("31");
+  const [selectedCountry, setSelectedCountry] = useState("US");
+  const [areaCode, setAreaCode] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [purchasedNumber, setPurchasedNumber] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  const countries = getAvailableCountries();
+  const country = getCountryByCode(selectedCountry);
 
   const handlePurchase = async () => {
     setStatus("loading");
@@ -59,7 +53,8 @@ export function PhoneNumberDialog({
       const { data, error } = await supabase.functions.invoke("buy-phone-number", {
         body: {
           organizationId,
-          areaCode: selectedCountry,
+          countryCode: selectedCountry,
+          areaCode: areaCode || undefined,
         },
       });
 
@@ -74,7 +69,7 @@ export function PhoneNumberDialog({
         setPurchasedNumber(data.phoneNumber);
         toast({
           title: "Phone number activated!",
-          description: `Your AI is now reachable at ${data.phoneNumber}`,
+          description: `Your AI is now reachable at ${formatPhoneNumber(data.phoneNumber)}`,
         });
         onSuccess?.(data.phoneNumber);
       } else {
@@ -95,11 +90,11 @@ export function PhoneNumberDialog({
   const handleClose = () => {
     if (status !== "loading") {
       onOpenChange(false);
-      // Reset after animation
       setTimeout(() => {
         setStatus("idle");
         setPurchasedNumber("");
         setErrorMessage("");
+        setAreaCode("");
       }, 200);
     }
   };
@@ -129,8 +124,8 @@ export function PhoneNumberDialog({
             <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 mb-6">
               <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">Your AI Phone Number</p>
               <div className="flex items-center justify-center gap-3">
-                <p className="text-3xl font-mono font-bold text-foreground tracking-wide">
-                  {purchasedNumber}
+                <p className="text-2xl font-mono font-bold text-foreground tracking-wide">
+                  {formatPhoneNumber(purchasedNumber)}
                 </p>
                 <Button
                   variant="ghost"
@@ -143,10 +138,11 @@ export function PhoneNumberDialog({
               </div>
             </div>
 
-            <div className="space-y-2 text-sm text-muted-foreground mb-6">
-              <p>✅ Customers can now call this number 24/7</p>
-              <p>✅ Your AI will answer in your configured language</p>
-              <p>✅ All calls are logged to your dashboard</p>
+            <div className="space-y-2 text-sm text-muted-foreground mb-6 text-left">
+              <p className="font-medium text-foreground">Next steps:</p>
+              <p>1. Forward your business phone to this number</p>
+              <p>2. Your AI will answer calls 24/7</p>
+              <p>3. All calls are logged to your dashboard</p>
             </div>
 
             <Button onClick={handleClose} size="lg" className="w-full gap-2">
@@ -158,36 +154,30 @@ export function PhoneNumberDialog({
           <>
             <DialogHeader className="text-center pb-2">
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                <Phone className="w-8 h-8 text-primary" />
+                <Globe className="w-8 h-8 text-primary" />
               </div>
               <DialogTitle className="text-2xl font-serif">
                 Get Your AI Phone Number
               </DialogTitle>
               <DialogDescription className="text-base">
-                Choose a country for your local phone number
+                Choose a country to get a real local phone number
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-5 py-4">
-              {/* Step indicator */}
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">2</span>
-                <span>of 3 steps</span>
-              </div>
-
               <div className="space-y-2">
-                <Label className="text-base font-medium">Select Country</Label>
+                <Label className="text-base font-medium">Country</Label>
                 <Select value={selectedCountry} onValueChange={setSelectedCountry}>
                   <SelectTrigger className="h-14 text-lg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {COUNTRY_OPTIONS.map((option) => (
-                      <SelectItem key={option.code} value={option.code} className="py-3">
+                    {countries.map((c) => (
+                      <SelectItem key={c.code} value={c.code} className="py-3">
                         <span className="flex items-center gap-3">
-                          <span className="text-2xl">{option.flag}</span>
-                          <span className="font-medium">{option.country}</span>
-                          <span className="text-muted-foreground">+{option.code}</span>
+                          <span className="text-2xl">{c.flag}</span>
+                          <span className="font-medium">{c.name}</span>
+                          <span className="text-muted-foreground ml-auto">€{c.monthlyPriceEur}/mo</span>
                         </span>
                       </SelectItem>
                     ))}
@@ -195,13 +185,28 @@ export function PhoneNumberDialog({
                 </Select>
               </div>
 
+              {country && (
+                <div className="space-y-2">
+                  <Label>{country.areaCodeLabel} (Optional)</Label>
+                  <Input
+                    placeholder={country.areaCodePlaceholder}
+                    value={areaCode}
+                    onChange={(e) => setAreaCode(e.target.value)}
+                    maxLength={country.areaCodeLength || 5}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty to get any available number
+                  </p>
+                </div>
+              )}
+
               <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
                   <div>
-                    <p className="font-medium text-green-800 dark:text-green-300">Included in your plan</p>
+                    <p className="font-medium text-green-800 dark:text-green-300">Real phone number included</p>
                     <p className="text-sm text-green-700 dark:text-green-400">
-                      Phone number + 24/7 AI answering
+                      Customers can call this number directly or you can forward your existing business line
                     </p>
                   </div>
                 </div>
@@ -232,8 +237,8 @@ export function PhoneNumberDialog({
                   </>
                 ) : (
                   <>
-                    Get My Number
-                    <Phone className="w-5 h-5 ml-2" />
+                    Get {country?.flag} {country?.prefix} Number
+                    <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
               </Button>

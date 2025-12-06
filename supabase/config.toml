@@ -17,3 +17,12 @@ verify_jwt = false
 
 [functions.complete-onboarding]
 verify_jwt = true
+
+[functions.search-phone-numbers]
+verify_jwt = true
+
+[functions.release-phone-number]
+verify_jwt = true
+
+[functions.update-forwarding-status]
+verify_jwt = true
