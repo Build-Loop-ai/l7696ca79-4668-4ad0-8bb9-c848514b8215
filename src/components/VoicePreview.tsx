@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Square, Loader2, Volume2, User, Check, Star } from "lucide-react";
@@ -159,8 +159,9 @@ export function VoicePreview({
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const currentLanguage = getLanguageByCode(selectedLanguage);
-  const voices = currentLanguage?.voices || [];
+  // Use useMemo to ensure language and voices update correctly
+  const currentLanguage = useMemo(() => getLanguageByCode(selectedLanguage), [selectedLanguage]);
+  const voices = useMemo(() => currentLanguage?.voices || [], [currentLanguage]);
 
   // Auto-select recommended voice when language changes
   useEffect(() => {
@@ -291,15 +292,15 @@ export function VoicePreview({
         <label className="text-sm font-medium text-foreground">
           Voice {currentLanguage ? `for ${currentLanguage.name}` : ""}
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div key={selectedLanguage} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {voices.map((voice) => (
             <VoiceCard
-              key={voice.id}
+              key={`${selectedLanguage}-${voice.id}`}
               voice={voice}
               selected={selectedVoice === voice.id}
               onSelect={() => handleVoiceSelect(voice)}
               isPlaying={playingVoice === voice.id}
-              onPlay={() => handlePlay(voice.id)}
+              onPlay={() => handlePlay(voice.id, voices)}
               onStop={handleStop}
             />
           ))}
