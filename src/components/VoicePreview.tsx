@@ -238,25 +238,43 @@ export function VoicePreview({
           v.lang.toLowerCase().startsWith(langCode.toLowerCase())
         );
         
+        // Debug: log available voices for this language
+        console.log(`Browser voices for ${langCode}:`, langVoices.map(v => ({ name: v.name, lang: v.lang })));
+        
         // Try to find a voice that matches gender
         let matchingVoice: SpeechSynthesisVoice | undefined;
         if (voice && langVoices.length > 0) {
-          if (voice.gender === 'female') {
-            // Prefer female voices (usually don't have "male" in name)
-            matchingVoice = langVoices.find(v => 
-              !v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('female')
-            );
-          } else if (voice.gender === 'male') {
-            // Prefer male voices
-            matchingVoice = langVoices.find(v => 
-              v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('female')
-            );
-          }
+          // First, try to pick a distinct voice based on index in voice list
+          const voiceIndex = voiceList.findIndex(v => v.id === voiceId);
           
-          // If no gender match found, try to pick a different voice based on voice index
-          if (!matchingVoice && langVoices.length > 1) {
-            const voiceIndex = voiceList.findIndex(v => v.id === voiceId);
-            matchingVoice = langVoices[voiceIndex % langVoices.length];
+          if (voice.gender === 'male') {
+            // For male: look for voices with male-sounding names or use different index
+            const maleVoices = langVoices.filter(v => {
+              const name = v.name.toLowerCase();
+              // Common male indicators in voice names
+              return name.includes('male') || 
+                     name.includes('guy') || 
+                     name.includes('david') ||
+                     name.includes('mark') ||
+                     name.includes('daniel') ||
+                     name.includes('thomas') ||
+                     name.includes('xander') ||
+                     name.includes('frank') ||
+                     // Dutch male names
+                     name.includes('maarten') ||
+                     name.includes('ruben') ||
+                     name.includes('willem');
+            });
+            matchingVoice = maleVoices[0];
+            
+            // If no explicit male voice, use second half of available voices
+            if (!matchingVoice && langVoices.length > 1) {
+              matchingVoice = langVoices[Math.floor(langVoices.length / 2) + (voiceIndex % Math.ceil(langVoices.length / 2))];
+            }
+          } else {
+            // For female: use first voices, try to differentiate by index
+            const femaleIndex = voiceIndex % Math.max(1, Math.ceil(langVoices.length / 2));
+            matchingVoice = langVoices[femaleIndex];
           }
         }
         
@@ -267,6 +285,19 @@ export function VoicePreview({
         
         if (matchingVoice) {
           utterance.voice = matchingVoice;
+          console.log(`Using voice: ${matchingVoice.name} for ${voice?.name} (${voice?.gender})`);
+        }
+        
+        // Use pitch to further differentiate voices
+        if (voice) {
+          // Male voices: lower pitch, Female voices: vary pitch slightly
+          if (voice.gender === 'male') {
+            utterance.pitch = 0.85;
+          } else {
+            // Different female voices get slightly different pitches
+            const femaleIndex = voiceList.filter(v => v.gender === 'female').findIndex(v => v.id === voiceId);
+            utterance.pitch = 1.0 + (femaleIndex * 0.08); // 1.0, 1.08, 1.16, etc.
+          }
         }
         
         utterance.lang = selectedLanguage;
