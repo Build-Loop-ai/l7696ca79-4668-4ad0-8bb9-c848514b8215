@@ -16,10 +16,8 @@ import { useState } from "react";
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: Phone, label: "Calls", href: "/dashboard/calls" },
-  { icon: Megaphone, label: "Campaigns", href: "/dashboard/campaigns" },
   { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
   { icon: Settings, label: "Settings", href: "/dashboard/settings" },
-  { icon: HelpCircle, label: "Help", href: "/dashboard/help" },
 ];
 
 const DashboardSidebar = () => {
