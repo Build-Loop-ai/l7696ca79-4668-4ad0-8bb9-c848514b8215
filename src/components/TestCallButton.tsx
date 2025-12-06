@@ -25,7 +25,23 @@ const checkBrowserSupport = (): { supported: boolean; reason?: string } => {
   return { supported: true };
 };
 
-// Removed sandbox detection - let Vapi SDK attempt connection directly
+// Detect if running in sandboxed iframe (Lovable editor preview)
+// WebRTC connections are blocked in sandboxed iframes, so we show phone-first UI
+const isInSandboxedIframe = (): boolean => {
+  // Not in an iframe at all - browser calls should work
+  if (window.self === window.top) {
+    return false;
+  }
+  
+  // We're in an iframe - check if it's sandboxed
+  try {
+    // Try to access parent - will throw in sandboxed/cross-origin iframes
+    const _test = window.parent.location.href;
+    return false;
+  } catch {
+    return true;
+  }
+};
 
 export function TestCallButton({
   assistantId,
@@ -37,6 +53,9 @@ export function TestCallButton({
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const [showPhoneOnly, setShowPhoneOnly] = useState(false);
+  
+  // In sandboxed iframes, WebRTC is blocked - show phone option directly
+  const inSandbox = isInSandboxedIframe();
 
   // Vapi public key for browser-based testing
   const publicKey = "3d8f4267-671a-4a72-924e-79ac9179df8f";
@@ -180,6 +199,44 @@ export function TestCallButton({
   };
 
   const isActive = callStatus !== "idle" && callStatus !== "error";
+
+  // In sandboxed iframe, show phone-first UI
+  if (inSandbox && phoneNumber) {
+    return (
+      <div className="flex flex-col items-center gap-4 w-full">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            Call your AI receptionist to test it:
+          </p>
+        </div>
+        
+        <a href={`tel:${phoneNumber}`} className="w-full">
+          <Button variant="hero" size="lg" className="gap-2 w-full">
+            <Phone className="w-5 h-5" />
+            Call {phoneNumber}
+          </Button>
+        </a>
+
+        <p className="text-xs text-muted-foreground text-center">
+          Opens your phone app to call the AI
+        </p>
+      </div>
+    );
+  }
+
+  if (inSandbox && !phoneNumber) {
+    return (
+      <div className="flex flex-col items-center gap-4">
+        <Button disabled variant="outline" size="lg" className="gap-2">
+          <Phone className="w-5 h-5" />
+          Test Your AI
+        </Button>
+        <p className="text-xs text-muted-foreground text-center max-w-xs">
+          Get a phone number first to test your AI receptionist
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-4">
