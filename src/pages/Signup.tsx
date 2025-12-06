@@ -1,13 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Phone, Mail, Lock, Eye, EyeOff, User, Building } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { signupSchema } from "@/lib/validations";
+import { z } from "zod";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { signUp, signInWithGoogle, user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+  
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -17,16 +24,85 @@ const Signup = () => {
     agreeTerms: false,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate("/onboarding");
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // TODO: Implement signup logic
-    setTimeout(() => {
-      setIsLoading(false);
+    setErrors({});
+    
+    try {
+      const data = signupSchema.parse(formData);
+      setIsLoading(true);
+      
+      const { error } = await signUp(data.email, data.password, data.fullName);
+      
+      if (error) {
+        if (error.message.includes("already registered")) {
+          toast({
+            variant: "destructive",
+            title: "Account exists",
+            description: "An account with this email already exists. Please sign in instead.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Sign up failed",
+            description: error.message,
+          });
+        }
+        return;
+      }
+      
+      // Store clinic name for onboarding
+      sessionStorage.setItem('pendingClinicName', data.clinicName);
+      
+      toast({
+        title: "Account created!",
+        description: "Let's set up your AI receptionist.",
+      });
       navigate("/onboarding");
-    }, 1000);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        err.errors.forEach((error) => {
+          if (error.path[0]) {
+            fieldErrors[error.path[0].toString()] = error.message;
+          }
+        });
+        setErrors(fieldErrors);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const handleGoogleSignIn = async () => {
+    const { error } = await signInWithGoogle();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Google sign in failed",
+        description: error.message,
+      });
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal to-teal-light flex items-center justify-center animate-pulse">
+          <Phone className="w-5 h-5 text-white" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -85,7 +161,13 @@ const Signup = () => {
           </div>
 
           {/* Google OAuth */}
-          <Button variant="outline" size="lg" className="w-full mb-6">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="w-full mb-6"
+            onClick={handleGoogleSignIn}
+            type="button"
+          >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
@@ -127,7 +209,7 @@ const Signup = () => {
                   id="fullName"
                   type="text"
                   placeholder="Dr. John Smith"
-                  className="pl-10"
+                  className={`pl-10 ${errors.fullName ? 'border-destructive' : ''}`}
                   value={formData.fullName}
                   onChange={(e) =>
                     setFormData({ ...formData, fullName: e.target.value })
@@ -135,6 +217,9 @@ const Signup = () => {
                   required
                 />
               </div>
+              {errors.fullName && (
+                <p className="text-sm text-destructive">{errors.fullName}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -145,7 +230,7 @@ const Signup = () => {
                   id="email"
                   type="email"
                   placeholder="you@clinic.com"
-                  className="pl-10"
+                  className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
@@ -153,6 +238,9 @@ const Signup = () => {
                   required
                 />
               </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -163,7 +251,7 @@ const Signup = () => {
                   id="clinicName"
                   type="text"
                   placeholder="Amsterdam Dental Care"
-                  className="pl-10"
+                  className={`pl-10 ${errors.clinicName ? 'border-destructive' : ''}`}
                   value={formData.clinicName}
                   onChange={(e) =>
                     setFormData({ ...formData, clinicName: e.target.value })
@@ -171,6 +259,9 @@ const Signup = () => {
                   required
                 />
               </div>
+              {errors.clinicName && (
+                <p className="text-sm text-destructive">{errors.clinicName}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -181,7 +272,7 @@ const Signup = () => {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10"
+                  className={`pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
@@ -201,6 +292,9 @@ const Signup = () => {
                   )}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password}</p>
+              )}
             </div>
 
             <div className="flex items-start space-x-2 pt-2">
@@ -225,6 +319,9 @@ const Signup = () => {
                 </a>
               </label>
             </div>
+            {errors.agreeTerms && (
+              <p className="text-sm text-destructive">{errors.agreeTerms}</p>
+            )}
 
             <Button
               type="submit"
