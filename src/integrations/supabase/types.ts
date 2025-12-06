@@ -151,37 +151,52 @@ export type Database = {
           ai_config: Json | null
           business_hours: Json | null
           created_at: string
+          custom_greeting: string | null
           id: string
+          language: string | null
           organization_id: string
           services: Json | null
+          transcriber_language: string | null
           transfer_number: string | null
           updated_at: string
           vapi_api_key: string | null
           vapi_assistant_id: string | null
+          voice_id: string | null
+          voice_provider: string | null
         }
         Insert: {
           ai_config?: Json | null
           business_hours?: Json | null
           created_at?: string
+          custom_greeting?: string | null
           id?: string
+          language?: string | null
           organization_id: string
           services?: Json | null
+          transcriber_language?: string | null
           transfer_number?: string | null
           updated_at?: string
           vapi_api_key?: string | null
           vapi_assistant_id?: string | null
+          voice_id?: string | null
+          voice_provider?: string | null
         }
         Update: {
           ai_config?: Json | null
           business_hours?: Json | null
           created_at?: string
+          custom_greeting?: string | null
           id?: string
+          language?: string | null
           organization_id?: string
           services?: Json | null
+          transcriber_language?: string | null
           transfer_number?: string | null
           updated_at?: string
           vapi_api_key?: string | null
           vapi_assistant_id?: string | null
+          voice_id?: string | null
+          voice_provider?: string | null
         }
         Relationships: [
           {
