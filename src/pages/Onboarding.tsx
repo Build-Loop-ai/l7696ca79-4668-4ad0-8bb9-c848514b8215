@@ -673,10 +673,6 @@ const Onboarding = () => {
                   </p>
                 </div>
 
-                <TestCallButton
-                  assistantId={assistantId || undefined}
-                  disabled={!assistantId}
-                />
               </div>
             </div>
           )}
