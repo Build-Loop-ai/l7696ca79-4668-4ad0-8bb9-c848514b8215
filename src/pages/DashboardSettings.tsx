@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,46 +28,224 @@ import {
   ExternalLink,
   Trash2,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { VoiceLanguageSettings } from "@/components/settings/VoiceLanguageSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { format, parseISO } from "date-fns";
+
+interface Organization {
+  id: string;
+  name: string;
+  business_type: string | null;
+  phone: string | null;
+  timezone: string | null;
+  address: unknown;
+}
+
+interface PhoneNumber {
+  id: string;
+  phone_number: string;
+  friendly_name: string | null;
+  is_active: boolean | null;
+}
+
+interface Subscription {
+  id: string;
+  plan: string | null;
+  status: string | null;
+  minutes_used: number | null;
+  minutes_included: number | null;
+  current_period_end: string | null;
+}
+
+interface TeamMember {
+  id: string;
+  user_id: string;
+  role: string;
+  profile: {
+    full_name: string | null;
+    email: string | null;
+  } | null;
+}
 
 const DashboardSettings = () => {
   const { user } = useAuth();
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [organizationName, setOrganizationName] = useState<string>("your business");
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Fetch organization details
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+
+  // Form state for editing
+  const [formData, setFormData] = useState({
+    name: "",
+    business_type: "",
+    phone: "",
+    timezone: "",
+    address: "",
+  });
+
   useEffect(() => {
-    async function fetchOrganization() {
+    const fetchData = async () => {
       if (!user?.id) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("organization_id")
-        .eq("id", user.id)
-        .single();
+      try {
+        // Get profile and org ID
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("organization_id")
+          .eq("id", user.id)
+          .maybeSingle();
 
-      if (profile?.organization_id) {
+        if (!profile?.organization_id) {
+          setLoading(false);
+          return;
+        }
+
         setOrganizationId(profile.organization_id);
 
-        const { data: org } = await supabase
-          .from("organizations")
-          .select("name")
-          .eq("id", profile.organization_id)
-          .single();
+        // Fetch all data in parallel
+        const [orgRes, phonesRes, subRes, rolesRes] = await Promise.all([
+          supabase
+            .from("organizations")
+            .select("*")
+            .eq("id", profile.organization_id)
+            .single(),
+          supabase
+            .from("phone_numbers")
+            .select("id, phone_number, friendly_name, is_active")
+            .eq("organization_id", profile.organization_id),
+          supabase
+            .from("subscriptions")
+            .select("*")
+            .eq("organization_id", profile.organization_id)
+            .maybeSingle(),
+          supabase
+            .from("user_roles")
+            .select("id, user_id, role")
+            .eq("organization_id", profile.organization_id),
+        ]);
 
-        if (org?.name) {
-          setOrganizationName(org.name);
+        if (orgRes.data) {
+          const org = orgRes.data;
+          setOrganization(org);
+          setFormData({
+            name: org.name || "",
+            business_type: org.business_type || "",
+            phone: org.phone || "",
+            timezone: org.timezone || "Europe/Amsterdam",
+            address: org.address
+              ? `${(org.address as any).street || ""}, ${(org.address as any).postal_code || ""} ${(org.address as any).city || ""}`
+              : "",
+          });
         }
-      }
-    }
 
-    fetchOrganization();
+        if (phonesRes.data) {
+          setPhoneNumbers(phonesRes.data);
+        }
+
+        if (subRes.data) {
+          setSubscription(subRes.data);
+        }
+
+        // Fetch team member profiles
+        if (rolesRes.data && rolesRes.data.length > 0) {
+          const userIds = rolesRes.data.map((r) => r.user_id);
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, full_name, email")
+            .in("id", userIds);
+
+          const membersWithProfiles = rolesRes.data.map((role) => ({
+            ...role,
+            profile: profiles?.find((p) => p.id === role.user_id) || null,
+          }));
+          setTeamMembers(membersWithProfiles);
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [user?.id]);
+
+  const handleSaveGeneral = async () => {
+    if (!organizationId) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("organizations")
+        .update({
+          name: formData.name,
+          business_type: formData.business_type as any,
+          phone: formData.phone,
+          timezone: formData.timezone,
+        })
+        .eq("id", organizationId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Settings saved",
+        description: "Your business information has been updated.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error saving",
+        description: error.message,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const minutesUsed = subscription?.minutes_used || 0;
+  const minutesIncluded = subscription?.minutes_included || 100;
+  const usagePercentage = Math.round((minutesUsed / minutesIncluded) * 100);
+
+  const planLabels: Record<string, string> = {
+    starter: "Starter Plan",
+    growth: "Growth Plan",
+    enterprise: "Enterprise Plan",
+  };
+
+  const planPrices: Record<string, string> = {
+    starter: "€97/month",
+    growth: "€197/month",
+    enterprise: "€497/month",
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-32 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Card>
+          <CardContent className="p-6">
+            <Skeleton className="h-64 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -113,57 +297,97 @@ const DashboardSettings = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Business Name</Label>
-                  <Input defaultValue="Amsterdam Dental Care" />
+                  <Input
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Business Type</Label>
-                  <Select defaultValue="dental">
+                  <Select
+                    value={formData.business_type}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, business_type: value })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="dental">Dental Clinic</SelectItem>
-                      <SelectItem value="medical">Medical Practice</SelectItem>
+                      <SelectItem value="dental_clinic">Dental Clinic</SelectItem>
+                      <SelectItem value="medical_practice">
+                        Medical Practice
+                      </SelectItem>
                       <SelectItem value="salon">Salon</SelectItem>
+                      <SelectItem value="restaurant">Restaurant</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Address</Label>
-                <Input defaultValue="Keizersgracht 123, 1015 CD Amsterdam" />
+                <Input
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  placeholder="Street, Postal Code City"
+                />
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Contact Phone</Label>
-                  <Input defaultValue="+31 20 123 4567" />
+                  <Input
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Timezone</Label>
-                  <Select defaultValue="amsterdam">
+                  <Select
+                    value={formData.timezone}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, timezone: value })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="amsterdam">
+                      <SelectItem value="Europe/Amsterdam">
                         Europe/Amsterdam (CET)
                       </SelectItem>
-                      <SelectItem value="london">Europe/London (GMT)</SelectItem>
-                      <SelectItem value="paris">Europe/Paris (CET)</SelectItem>
+                      <SelectItem value="Europe/London">
+                        Europe/London (GMT)
+                      </SelectItem>
+                      <SelectItem value="Europe/Paris">
+                        Europe/Paris (CET)
+                      </SelectItem>
+                      <SelectItem value="America/New_York">
+                        America/New_York (EST)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <Button>Save Changes</Button>
+              <Button onClick={handleSaveGeneral} disabled={saving}>
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Changes
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* AI Configuration Tab - Now with VoiceLanguageSettings */}
+        {/* AI Configuration Tab */}
         <TabsContent value="ai" className="space-y-6">
-          <VoiceLanguageSettings 
+          <VoiceLanguageSettings
             organizationId={organizationId || undefined}
-            organizationName={organizationName}
+            organizationName={organization?.name || "your business"}
           />
         </TabsContent>
 
@@ -183,52 +407,53 @@ const DashboardSettings = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[
-                  {
-                    number: "+31 20 123 4567",
-                    name: "Main Line",
-                    status: "active",
-                    calls: 245,
-                  },
-                  {
-                    number: "+31 20 765 4321",
-                    name: "Emergency",
-                    status: "active",
-                    calls: 52,
-                  },
-                ].map((phone, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-4 rounded-xl border border-border"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Phone className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <div className="font-medium font-mono">
-                          {phone.number}
+              {phoneNumbers.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Phone className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No phone numbers configured</p>
+                  <p className="text-sm mt-1">
+                    Add a phone number to start receiving AI-powered calls
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {phoneNumbers.map((phone) => (
+                    <div
+                      key={phone.id}
+                      className="flex items-center justify-between p-4 rounded-xl border border-border"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Phone className="w-5 h-5 text-primary" />
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {phone.name} · {phone.calls} calls this month
+                        <div>
+                          <div className="font-medium font-mono">
+                            {phone.phone_number}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {phone.friendly_name || "Main Line"}
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-3">
+                        <Badge
+                          variant="secondary"
+                          className={
+                            phone.is_active
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-700"
+                          }
+                        >
+                          {phone.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="w-4 h-4 text-muted-foreground" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        variant="secondary"
-                        className="bg-green-100 text-green-700"
-                      >
-                        Active
-                      </Badge>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="w-4 h-4 text-muted-foreground" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -268,11 +493,11 @@ const DashboardSettings = () => {
                   <div>
                     <div className="font-medium">Google Calendar</div>
                     <div className="text-sm text-muted-foreground">
-                      Connected to dr.sarah@amsterdamdental.com
+                      Not connected
                     </div>
                   </div>
                 </div>
-                <Button variant="outline">Disconnect</Button>
+                <Button variant="outline">Connect</Button>
               </div>
             </CardContent>
           </Card>
@@ -286,21 +511,24 @@ const DashboardSettings = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>API Key</Label>
+                <Label>Organization ID</Label>
                 <div className="flex gap-2">
                   <Input
-                    value="sk_live_••••••••••••••••••••••••"
+                    value={organizationId || ""}
                     readOnly
                     className="font-mono"
                   />
-                  <Button variant="outline" size="icon">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(organizationId || "");
+                      toast({ title: "Copied to clipboard" });
+                    }}
+                  >
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Webhook URL</Label>
-                <Input placeholder="https://your-server.com/webhook" />
               </div>
               <Button variant="outline" className="gap-2">
                 <ExternalLink className="w-4 h-4" />
@@ -316,9 +544,7 @@ const DashboardSettings = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Team Members</CardTitle>
-                <CardDescription>
-                  Invite and manage team members.
-                </CardDescription>
+                <CardDescription>Invite and manage team members.</CardDescription>
               </div>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
@@ -326,50 +552,47 @@ const DashboardSettings = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[
-                  {
-                    name: "Dr. Sarah van den Berg",
-                    email: "sarah@amsterdamdental.com",
-                    role: "Admin",
-                  },
-                  {
-                    name: "Michael de Vries",
-                    email: "michael@amsterdamdental.com",
-                    role: "Manager",
-                  },
-                  {
-                    name: "Emma Jansen",
-                    email: "emma@amsterdamdental.com",
-                    role: "Viewer",
-                  },
-                ].map((member, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-4 rounded-xl border border-border"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-medium text-primary">
-                        {member.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-medium">{member.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {member.email}
+              {teamMembers.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No team members yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {teamMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-4 rounded-xl border border-border"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-medium text-primary">
+                          {(member.profile?.full_name || member.profile?.email || "?")
+                            .charAt(0)
+                            .toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-medium">
+                            {member.profile?.full_name || "Unknown"}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {member.profile?.email || "-"}
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary" className="capitalize">
+                          {member.role}
+                        </Badge>
+                        {member.role !== "owner" && (
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary">{member.role}</Badge>
-                      {member.role !== "Admin" && (
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="w-4 h-4 text-muted-foreground" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -387,10 +610,19 @@ const DashboardSettings = () => {
               <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20">
                 <div>
                   <div className="text-lg font-serif font-medium text-primary">
-                    Growth Plan
+                    {planLabels[subscription?.plan || "starter"] || "Starter Plan"}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    €197/month · Renews on April 15, 2024
+                    {planPrices[subscription?.plan || "starter"] || "€97/month"}
+                    {subscription?.current_period_end && (
+                      <>
+                        {" · Renews on "}
+                        {format(
+                          parseISO(subscription.current_period_end),
+                          "MMMM d, yyyy"
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
                 <Button variant="outline">Upgrade Plan</Button>
@@ -401,12 +633,12 @@ const DashboardSettings = () => {
                   <div>
                     <div className="font-medium">Minutes Usage</div>
                     <div className="text-sm text-muted-foreground">
-                      342 of 500 minutes used
+                      {minutesUsed} of {minutesIncluded} minutes used
                     </div>
                   </div>
-                  <span className="text-sm font-medium">68%</span>
+                  <span className="text-sm font-medium">{usagePercentage}%</span>
                 </div>
-                <Progress value={68} />
+                <Progress value={usagePercentage} />
               </div>
 
               <div className="flex gap-4">
