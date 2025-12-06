@@ -202,6 +202,11 @@ export function VoicePreview({
   };
 
   const handlePlay = async (voiceId: string, voicesToSearch?: VoiceConfig[]) => {
+    // Cancel any currently playing voice first
+    if ("speechSynthesis" in window) {
+      speechSynthesis.cancel();
+    }
+    
     setIsLoading(true);
     setPlayingVoice(voiceId);
 
