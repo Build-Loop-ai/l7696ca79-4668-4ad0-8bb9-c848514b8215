@@ -14,16 +14,378 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      call_logs: {
+        Row: {
+          caller_number: string | null
+          created_at: string
+          direction: Database["public"]["Enums"]["call_direction"] | null
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          metadata: Json | null
+          organization_id: string
+          outcome: Database["public"]["Enums"]["call_outcome"] | null
+          phone_number_id: string | null
+          recording_url: string | null
+          started_at: string | null
+          summary: string | null
+          transcript: string | null
+          vapi_call_id: string | null
+        }
+        Insert: {
+          caller_number?: string | null
+          created_at?: string
+          direction?: Database["public"]["Enums"]["call_direction"] | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+          outcome?: Database["public"]["Enums"]["call_outcome"] | null
+          phone_number_id?: string | null
+          recording_url?: string | null
+          started_at?: string | null
+          summary?: string | null
+          transcript?: string | null
+          vapi_call_id?: string | null
+        }
+        Update: {
+          caller_number?: string | null
+          created_at?: string
+          direction?: Database["public"]["Enums"]["call_direction"] | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+          outcome?: Database["public"]["Enums"]["call_outcome"] | null
+          phone_number_id?: string | null
+          recording_url?: string | null
+          started_at?: string | null
+          summary?: string | null
+          transcript?: string | null
+          vapi_call_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_phone_number_id_fkey"
+            columns: ["phone_number_id"]
+            isOneToOne: false
+            referencedRelation: "phone_numbers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_settings: {
+        Row: {
+          ai_config: Json | null
+          business_hours: Json | null
+          created_at: string
+          id: string
+          organization_id: string
+          services: Json | null
+          transfer_number: string | null
+          updated_at: string
+          vapi_api_key: string | null
+          vapi_assistant_id: string | null
+        }
+        Insert: {
+          ai_config?: Json | null
+          business_hours?: Json | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          services?: Json | null
+          transfer_number?: string | null
+          updated_at?: string
+          vapi_api_key?: string | null
+          vapi_assistant_id?: string | null
+        }
+        Update: {
+          ai_config?: Json | null
+          business_hours?: Json | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          services?: Json | null
+          transfer_number?: string | null
+          updated_at?: string
+          vapi_api_key?: string | null
+          vapi_assistant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          address: Json | null
+          business_type: Database["public"]["Enums"]["business_type"] | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          phone: string | null
+          slug: string | null
+          timezone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: Json | null
+          business_type?: Database["public"]["Enums"]["business_type"] | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          slug?: string | null
+          timezone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: Json | null
+          business_type?: Database["public"]["Enums"]["business_type"] | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          slug?: string | null
+          timezone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      phone_numbers: {
+        Row: {
+          created_at: string
+          forwarding_number: string | null
+          friendly_name: string | null
+          id: string
+          is_active: boolean | null
+          is_forwarding: boolean | null
+          organization_id: string
+          phone_number: string
+          updated_at: string
+          vapi_phone_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          forwarding_number?: string | null
+          friendly_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_forwarding?: boolean | null
+          organization_id: string
+          phone_number: string
+          updated_at?: string
+          vapi_phone_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          forwarding_number?: string | null
+          friendly_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_forwarding?: boolean | null
+          organization_id?: string
+          phone_number?: string
+          updated_at?: string
+          vapi_phone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_numbers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          onboarding_completed: boolean | null
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          onboarding_completed?: boolean | null
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          onboarding_completed?: boolean | null
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          minutes_included: number | null
+          minutes_used: number | null
+          organization_id: string
+          plan: Database["public"]["Enums"]["subscription_plan"] | null
+          status: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          minutes_included?: number | null
+          minutes_used?: number | null
+          organization_id: string
+          plan?: Database["public"]["Enums"]["subscription_plan"] | null
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          minutes_included?: number | null
+          minutes_used?: number | null
+          organization_id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"] | null
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_organization_id: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _organization_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_org_admin: {
+        Args: { _organization_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _organization_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "admin" | "manager" | "viewer"
+      business_type:
+        | "dental_clinic"
+        | "medical_practice"
+        | "salon"
+        | "restaurant"
+        | "other"
+      call_direction: "inbound" | "outbound"
+      call_outcome:
+        | "appointment_booked"
+        | "info_provided"
+        | "transferred"
+        | "voicemail"
+        | "missed"
+        | "completed"
+      subscription_plan: "starter" | "growth" | "enterprise"
+      subscription_status: "active" | "canceled" | "past_due" | "trialing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +512,26 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "admin", "manager", "viewer"],
+      business_type: [
+        "dental_clinic",
+        "medical_practice",
+        "salon",
+        "restaurant",
+        "other",
+      ],
+      call_direction: ["inbound", "outbound"],
+      call_outcome: [
+        "appointment_booked",
+        "info_provided",
+        "transferred",
+        "voicemail",
+        "missed",
+        "completed",
+      ],
+      subscription_plan: ["starter", "growth", "enterprise"],
+      subscription_status: ["active", "canceled", "past_due", "trialing"],
+    },
   },
 } as const
