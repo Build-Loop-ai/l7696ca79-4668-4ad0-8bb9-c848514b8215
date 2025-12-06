@@ -200,7 +200,7 @@ export function VoicePreview({
     onSelectVoice(voice.id, voice.provider);
   };
 
-  const handlePlay = async (voiceId: string) => {
+  const handlePlay = async (voiceId: string, voicesToSearch?: VoiceConfig[]) => {
     setIsLoading(true);
     setPlayingVoice(voiceId);
 
@@ -208,22 +208,32 @@ export function VoicePreview({
       // Use browser's speech synthesis for demo
       if ("speechSynthesis" in window) {
         const utterance = new SpeechSynthesisUtterance(greeting);
-        const synthVoices = speechSynthesis.getVoices();
+        
+        // Wait for voices to load
+        let synthVoices = speechSynthesis.getVoices();
+        if (synthVoices.length === 0) {
+          await new Promise<void>((resolve) => {
+            speechSynthesis.onvoiceschanged = () => {
+              synthVoices = speechSynthesis.getVoices();
+              resolve();
+            };
+            // Timeout fallback
+            setTimeout(resolve, 500);
+          });
+        }
         
         // Try to find a matching voice for the language
-        const voice = voices.find((v) => v.id === voiceId);
+        const voiceList = voicesToSearch || voices;
+        const voice = voiceList.find((v) => v.id === voiceId);
         const langCode = selectedLanguage.split('-')[0];
         
-        if (voice) {
-          const synthVoice = synthVoices.find((v) => 
-            v.lang.startsWith(langCode) && 
-            (voice.gender === "female" 
-              ? !v.name.toLowerCase().includes("male")
-              : v.name.toLowerCase().includes("male"))
-          );
-          if (synthVoice) {
-            utterance.voice = synthVoice;
-          }
+        // Find a browser voice that matches the language
+        const matchingVoice = synthVoices.find((v) => 
+          v.lang.toLowerCase().startsWith(langCode.toLowerCase())
+        );
+        
+        if (matchingVoice) {
+          utterance.voice = matchingVoice;
         }
         
         utterance.lang = selectedLanguage;
