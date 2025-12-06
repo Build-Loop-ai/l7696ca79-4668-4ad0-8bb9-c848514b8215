@@ -56,7 +56,8 @@ export function TestCallButton({
   const [statusMessage, setStatusMessage] = useState("");
   const [showPhoneOnly, setShowPhoneOnly] = useState(false);
 
-  const publicKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
+  // Vapi public key for browser-based testing
+  const publicKey = "3d8f4267-671a-4a72-924e-79ac9179df8f";
   
   // In Lovable preview, browser-based Vapi calls are blocked by sandbox
   // Show phone option directly instead of attempting and failing
