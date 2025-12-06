@@ -22,13 +22,14 @@ import {
   CheckCircle2,
   ArrowRight,
   ArrowLeft,
-  Play,
   Sparkles,
   Loader2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { VoicePreview } from "@/components/VoicePreview";
+import { TestCallButton } from "@/components/TestCallButton";
 
 const STEPS = [
   { id: 1, title: "Business Basics", icon: Building },
@@ -102,7 +103,7 @@ const Onboarding = () => {
   ]);
 
   const [aiConfig, setAiConfig] = useState({
-    voice: "female-friendly",
+    voice: "rachel",
     tone: 50,
     language: "en",
     greeting: "Hello! Thank you for calling. How can I help you today?",
@@ -112,6 +113,8 @@ const Onboarding = () => {
     option: "new",
     areaCode: "+31",
   });
+
+  const [assistantId, setAssistantId] = useState<string | null>(null);
 
   // Load saved clinic name from signup
   useEffect(() => {
@@ -241,6 +244,22 @@ const Onboarding = () => {
         });
 
       if (subError) throw subError;
+
+      // 6. Create Vapi assistant
+      try {
+        const { data: vapiData, error: vapiError } = await supabase.functions.invoke(
+          'create-vapi-assistant',
+          { body: { organizationId: org.id } }
+        );
+        
+        if (vapiError) {
+          console.error('Vapi assistant error:', vapiError);
+        } else if (vapiData?.assistantId) {
+          setAssistantId(vapiData.assistantId);
+        }
+      } catch (vapiErr) {
+        console.error('Failed to create Vapi assistant:', vapiErr);
+      }
 
       toast({
         title: "Setup complete!",
@@ -624,42 +643,11 @@ const Onboarding = () => {
                 {/* Voice selection */}
                 <div className="space-y-4">
                   <Label>Voice</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { id: "female-friendly", label: "Sarah (Friendly)" },
-                      { id: "female-professional", label: "Emma (Professional)" },
-                      { id: "male-friendly", label: "James (Friendly)" },
-                      { id: "male-professional", label: "Michael (Professional)" },
-                    ].map((voice) => (
-                      <label
-                        key={voice.id}
-                        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                          aiConfig.voice === voice.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="voice"
-                            value={voice.id}
-                            checked={aiConfig.voice === voice.id}
-                            onChange={() =>
-                              setAiConfig({ ...aiConfig, voice: voice.id })
-                            }
-                            className="sr-only"
-                          />
-                          <span className="text-sm font-medium text-foreground">
-                            {voice.label}
-                          </span>
-                        </div>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Play className="w-4 h-4" />
-                        </Button>
-                      </label>
-                    ))}
-                  </div>
+                  <VoicePreview
+                    selectedVoice={aiConfig.voice}
+                    onSelectVoice={(voiceId) => setAiConfig({ ...aiConfig, voice: voiceId })}
+                    greeting={aiConfig.greeting}
+                  />
                 </div>
 
                 {/* Language */}
@@ -697,10 +685,10 @@ const Onboarding = () => {
                   />
                 </div>
 
-                <Button variant="outline" className="w-full gap-2">
-                  <Play className="w-4 h-4" />
-                  Test Your AI
-                </Button>
+                <TestCallButton
+                  assistantId={assistantId || undefined}
+                  disabled={!assistantId}
+                />
               </div>
             </div>
           )}

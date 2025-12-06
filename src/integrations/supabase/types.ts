@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          call_id: string | null
+          created_at: string | null
+          email: string | null
+          google_calendar_event_id: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          patient_name: string
+          phone_number: string | null
+          scheduled_at: string
+          service_type: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          call_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          google_calendar_event_id?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          patient_name: string
+          phone_number?: string | null
+          scheduled_at: string
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          call_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          google_calendar_event_id?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          patient_name?: string
+          phone_number?: string | null
+          scheduled_at?: string
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "call_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_logs: {
         Row: {
           caller_number: string | null
@@ -358,6 +421,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_minutes_used: {
+        Args: { minutes_to_add: number; org_id: string }
+        Returns: undefined
       }
       is_org_admin: {
         Args: { _organization_id: string; _user_id: string }
