@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,8 @@ import {
   Info,
   PhoneForwarded,
   PhoneMissed,
+  Loader2,
+  Voicemail,
 } from "lucide-react";
 import {
   Table,
@@ -22,76 +25,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { format, isToday, parseISO } from "date-fns";
 
-const stats = [
-  {
-    title: "Today's Calls",
-    value: "24",
-    change: "+12%",
-    changeType: "positive",
-    icon: Phone,
-  },
-  {
-    title: "Appointments Booked",
-    value: "8",
-    change: "33%",
-    changeType: "positive",
-    icon: Calendar,
-    subtitle: "conversion",
-  },
-  {
-    title: "Avg Call Duration",
-    value: "1:42",
-    change: "-8%",
-    changeType: "neutral",
-    icon: Clock,
-  },
-  {
-    title: "AI Resolution Rate",
-    value: "87%",
-    change: "+5%",
-    changeType: "positive",
-    icon: TrendingUp,
-  },
-];
+interface CallLog {
+  id: string;
+  started_at: string | null;
+  caller_number: string | null;
+  duration_seconds: number | null;
+  outcome: string | null;
+  recording_url: string | null;
+  transcript: string | null;
+}
 
-const recentCalls = [
-  {
-    id: 1,
-    time: "14:32",
-    caller: "+31 6 1234 5678",
-    duration: "2:15",
-    outcome: "appointment_booked",
-  },
-  {
-    id: 2,
-    time: "14:15",
-    caller: "+31 6 9876 5432",
-    duration: "1:02",
-    outcome: "info_provided",
-  },
-  {
-    id: 3,
-    time: "13:48",
-    caller: "+31 6 5555 4444",
-    duration: "0:45",
-    outcome: "transferred",
-  },
-  {
-    id: 4,
-    time: "13:22",
-    caller: "+31 6 3333 2222",
-    duration: "1:58",
-    outcome: "appointment_booked",
-  },
-  {
-    id: 5,
-    time: "12:55",
-    caller: "+31 6 1111 0000",
-    duration: "0:00",
-    outcome: "missed",
-  },
-];
+interface Subscription {
+  minutes_used: number | null;
+  minutes_included: number | null;
+}
 
 const outcomeConfig: Record<
   string,
@@ -117,9 +70,197 @@ const outcomeConfig: Record<
     color: "bg-red-100 text-red-700",
     icon: PhoneMissed,
   },
+  voicemail: {
+    label: "Voicemail",
+    color: "bg-purple-100 text-purple-700",
+    icon: Voicemail,
+  },
+  completed: {
+    label: "Completed",
+    color: "bg-gray-100 text-gray-700",
+    icon: Phone,
+  },
+};
+
+const formatDuration = (seconds: number | null): string => {
+  if (!seconds || seconds === 0) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+};
+
+const formatTime = (dateStr: string | null): string => {
+  if (!dateStr) return "-";
+  try {
+    return format(parseISO(dateStr), "HH:mm");
+  } catch {
+    return "-";
+  }
 };
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [calls, setCalls] = useState<CallLog[]>([]);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+
+      try {
+        // Get user's organization
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("organization_id")
+          .eq("id", user.id)
+          .single();
+
+        if (!profile?.organization_id) {
+          setLoading(false);
+          return;
+        }
+
+        setOrganizationId(profile.organization_id);
+
+        // Fetch call logs and subscription in parallel
+        const [callsRes, subRes] = await Promise.all([
+          supabase
+            .from("call_logs")
+            .select("id, started_at, caller_number, duration_seconds, outcome, recording_url, transcript")
+            .eq("organization_id", profile.organization_id)
+            .order("created_at", { ascending: false })
+            .limit(10),
+          supabase
+            .from("subscriptions")
+            .select("minutes_used, minutes_included")
+            .eq("organization_id", profile.organization_id)
+            .single(),
+        ]);
+
+        if (callsRes.data) {
+          setCalls(callsRes.data);
+        }
+
+        if (subRes.data) {
+          setSubscription(subRes.data);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  // Calculate stats from real data
+  const todaysCalls = calls.filter(
+    (call) => call.started_at && isToday(parseISO(call.started_at))
+  );
+
+  const todaysAppointments = todaysCalls.filter(
+    (call) => call.outcome === "appointment_booked"
+  ).length;
+
+  const todaysTotalCalls = todaysCalls.length;
+
+  const avgDurationSeconds =
+    todaysCalls.length > 0
+      ? Math.round(
+          todaysCalls.reduce((sum, c) => sum + (c.duration_seconds || 0), 0) /
+            todaysCalls.length
+        )
+      : 0;
+
+  const answeredCalls = todaysCalls.filter(
+    (call) => call.outcome && call.outcome !== "missed"
+  ).length;
+
+  const missedCalls = todaysCalls.filter(
+    (call) => call.outcome === "missed"
+  ).length;
+
+  const resolutionRate =
+    todaysCalls.length > 0
+      ? Math.round((answeredCalls / todaysCalls.length) * 100)
+      : 0;
+
+  const conversionRate =
+    todaysTotalCalls > 0
+      ? Math.round((todaysAppointments / todaysTotalCalls) * 100)
+      : 0;
+
+  const lastCallTime = calls.length > 0 ? formatTime(calls[0].started_at) : "-";
+
+  const stats = [
+    {
+      title: "Today's Calls",
+      value: todaysTotalCalls.toString(),
+      change: "",
+      changeType: "neutral" as const,
+      icon: Phone,
+    },
+    {
+      title: "Appointments Booked",
+      value: todaysAppointments.toString(),
+      change: conversionRate > 0 ? `${conversionRate}%` : "",
+      changeType: "positive" as const,
+      icon: Calendar,
+      subtitle: "conversion",
+    },
+    {
+      title: "Avg Call Duration",
+      value: formatDuration(avgDurationSeconds),
+      change: "",
+      changeType: "neutral" as const,
+      icon: Clock,
+    },
+    {
+      title: "AI Resolution Rate",
+      value: `${resolutionRate}%`,
+      change: "",
+      changeType: resolutionRate >= 80 ? "positive" as const : "neutral" as const,
+      icon: TrendingUp,
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
+            <CardContent className="p-6">
+              <Skeleton className="h-64 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <Skeleton className="h-64 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -143,17 +284,17 @@ const Dashboard = () => {
                     {stat.value}
                   </p>
                   <div className="flex items-center gap-2 mt-2">
-                    <span
-                      className={`text-sm font-medium ${
-                        stat.changeType === "positive"
-                          ? "text-green-600"
-                          : stat.changeType === "negative"
-                          ? "text-red-600"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {stat.change}
-                    </span>
+                    {stat.change && (
+                      <span
+                        className={`text-sm font-medium ${
+                          stat.changeType === "positive"
+                            ? "text-green-600"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {stat.change}
+                      </span>
+                    )}
                     {stat.subtitle && (
                       <span className="text-sm text-muted-foreground">
                         {stat.subtitle}
@@ -175,56 +316,100 @@ const Dashboard = () => {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-serif">Recent Calls</CardTitle>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/dashboard/calls")}
+            >
               View all
             </Button>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Caller</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Outcome</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentCalls.map((call) => {
-                  const outcome = outcomeConfig[call.outcome];
-                  return (
-                    <TableRow key={call.id}>
-                      <TableCell className="font-medium">{call.time}</TableCell>
-                      <TableCell>{call.caller}</TableCell>
-                      <TableCell>{call.duration}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="secondary"
-                          className={`gap-1 ${outcome.color}`}
-                        >
-                          <outcome.icon className="w-3 h-3" />
-                          {outcome.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Play className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <FileText className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <PhoneCall className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            {calls.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Phone className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No calls yet</p>
+                <p className="text-sm mt-1">
+                  Calls will appear here once your AI starts receiving them
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Caller</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Outcome</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {calls.slice(0, 5).map((call) => {
+                    const outcome = call.outcome
+                      ? outcomeConfig[call.outcome] || outcomeConfig.completed
+                      : outcomeConfig.completed;
+                    return (
+                      <TableRow key={call.id}>
+                        <TableCell className="font-medium">
+                          {formatTime(call.started_at)}
+                        </TableCell>
+                        <TableCell>{call.caller_number || "-"}</TableCell>
+                        <TableCell>
+                          {formatDuration(call.duration_seconds)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="secondary"
+                            className={`gap-1 ${outcome.color}`}
+                          >
+                            <outcome.icon className="w-3 h-3" />
+                            {outcome.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {call.recording_url && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  window.open(call.recording_url!, "_blank")
+                                }
+                              >
+                                <Play className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {call.transcript && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                              >
+                                <FileText className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {call.caller_number && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  window.open(`tel:${call.caller_number}`)
+                                }
+                              >
+                                <PhoneCall className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 
@@ -242,7 +427,7 @@ const Dashboard = () => {
                 Ready to receive calls
               </h3>
               <p className="text-sm text-muted-foreground">
-                Last call: 14:32
+                Last call: {lastCallTime}
               </p>
             </div>
 
@@ -253,15 +438,22 @@ const Dashboard = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Calls answered</span>
-                  <span className="font-medium text-foreground">23</span>
+                  <span className="font-medium text-foreground">
+                    {answeredCalls}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Calls missed</span>
-                  <span className="font-medium text-foreground">1</span>
+                  <span className="font-medium text-foreground">
+                    {missedCalls}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Minutes used</span>
-                  <span className="font-medium text-foreground">42 / 500</span>
+                  <span className="font-medium text-foreground">
+                    {subscription?.minutes_used ?? 0} /{" "}
+                    {subscription?.minutes_included ?? 0}
+                  </span>
                 </div>
               </div>
             </div>
