@@ -181,8 +181,12 @@ const Dashboard = () => {
         }
 
         if (phonesRes.data && phonesRes.data.length > 0) {
-          setHasPhoneNumber(true);
-          setAiPhoneNumber(phonesRes.data[0].phone_number);
+          const activePhone = phonesRes.data[0];
+          // Only set as valid phone number if it looks like a real phone number (starts with +)
+          if (activePhone.phone_number?.startsWith('+')) {
+            setHasPhoneNumber(true);
+            setAiPhoneNumber(activePhone.phone_number);
+          }
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
