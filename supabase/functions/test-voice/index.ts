@@ -5,51 +5,77 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Map voice IDs to ElevenLabs voice IDs
-const voiceMapping: Record<string, string> = {
-  rachel: "EXAVITQu4vr4xnSDxMaL",
-  adam: "pNInz6obpgDQGcFmaJgB",
-  bella: "EXAVITQu4vr4xnSDxMaL",
-  josh: "TxGEqnHWrfWFTfGW9XjX",
-  antoni: "ErXwobaYiN019PkySvjV",
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { voiceId, text } = await req.json();
+    const { voiceId, text, language } = await req.json();
 
     if (!voiceId || !text) {
       throw new Error("voiceId and text are required");
     }
 
-    const vapiApiKey = Deno.env.get("VAPI_API_KEY");
+    // Try to get ElevenLabs API key from environment
+    const elevenLabsApiKey = Deno.env.get("ELEVENLABS_API_KEY");
 
-    if (!vapiApiKey) {
-      throw new Error("VAPI_API_KEY is not configured");
+    if (!elevenLabsApiKey) {
+      console.log("ELEVENLABS_API_KEY not configured, returning placeholder");
+      return new Response(
+        JSON.stringify({
+          success: true,
+          voiceId: voiceId,
+          message: "ElevenLabs API key not configured. Voice will work in production calls.",
+          audioContent: null,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const elevenLabsVoiceId = voiceMapping[voiceId] || voiceMapping.rachel;
+    console.log(`Generating ElevenLabs preview for voice: ${voiceId}, language: ${language}`);
 
-    console.log("Generating voice preview for:", voiceId, "->", elevenLabsVoiceId);
+    // Call ElevenLabs Text-to-Speech API
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": elevenLabsApiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: "eleven_multilingual_v2",
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.0,
+            use_speaker_boost: true,
+          },
+        }),
+      }
+    );
 
-    // Use Vapi's voice synthesis endpoint
-    // Note: If Vapi doesn't provide a direct TTS endpoint, we'll use their assistant 
-    // for now and return a placeholder
-    
-    // For demo purposes, return info about the voice
-    // In production, you'd integrate with ElevenLabs directly or use Vapi's streaming
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("ElevenLabs API error:", response.status, errorText);
+      throw new Error(`ElevenLabs API error: ${response.status}`);
+    }
+
+    // Convert audio to base64
+    const audioBuffer = await response.arrayBuffer();
+    const base64Audio = btoa(
+      String.fromCharCode(...new Uint8Array(audioBuffer))
+    );
+
+    console.log(`Successfully generated audio preview (${audioBuffer.byteLength} bytes)`);
+
     return new Response(
       JSON.stringify({
         success: true,
         voiceId: voiceId,
-        elevenLabsVoiceId: elevenLabsVoiceId,
-        message: "Voice preview generated",
-        // In production, this would be a base64 audio or a URL
-        audioUrl: null,
+        audioContent: base64Audio,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -57,7 +83,10 @@ serve(async (req) => {
     console.error("Error in test-voice:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ 
+        error: message,
+        audioContent: null,
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
