@@ -25,25 +25,7 @@ const checkBrowserSupport = (): { supported: boolean; reason?: string } => {
   return { supported: true };
 };
 
-// Detect if running in sandboxed iframe (Lovable editor preview)
-const isInSandboxedIframe = (): boolean => {
-  // Not in an iframe at all - browser calls should work
-  if (window.self === window.top) {
-    console.log("[TestCallButton] Not in iframe, browser calls enabled");
-    return false;
-  }
-  
-  // We're in an iframe - check if it's sandboxed
-  try {
-    // Try to access parent - will throw in sandboxed/cross-origin iframes
-    const _test = window.parent.location.href;
-    console.log("[TestCallButton] In accessible iframe, browser calls enabled");
-    return false;
-  } catch {
-    console.log("[TestCallButton] In sandboxed iframe, browser calls blocked");
-    return true;
-  }
-};
+// Removed sandbox detection - let Vapi SDK attempt connection directly
 
 export function TestCallButton({
   assistantId,
@@ -58,15 +40,11 @@ export function TestCallButton({
 
   // Vapi public key for browser-based testing
   const publicKey = "3d8f4267-671a-4a72-924e-79ac9179df8f";
-  
-  // In Lovable preview, browser-based Vapi calls are blocked by sandbox
-  // Show phone option directly instead of attempting and failing
-  const inPreview = isInSandboxedIframe();
 
   useEffect(() => {
     // Cleanup on unmount
     return () => {
-      if (callStatus !== "idle" && !inPreview) {
+      if (callStatus !== "idle") {
         try {
           const vapi = getVapiClient(publicKey);
           vapi.stop();
@@ -75,16 +53,9 @@ export function TestCallButton({
         }
       }
     };
-  }, [callStatus, publicKey, inPreview]);
+  }, [callStatus, publicKey]);
 
   const startTestCall = async () => {
-    // In Lovable preview, skip browser test and show phone option
-    if (inPreview) {
-      setShowPhoneOnly(true);
-      setStatusMessage("Browser calls are not available in the preview. Use the phone number below.");
-      return;
-    }
-
     // Check browser support first
     const browserCheck = checkBrowserSupport();
     if (!browserCheck.supported) {
@@ -197,50 +168,6 @@ export function TestCallButton({
   };
 
   const isActive = callStatus !== "idle" && callStatus !== "error";
-
-  // If in preview and we have a phone number, show a simpler UI focused on calling
-  if (inPreview && phoneNumber) {
-    return (
-      <div className="flex flex-col items-center gap-4 w-full">
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground mb-4">
-            Browser testing is not available in the preview.
-            <br />
-            Call your AI receptionist directly:
-          </p>
-        </div>
-        
-        <a 
-          href={`tel:${phoneNumber}`}
-          className="w-full"
-        >
-          <Button variant="hero" size="lg" className="gap-2 w-full">
-            <Phone className="w-5 h-5" />
-            Call {phoneNumber}
-          </Button>
-        </a>
-
-        <p className="text-xs text-muted-foreground text-center">
-          Opens your phone app to call the AI
-        </p>
-      </div>
-    );
-  }
-
-  // If no phone number in preview, show a message
-  if (inPreview && !phoneNumber) {
-    return (
-      <div className="flex flex-col items-center gap-4">
-        <Button disabled variant="outline" size="lg" className="gap-2">
-          <Phone className="w-5 h-5" />
-          Test Your AI
-        </Button>
-        <p className="text-xs text-muted-foreground text-center max-w-xs">
-          Get a phone number first to test your AI receptionist
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col items-center gap-4">
