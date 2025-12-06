@@ -103,9 +103,9 @@ const Onboarding = () => {
   ]);
 
   const [aiConfig, setAiConfig] = useState({
-    voice: "rachel",
-    tone: 50,
-    language: "en",
+    voice: "en-US-AriaNeural",
+    voiceProvider: "azure" as "azure" | "11labs" | "playht",
+    language: "en-US",
     greeting: "Hello! Thank you for calling. How can I help you today?",
   });
 
@@ -190,16 +190,21 @@ const Onboarding = () => {
 
       if (orgError) throw orgError;
 
-      // 2. Create organization settings
+      // 2. Create organization settings with language/voice config
       const { error: settingsError } = await supabase
         .from('organization_settings')
         .insert({
           organization_id: org.id,
           business_hours: hours,
           services: services.map(name => ({ name, duration: 30 })),
+          language: aiConfig.language,
+          voice_provider: aiConfig.voiceProvider,
+          voice_id: aiConfig.voice,
+          custom_greeting: aiConfig.greeting,
+          transcriber_language: aiConfig.language.split('-')[0] || 'en',
           ai_config: {
             voice_id: aiConfig.voice,
-            personality: aiConfig.tone > 50 ? 'friendly' : 'professional',
+            personality: 'professional',
             greeting: aiConfig.greeting,
             language: aiConfig.language,
             additional_languages: [],
@@ -636,41 +641,21 @@ const Onboarding = () => {
                 Customize your AI personality
               </h2>
               <p className="text-muted-foreground mb-8">
-                Choose how your AI receptionist sounds and behaves.
+                Choose the language and voice for your AI receptionist.
               </p>
 
               <div className="space-y-8">
-                {/* Voice selection */}
-                <div className="space-y-4">
-                  <Label>Voice</Label>
-                  <VoicePreview
-                    selectedVoice={aiConfig.voice}
-                    onSelectVoice={(voiceId) => setAiConfig({ ...aiConfig, voice: voiceId })}
-                    greeting={aiConfig.greeting}
-                  />
-                </div>
-
-                {/* Language */}
-                <div className="space-y-2">
-                  <Label>Primary Language</Label>
-                  <Select
-                    value={aiConfig.language}
-                    onValueChange={(value) =>
-                      setAiConfig({ ...aiConfig, language: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="nl">Dutch</SelectItem>
-                      <SelectItem value="de">German</SelectItem>
-                      <SelectItem value="fr">French</SelectItem>
-                      <SelectItem value="es">Spanish</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Language & Voice selection */}
+                <VoicePreview
+                  selectedVoice={aiConfig.voice}
+                  onSelectVoice={(voiceId) => setAiConfig({ ...aiConfig, voice: voiceId })}
+                  selectedLanguage={aiConfig.language}
+                  onSelectLanguage={(lang) => setAiConfig({ ...aiConfig, language: lang })}
+                  greeting={aiConfig.greeting}
+                  onGreetingChange={(greeting) => setAiConfig({ ...aiConfig, greeting })}
+                  businessName={businessData.name || "your business"}
+                  showLanguageSelector={true}
+                />
 
                 {/* Greeting */}
                 <div className="space-y-2">
@@ -683,6 +668,9 @@ const Onboarding = () => {
                     }
                     rows={3}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    This is the first message your AI will say when answering a call.
+                  </p>
                 </div>
 
                 <TestCallButton
