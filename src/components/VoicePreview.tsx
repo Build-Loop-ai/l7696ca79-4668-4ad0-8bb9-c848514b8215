@@ -233,10 +233,37 @@ export function VoicePreview({
         const voice = voiceList.find((v) => v.id === voiceId);
         const langCode = selectedLanguage.split('-')[0];
         
-        // Find a browser voice that matches the language
-        const matchingVoice = synthVoices.find((v) => 
+        // Get all browser voices that match the language
+        const langVoices = synthVoices.filter((v) => 
           v.lang.toLowerCase().startsWith(langCode.toLowerCase())
         );
+        
+        // Try to find a voice that matches gender
+        let matchingVoice: SpeechSynthesisVoice | undefined;
+        if (voice && langVoices.length > 0) {
+          if (voice.gender === 'female') {
+            // Prefer female voices (usually don't have "male" in name)
+            matchingVoice = langVoices.find(v => 
+              !v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('female')
+            );
+          } else if (voice.gender === 'male') {
+            // Prefer male voices
+            matchingVoice = langVoices.find(v => 
+              v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('female')
+            );
+          }
+          
+          // If no gender match found, try to pick a different voice based on voice index
+          if (!matchingVoice && langVoices.length > 1) {
+            const voiceIndex = voiceList.findIndex(v => v.id === voiceId);
+            matchingVoice = langVoices[voiceIndex % langVoices.length];
+          }
+        }
+        
+        // Fallback to first matching language voice
+        if (!matchingVoice && langVoices.length > 0) {
+          matchingVoice = langVoices[0];
+        }
         
         if (matchingVoice) {
           utterance.voice = matchingVoice;
