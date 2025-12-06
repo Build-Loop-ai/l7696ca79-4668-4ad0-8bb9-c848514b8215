@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Phone, PhoneOff, Loader2, Mic, Volume2, AlertTriangle } from "lucide-react";
+import { Phone, PhoneOff, Loader2, Mic, Volume2, AlertTriangle, ExternalLink } from "lucide-react";
 import { getVapiClient, resetVapiClient } from "@/lib/vapi-client";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,12 @@ const checkBrowserSupport = (): { supported: boolean; reason?: string } => {
   return { supported: true };
 };
 
+// Detect if running in Lovable preview (sandboxed environment)
+const isLovablePreview = (): boolean => {
+  const hostname = window.location.hostname;
+  return hostname.includes('lovableproject.com') || hostname.includes('lovable.dev');
+};
+
 export function TestCallButton({
   assistantId,
   disabled = false,
@@ -34,14 +40,18 @@ export function TestCallButton({
 }: TestCallButtonProps) {
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
-  const [showPhoneOption, setShowPhoneOption] = useState(false);
+  const [showPhoneOnly, setShowPhoneOnly] = useState(false);
 
   const publicKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
+  
+  // In Lovable preview, browser-based Vapi calls are blocked by sandbox
+  // Show phone option directly instead of attempting and failing
+  const inPreview = isLovablePreview();
 
   useEffect(() => {
     // Cleanup on unmount
     return () => {
-      if (callStatus !== "idle") {
+      if (callStatus !== "idle" && !inPreview) {
         try {
           const vapi = getVapiClient(publicKey);
           vapi.stop();
@@ -50,22 +60,29 @@ export function TestCallButton({
         }
       }
     };
-  }, [callStatus, publicKey]);
+  }, [callStatus, publicKey, inPreview]);
 
   const startTestCall = async () => {
+    // In Lovable preview, skip browser test and show phone option
+    if (inPreview) {
+      setShowPhoneOnly(true);
+      setStatusMessage("Browser calls are not available in the preview. Use the phone number below.");
+      return;
+    }
+
     // Check browser support first
     const browserCheck = checkBrowserSupport();
     if (!browserCheck.supported) {
       setCallStatus("error");
       setStatusMessage(browserCheck.reason || "Browser not supported");
-      setShowPhoneOption(true);
+      setShowPhoneOnly(true);
       return;
     }
 
     if (!publicKey) {
       setCallStatus("error");
       setStatusMessage("Voice testing not configured. Try calling the phone number directly.");
-      setShowPhoneOption(true);
+      setShowPhoneOnly(true);
       return;
     }
 
@@ -77,7 +94,7 @@ export function TestCallButton({
 
     setCallStatus("connecting");
     setStatusMessage("Requesting microphone access...");
-    setShowPhoneOption(false);
+    setShowPhoneOnly(false);
 
     try {
       // Request microphone permission first
@@ -116,13 +133,13 @@ export function TestCallButton({
         // Parse error for better messaging
         const errorMsg = error?.message || JSON.stringify(error);
         if (errorMsg.includes("Failed to fetch") || errorMsg.includes("network")) {
-          setStatusMessage("Connection failed. Try calling the phone number directly.");
-          setShowPhoneOption(true);
+          setStatusMessage("Browser calls blocked. Use the phone number below.");
+          setShowPhoneOnly(true);
         } else if (errorMsg.includes("permission") || errorMsg.includes("NotAllowed")) {
           setStatusMessage("Microphone access denied. Please allow microphone access.");
         } else {
-          setStatusMessage("Call failed. Try calling the phone number directly.");
-          setShowPhoneOption(true);
+          setStatusMessage("Call failed. Try the phone number below.");
+          setShowPhoneOnly(true);
         }
       });
 
@@ -134,8 +151,8 @@ export function TestCallButton({
       if (error.name === "NotAllowedError" || error.message?.includes("permission")) {
         setStatusMessage("Microphone access denied. Please allow microphone access and try again.");
       } else {
-        setStatusMessage("Failed to start call. Try calling the phone number directly.");
-        setShowPhoneOption(true);
+        setStatusMessage("Failed to start browser call. Use the phone number below.");
+        setShowPhoneOnly(true);
       }
     }
   };
@@ -149,11 +166,55 @@ export function TestCallButton({
     }
     setCallStatus("idle");
     setStatusMessage("");
-    setShowPhoneOption(false);
+    setShowPhoneOnly(false);
     onCallEnd?.();
   };
 
   const isActive = callStatus !== "idle" && callStatus !== "error";
+
+  // If in preview and we have a phone number, show a simpler UI focused on calling
+  if (inPreview && phoneNumber) {
+    return (
+      <div className="flex flex-col items-center gap-4 w-full">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            Browser testing is not available in the preview.
+            <br />
+            Call your AI receptionist directly:
+          </p>
+        </div>
+        
+        <a 
+          href={`tel:${phoneNumber}`}
+          className="w-full"
+        >
+          <Button variant="hero" size="lg" className="gap-2 w-full">
+            <Phone className="w-5 h-5" />
+            Call {phoneNumber}
+          </Button>
+        </a>
+
+        <p className="text-xs text-muted-foreground text-center">
+          Opens your phone app to call the AI
+        </p>
+      </div>
+    );
+  }
+
+  // If no phone number in preview, show a message
+  if (inPreview && !phoneNumber) {
+    return (
+      <div className="flex flex-col items-center gap-4">
+        <Button disabled variant="outline" size="lg" className="gap-2">
+          <Phone className="w-5 h-5" />
+          Test Your AI
+        </Button>
+        <p className="text-xs text-muted-foreground text-center max-w-xs">
+          Get a phone number first to test your AI receptionist
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -236,16 +297,20 @@ export function TestCallButton({
       )}
 
       {/* Show phone number option when browser test fails */}
-      {showPhoneOption && phoneNumber && (
-        <div className="flex flex-col items-center gap-2 p-4 bg-muted/50 rounded-lg">
+      {showPhoneOnly && phoneNumber && (
+        <div className="flex flex-col items-center gap-3 p-4 bg-muted/50 rounded-xl border border-border">
           <p className="text-sm text-muted-foreground text-center">
             Call your AI directly:
           </p>
           <a 
             href={`tel:${phoneNumber}`}
-            className="text-lg font-medium text-primary hover:underline"
+            className="flex items-center gap-2"
           >
-            {phoneNumber}
+            <Button variant="outline" size="lg" className="gap-2">
+              <Phone className="w-4 h-4" />
+              {phoneNumber}
+              <ExternalLink className="w-3 h-3" />
+            </Button>
           </a>
         </div>
       )}
