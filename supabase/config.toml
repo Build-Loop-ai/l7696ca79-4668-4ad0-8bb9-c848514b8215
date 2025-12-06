@@ -26,3 +26,6 @@ verify_jwt = true
 
 [functions.update-forwarding-status]
 verify_jwt = true
+
+[functions.generate-demo-audio]
+verify_jwt = false
