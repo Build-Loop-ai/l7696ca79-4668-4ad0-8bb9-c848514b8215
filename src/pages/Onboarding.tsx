@@ -648,11 +648,11 @@ const Onboarding = () => {
                 {/* Language & Voice selection */}
                 <VoicePreview
                   selectedVoice={aiConfig.voice}
-                  onSelectVoice={(voiceId, provider) => setAiConfig({ ...aiConfig, voice: voiceId, voiceProvider: provider })}
+                  onSelectVoice={(voiceId, provider) => setAiConfig(prev => ({ ...prev, voice: voiceId, voiceProvider: provider }))}
                   selectedLanguage={aiConfig.language}
-                  onSelectLanguage={(lang) => setAiConfig({ ...aiConfig, language: lang })}
+                  onSelectLanguage={(lang) => setAiConfig(prev => ({ ...prev, language: lang }))}
                   greeting={aiConfig.greeting}
-                  onGreetingChange={(greeting) => setAiConfig({ ...aiConfig, greeting })}
+                  onGreetingChange={(greeting) => setAiConfig(prev => ({ ...prev, greeting }))}
                   businessName={businessData.name || "your business"}
                   showLanguageSelector={true}
                 />
