@@ -213,10 +213,14 @@ export type Database = {
           address: Json | null
           business_type: Database["public"]["Enums"]["business_type"] | null
           created_at: string
+          customer_phone_number: string | null
+          forwarding_active: boolean | null
+          forwarding_confirmed_at: string | null
           id: string
           logo_url: string | null
           name: string
           phone: string | null
+          phone_carrier: string | null
           slug: string | null
           timezone: string | null
           updated_at: string
@@ -226,10 +230,14 @@ export type Database = {
           address?: Json | null
           business_type?: Database["public"]["Enums"]["business_type"] | null
           created_at?: string
+          customer_phone_number?: string | null
+          forwarding_active?: boolean | null
+          forwarding_confirmed_at?: string | null
           id?: string
           logo_url?: string | null
           name: string
           phone?: string | null
+          phone_carrier?: string | null
           slug?: string | null
           timezone?: string | null
           updated_at?: string
@@ -239,10 +247,14 @@ export type Database = {
           address?: Json | null
           business_type?: Database["public"]["Enums"]["business_type"] | null
           created_at?: string
+          customer_phone_number?: string | null
+          forwarding_active?: boolean | null
+          forwarding_confirmed_at?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           phone?: string | null
+          phone_carrier?: string | null
           slug?: string | null
           timezone?: string | null
           updated_at?: string
@@ -252,38 +264,56 @@ export type Database = {
       }
       phone_numbers: {
         Row: {
+          country_code: string | null
           created_at: string
           forwarding_number: string | null
           friendly_name: string | null
           id: string
           is_active: boolean | null
           is_forwarding: boolean | null
+          number_type: string | null
           organization_id: string
           phone_number: string
+          released_at: string | null
+          status: string | null
+          twilio_monthly_cost_cents: number | null
+          twilio_sid: string | null
           updated_at: string
           vapi_phone_id: string | null
         }
         Insert: {
+          country_code?: string | null
           created_at?: string
           forwarding_number?: string | null
           friendly_name?: string | null
           id?: string
           is_active?: boolean | null
           is_forwarding?: boolean | null
+          number_type?: string | null
           organization_id: string
           phone_number: string
+          released_at?: string | null
+          status?: string | null
+          twilio_monthly_cost_cents?: number | null
+          twilio_sid?: string | null
           updated_at?: string
           vapi_phone_id?: string | null
         }
         Update: {
+          country_code?: string | null
           created_at?: string
           forwarding_number?: string | null
           friendly_name?: string | null
           id?: string
           is_active?: boolean | null
           is_forwarding?: boolean | null
+          number_type?: string | null
           organization_id?: string
           phone_number?: string
+          released_at?: string | null
+          status?: string | null
+          twilio_monthly_cost_cents?: number | null
+          twilio_sid?: string | null
           updated_at?: string
           vapi_phone_id?: string | null
         }

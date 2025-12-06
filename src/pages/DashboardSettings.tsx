@@ -30,6 +30,7 @@ import {
   Plus,
   Loader2,
   PhoneForwarded,
+  CheckCircle2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -40,6 +41,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
+import { formatPhoneNumber, isRealPhoneNumber } from "@/lib/phone-utils";
+import { getCarriersForCountry, getForwardingInstructions, getCarrierById } from "@/lib/phone-carriers";
 
 interface Organization {
   id: string;
@@ -55,6 +58,8 @@ interface PhoneNumber {
   phone_number: string;
   friendly_name: string | null;
   is_active: boolean | null;
+  country_code: string | null;
+  status: string | null;
 }
 
 interface Subscription {
@@ -128,8 +133,9 @@ const DashboardSettings = () => {
             .single(),
           supabase
             .from("phone_numbers")
-            .select("id, phone_number, friendly_name, is_active")
-            .eq("organization_id", profile.organization_id),
+            .select("id, phone_number, friendly_name, is_active, country_code, status")
+            .eq("organization_id", profile.organization_id)
+            .eq("status", "active"),
           supabase
             .from("subscriptions")
             .select("*")
@@ -738,7 +744,6 @@ const DashboardSettings = () => {
           onOpenChange={setShowPhoneDialog}
           organizationId={organizationId}
           onSuccess={(phoneNumber) => {
-            // Add the new phone number to the list
             setPhoneNumbers((prev) => [
               ...prev,
               {
@@ -746,6 +751,8 @@ const DashboardSettings = () => {
                 phone_number: phoneNumber,
                 friendly_name: "Main Line",
                 is_active: true,
+                country_code: null,
+                status: "active",
               },
             ]);
             setShowPhoneDialog(false);
