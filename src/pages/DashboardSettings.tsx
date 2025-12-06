@@ -430,16 +430,24 @@ const DashboardSettings = () => {
                       key={phone.id}
                       className="flex items-center justify-between p-4 rounded-xl border border-border"
                     >
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <Phone className="w-5 h-5 text-primary" />
                         </div>
                         <div>
-                          <div className="font-medium font-mono">
-                            {phone.phone_number}
+                          <div className="font-medium">
+                            {/* Check if it's a real phone number or a SIP/web endpoint */}
+                            {phone.phone_number.match(/^\+?[\d\s\-()]+$/) 
+                              ? phone.phone_number 
+                              : "Web Call Endpoint"}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {phone.friendly_name || "Main Line"}
+                            {!phone.phone_number.match(/^\+?[\d\s\-()]+$/) && (
+                              <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                                Browser calls only
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -487,7 +495,7 @@ const DashboardSettings = () => {
                 </ol>
               </div>
 
-              {phoneNumbers.length > 0 && (
+              {phoneNumbers.length > 0 && phoneNumbers[0]?.phone_number.match(/^\+?[\d\s\-()]+$/) && (
                 <div className="p-4 rounded-xl border border-primary/20 bg-primary/5">
                   <p className="text-sm text-muted-foreground mb-2">Forward calls to:</p>
                   <div className="flex items-center gap-2">
@@ -506,6 +514,16 @@ const DashboardSettings = () => {
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
+                </div>
+              )}
+              
+              {phoneNumbers.length > 0 && !phoneNumbers[0]?.phone_number.match(/^\+?[\d\s\-()]+$/) && (
+                <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
+                  <p className="text-sm text-amber-800 font-medium mb-1">Web-only endpoint active</p>
+                  <p className="text-sm text-amber-700">
+                    Your current setup allows browser-based calls only. To receive real phone calls, 
+                    you'll need to connect a Twilio account in Settings → Integrations.
+                  </p>
                 </div>
               )}
 
