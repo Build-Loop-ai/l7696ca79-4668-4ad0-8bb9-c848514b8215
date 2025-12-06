@@ -13,7 +13,6 @@ import {
   Info,
   PhoneForwarded,
   PhoneMissed,
-  Loader2,
   Voicemail,
 } from "lucide-react";
 import {
@@ -30,6 +29,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { format, isToday, parseISO } from "date-fns";
+import { SetupChecklist } from "@/components/dashboard/SetupChecklist";
+import { PhoneNumberDialog } from "@/components/dashboard/PhoneNumberDialog";
+import { TestCallDialog } from "@/components/dashboard/TestCallDialog";
 
 interface CallLog {
   id: string;
@@ -106,6 +108,16 @@ const Dashboard = () => {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
 
+  // Setup state
+  const [hasAssistant, setHasAssistant] = useState(false);
+  const [hasPhoneNumber, setHasPhoneNumber] = useState(false);
+  const [hasTestCall, setHasTestCall] = useState(false);
+  const [assistantId, setAssistantId] = useState<string | undefined>();
+
+  // Dialog state
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [showTestDialog, setShowTestDialog] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
@@ -125,8 +137,8 @@ const Dashboard = () => {
 
         setOrganizationId(profile.organization_id);
 
-        // Fetch call logs and subscription in parallel
-        const [callsRes, subRes] = await Promise.all([
+        // Fetch all data in parallel
+        const [callsRes, subRes, settingsRes, phonesRes] = await Promise.all([
           supabase
             .from("call_logs")
             .select("id, started_at, caller_number, duration_seconds, outcome, recording_url, transcript")
@@ -138,14 +150,35 @@ const Dashboard = () => {
             .select("minutes_used, minutes_included")
             .eq("organization_id", profile.organization_id)
             .single(),
+          supabase
+            .from("organization_settings")
+            .select("vapi_assistant_id")
+            .eq("organization_id", profile.organization_id)
+            .single(),
+          supabase
+            .from("phone_numbers")
+            .select("id")
+            .eq("organization_id", profile.organization_id)
+            .eq("is_active", true),
         ]);
 
         if (callsRes.data) {
           setCalls(callsRes.data);
+          // Has test call if there's at least one call
+          setHasTestCall(callsRes.data.length > 0);
         }
 
         if (subRes.data) {
           setSubscription(subRes.data);
+        }
+
+        if (settingsRes.data?.vapi_assistant_id) {
+          setHasAssistant(true);
+          setAssistantId(settingsRes.data.vapi_assistant_id);
+        }
+
+        if (phonesRes.data && phonesRes.data.length > 0) {
+          setHasPhoneNumber(true);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -228,6 +261,18 @@ const Dashboard = () => {
     },
   ];
 
+  const handlePhoneSuccess = () => {
+    setHasPhoneNumber(true);
+    setShowPhoneDialog(false);
+  };
+
+  const handleTestCallComplete = () => {
+    setHasTestCall(true);
+  };
+
+  // Check if setup is complete
+  const setupComplete = hasAssistant && hasPhoneNumber && hasTestCall;
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -235,6 +280,7 @@ const Dashboard = () => {
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-4 w-64" />
         </div>
+        <Skeleton className="h-40 w-full" />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i}>
@@ -244,18 +290,6 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
-        <div className="grid lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardContent className="p-6">
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
         </div>
       </div>
     );
@@ -267,10 +301,23 @@ const Dashboard = () => {
         <div>
           <h1 className="text-3xl font-serif text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's what's happening today.
+            {setupComplete
+              ? "Welcome back! Here's what's happening today."
+              : "Let's get your AI receptionist ready for production."}
           </p>
         </div>
       </div>
+
+      {/* Setup Checklist - shown until complete */}
+      {!setupComplete && organizationId && (
+        <SetupChecklist
+          hasAssistant={hasAssistant}
+          hasPhoneNumber={hasPhoneNumber}
+          hasTestCall={hasTestCall}
+          onGetPhoneNumber={() => setShowPhoneDialog(true)}
+          onTestCall={() => setShowTestDialog(true)}
+        />
+      )}
 
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -328,10 +375,17 @@ const Dashboard = () => {
             {calls.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Phone className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No calls yet</p>
-                <p className="text-sm mt-1">
-                  Calls will appear here once your AI starts receiving them
+                <p className="font-medium">No calls yet</p>
+                <p className="text-sm mt-1 mb-4">
+                  {hasPhoneNumber
+                    ? "Calls will appear here once customers start calling"
+                    : "Get a phone number to start receiving calls"}
                 </p>
+                {!hasPhoneNumber && organizationId && (
+                  <Button onClick={() => setShowPhoneDialog(true)}>
+                    Get Phone Number
+                  </Button>
+                )}
               </div>
             ) : (
               <Table>
@@ -424,7 +478,7 @@ const Dashboard = () => {
                 <div className="w-4 h-4 rounded-full bg-green-500 pulse-indicator" />
               </div>
               <h3 className="text-lg font-medium text-foreground mb-1">
-                Ready to receive calls
+                {hasPhoneNumber ? "Ready to receive calls" : "Setup in progress"}
               </h3>
               <p className="text-sm text-muted-foreground">
                 Last call: {lastCallTime}
@@ -457,9 +511,41 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+
+            {/* Quick actions */}
+            {hasAssistant && (
+              <div className="border-t border-border pt-6 mt-6">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowTestDialog(true)}
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Test Your AI
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialogs */}
+      {organizationId && (
+        <>
+          <PhoneNumberDialog
+            open={showPhoneDialog}
+            onOpenChange={setShowPhoneDialog}
+            organizationId={organizationId}
+            onSuccess={handlePhoneSuccess}
+          />
+          <TestCallDialog
+            open={showTestDialog}
+            onOpenChange={setShowTestDialog}
+            assistantId={assistantId}
+            onCallComplete={handleTestCallComplete}
+          />
+        </>
+      )}
     </div>
   );
 };
