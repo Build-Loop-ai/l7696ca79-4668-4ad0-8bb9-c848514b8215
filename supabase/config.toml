@@ -1,1 +1,16 @@
 project_id = "kzjklsnezzettujluwnq"
+
+[functions.create-vapi-assistant]
+verify_jwt = true
+
+[functions.vapi-webhook]
+verify_jwt = false
+
+[functions.buy-phone-number]
+verify_jwt = true
+
+[functions.update-vapi-assistant]
+verify_jwt = true
+
+[functions.test-voice]
+verify_jwt = false
