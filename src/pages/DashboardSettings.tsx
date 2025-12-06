@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -20,7 +18,6 @@ import {
   Link,
   Users,
   CreditCard,
-  Play,
   Copy,
   ExternalLink,
   Trash2,
@@ -28,11 +25,43 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { VoiceLanguageSettings } from "@/components/settings/VoiceLanguageSettings";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const DashboardSettings = () => {
-  const [greeting, setGreeting] = useState(
-    "Good morning! Thank you for calling Amsterdam Dental Care. How can I help you today?"
-  );
+  const { user } = useAuth();
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [organizationName, setOrganizationName] = useState<string>("your business");
+
+  // Fetch organization details
+  useEffect(() => {
+    async function fetchOrganization() {
+      if (!user?.id) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.organization_id) {
+        setOrganizationId(profile.organization_id);
+
+        const { data: org } = await supabase
+          .from("organizations")
+          .select("name")
+          .eq("id", profile.organization_id)
+          .single();
+
+        if (org?.name) {
+          setOrganizationName(org.name);
+        }
+      }
+    }
+
+    fetchOrganization();
+  }, [user?.id]);
 
   return (
     <div className="space-y-6">
@@ -51,7 +80,7 @@ const DashboardSettings = () => {
           </TabsTrigger>
           <TabsTrigger value="ai" className="gap-2">
             <Mic className="w-4 h-4" />
-            AI Configuration
+            Voice & Language
           </TabsTrigger>
           <TabsTrigger value="phone" className="gap-2">
             <Phone className="w-4 h-4" />
@@ -130,87 +159,12 @@ const DashboardSettings = () => {
           </Card>
         </TabsContent>
 
-        {/* AI Configuration Tab */}
+        {/* AI Configuration Tab - Now with VoiceLanguageSettings */}
         <TabsContent value="ai" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Voice & Personality</CardTitle>
-              <CardDescription>
-                Customize how your AI receptionist sounds and behaves.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <Label>Voice</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { id: "sarah", label: "Sarah (Friendly)", selected: true },
-                    { id: "emma", label: "Emma (Professional)" },
-                    { id: "james", label: "James (Friendly)" },
-                    { id: "michael", label: "Michael (Professional)" },
-                  ].map((voice) => (
-                    <label
-                      key={voice.id}
-                      className={`flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                        voice.selected
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <span className="text-sm font-medium">{voice.label}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                      >
-                        <Play className="w-3 h-3" />
-                      </Button>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Primary Language</Label>
-                <Select defaultValue="en">
-                  <SelectTrigger className="w-64">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="nl">Dutch</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Custom Greeting</Label>
-                <Textarea
-                  value={greeting}
-                  onChange={(e) => setGreeting(e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Transfer Number (for escalations)</Label>
-                <Input defaultValue="+31 6 9876 5432" />
-                <p className="text-sm text-muted-foreground">
-                  Calls will be transferred here when the AI can't help.
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button>Save Changes</Button>
-                <Button variant="outline" className="gap-2">
-                  <Play className="w-4 h-4" />
-                  Test AI
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <VoiceLanguageSettings 
+            organizationId={organizationId || undefined}
+            organizationName={organizationName}
+          />
         </TabsContent>
 
         {/* Phone Numbers Tab */}
@@ -447,16 +401,16 @@ const DashboardSettings = () => {
                   <div>
                     <div className="font-medium">Minutes Usage</div>
                     <div className="text-sm text-muted-foreground">
-                      342 / 500 minutes used this month
+                      342 of 500 minutes used
                     </div>
                   </div>
-                  <span className="text-2xl font-serif font-medium">68%</span>
+                  <span className="text-sm font-medium">68%</span>
                 </div>
-                <Progress value={68} className="h-3" />
+                <Progress value={68} />
               </div>
 
-              <div className="flex gap-2">
-                <Button variant="outline">Manage Payment Method</Button>
+              <div className="flex gap-4">
+                <Button variant="outline">Manage Payment</Button>
                 <Button variant="outline">View Invoices</Button>
               </div>
             </CardContent>

@@ -23,9 +23,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Get organization settings including language config
     const { data: settings, error: settingsError } = await supabase
       .from("organization_settings")
-      .select("vapi_assistant_id, vapi_api_key")
+      .select("vapi_assistant_id, vapi_api_key, language, transcriber_language")
       .eq("organization_id", organizationId)
       .single();
 
@@ -40,6 +41,87 @@ serve(async (req) => {
     }
 
     console.log("Updating Vapi assistant:", settings.vapi_assistant_id);
+    console.log("Updates:", JSON.stringify(updates, null, 2));
+
+    // Get organization details for system prompt
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", organizationId)
+      .single();
+
+    // Build the update payload
+    const updatePayload: Record<string, unknown> = { ...updates };
+
+    // If updating voice/transcriber, also update system prompt to enforce language
+    if (updates.transcriber || updates.voice) {
+      const language = settings.language || "en-US";
+      const languageNames: Record<string, string> = {
+        "nl-NL": "Dutch",
+        "nl-BE": "Flemish Dutch",
+        "en-US": "English",
+        "en-GB": "British English",
+        "de-DE": "German",
+        "fr-FR": "French",
+        "es-ES": "Spanish",
+        "es-MX": "Mexican Spanish",
+        "it-IT": "Italian",
+        "pt-BR": "Brazilian Portuguese",
+        "pl-PL": "Polish",
+        "ja-JP": "Japanese",
+        "ko-KR": "Korean",
+        "zh-CN": "Mandarin Chinese",
+        "tr-TR": "Turkish",
+        "ru-RU": "Russian",
+        "sv-SE": "Swedish",
+        "da-DK": "Danish",
+        "no-NO": "Norwegian",
+        "fi-FI": "Finnish",
+        "ar-SA": "Arabic",
+        "hi-IN": "Hindi",
+      };
+
+      const languageName = languageNames[language] || "English";
+
+      // Fetch current assistant to get existing model config
+      const getResponse = await fetch(
+        `https://api.vapi.ai/assistant/${settings.vapi_assistant_id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${vapiApiKey}`,
+          },
+        }
+      );
+
+      if (getResponse.ok) {
+        const currentAssistant = await getResponse.json();
+        const currentSystemPrompt = currentAssistant.model?.messages?.[0]?.content || "";
+        
+        // Remove old language instruction if present
+        const cleanedPrompt = currentSystemPrompt
+          .replace(/\n\nIMPORTANT LANGUAGE INSTRUCTION:[\s\S]*$/, "")
+          .trim();
+
+        // Add new language instruction
+        const languageInstruction = `
+
+IMPORTANT LANGUAGE INSTRUCTION:
+You MUST speak ONLY in ${languageName}. Never switch to English or any other language.
+Say all numbers, dates, times, and proper nouns in ${languageName}.
+If the caller speaks a different language, politely respond in ${languageName} and ask if they need assistance in that language.`;
+
+        updatePayload.model = {
+          ...currentAssistant.model,
+          messages: [
+            {
+              role: "system",
+              content: cleanedPrompt + languageInstruction,
+            },
+          ],
+        };
+      }
+    }
 
     // Update assistant via PATCH
     const response = await fetch(
@@ -50,7 +132,7 @@ serve(async (req) => {
           Authorization: `Bearer ${vapiApiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(updatePayload),
       }
     );
 
