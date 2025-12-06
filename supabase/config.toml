@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.test-voice]
 verify_jwt = false
+
+[functions.complete-onboarding]
+verify_jwt = true

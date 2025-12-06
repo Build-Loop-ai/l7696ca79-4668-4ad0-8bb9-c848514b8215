@@ -171,99 +171,21 @@ const Onboarding = () => {
     setIsSaving(true);
     
     try {
-      // 1. Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: businessData.name,
-          business_type: businessData.type,
-          address: {
-            street: businessData.address,
-            city: businessData.city,
-            postal_code: businessData.postalCode,
-          },
-          phone: businessData.phone,
-          website: businessData.website || null,
-        })
-        .select()
-        .single();
+      // Use edge function with service role to bypass RLS
+      const { data, error } = await supabase.functions.invoke('complete-onboarding', {
+        body: {
+          businessData,
+          hours,
+          services,
+          aiConfig,
+        },
+      });
 
-      if (orgError) throw orgError;
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Onboarding failed');
 
-      // 2. Create organization settings with language/voice config
-      const { error: settingsError } = await supabase
-        .from('organization_settings')
-        .insert({
-          organization_id: org.id,
-          business_hours: hours,
-          services: services.map(name => ({ name, duration: 30 })),
-          language: aiConfig.language,
-          voice_provider: aiConfig.voiceProvider,
-          voice_id: aiConfig.voice,
-          custom_greeting: aiConfig.greeting,
-          transcriber_language: aiConfig.language.split('-')[0] || 'en',
-          ai_config: {
-            voice_id: aiConfig.voice,
-            personality: 'professional',
-            greeting: aiConfig.greeting,
-            language: aiConfig.language,
-            additional_languages: [],
-          },
-        });
-
-      if (settingsError) throw settingsError;
-
-      // 3. Create user role (owner)
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: user.id,
-          organization_id: org.id,
-          role: 'owner',
-        });
-
-      if (roleError) throw roleError;
-
-      // 4. Update profile with organization
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          organization_id: org.id,
-          onboarding_completed: true,
-        })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      // 5. Create subscription (trial)
-      const { error: subError } = await supabase
-        .from('subscriptions')
-        .insert({
-          organization_id: org.id,
-          plan: 'starter',
-          status: 'trialing',
-          minutes_included: 100,
-          minutes_used: 0,
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        });
-
-      if (subError) throw subError;
-
-      // 6. Create Vapi assistant
-      try {
-        const { data: vapiData, error: vapiError } = await supabase.functions.invoke(
-          'create-vapi-assistant',
-          { body: { organizationId: org.id } }
-        );
-        
-        if (vapiError) {
-          console.error('Vapi assistant error:', vapiError);
-        } else if (vapiData?.assistantId) {
-          setAssistantId(vapiData.assistantId);
-        }
-      } catch (vapiErr) {
-        console.error('Failed to create Vapi assistant:', vapiErr);
+      if (data.assistantId) {
+        setAssistantId(data.assistantId);
       }
 
       toast({
