@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { organizationId, areaCode, country } = await req.json();
+    const { organizationId, areaCode } = await req.json();
 
     if (!organizationId) {
       throw new Error("organizationId is required");
@@ -34,15 +34,27 @@ serve(async (req) => {
       throw new Error(`Failed to get organization settings: ${settingsError.message}`);
     }
 
+    // Get organization name for the phone number label
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", organizationId)
+      .single();
+
     const vapiApiKey = settings?.vapi_api_key || Deno.env.get("VAPI_API_KEY");
 
     if (!vapiApiKey) {
       throw new Error("VAPI_API_KEY is not configured");
     }
 
-    console.log("Buying phone number for org:", organizationId, "area:", areaCode);
+    console.log("Creating phone number for org:", organizationId);
 
-    // Buy phone number from Vapi
+    // Create a short, descriptive name (max 40 chars)
+    const orgName = org?.name || "Main";
+    const shortName = orgName.substring(0, 30) + " Line";
+
+    // Create phone number from Vapi using the new API format
+    // Vapi now provides free US numbers through their platform
     const response = await fetch("https://api.vapi.ai/phone-number", {
       method: "POST",
       headers: {
@@ -51,39 +63,65 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         provider: "vapi",
-        areaCode: areaCode?.replace("+", "") || "31",
-        // Assign to assistant for inbound calls
-        assistantId: settings?.vapi_assistant_id,
-        name: `${organizationId}-main`,
+        // For Vapi-provided numbers, we create a SIP endpoint
+        // Vapi will assign a number when using their free tier
+        name: shortName,
+        assistantId: settings?.vapi_assistant_id || undefined,
       }),
     });
 
-    const phoneNumber = await response.json();
+    const responseText = await response.text();
+    let phoneNumber;
+    
+    try {
+      phoneNumber = JSON.parse(responseText);
+    } catch {
+      console.error("Failed to parse Vapi response:", responseText);
+      throw new Error("Invalid response from phone provider");
+    }
 
     if (!response.ok || phoneNumber.error) {
       console.error("Vapi phone number error:", phoneNumber);
-      throw new Error(phoneNumber.message || phoneNumber.error || "Failed to purchase phone number");
+      
+      // Provide user-friendly error messages
+      const errorMsg = phoneNumber.message || phoneNumber.error;
+      if (typeof errorMsg === 'string') {
+        throw new Error(errorMsg);
+      } else if (Array.isArray(errorMsg)) {
+        throw new Error(errorMsg.join(", "));
+      } else {
+        throw new Error("Failed to create phone number. Please try again.");
+      }
     }
 
-    console.log("Phone number purchased:", phoneNumber.number);
+    // Extract the phone number - Vapi may return it in different formats
+    const number = phoneNumber.number || phoneNumber.sipUri || phoneNumber.id;
+    
+    if (!number) {
+      console.error("No number in response:", phoneNumber);
+      throw new Error("Phone provider did not return a number");
+    }
+
+    console.log("Phone number created:", number);
 
     // Save to database
     const { error: insertError } = await supabase.from("phone_numbers").insert({
       organization_id: organizationId,
-      phone_number: phoneNumber.number,
+      phone_number: number,
       vapi_phone_id: phoneNumber.id,
-      friendly_name: phoneNumber.name || "Main Line",
+      friendly_name: shortName,
       is_active: true,
     });
 
     if (insertError) {
       console.error("Error saving phone number:", insertError);
+      // Don't throw - the number was created successfully in Vapi
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        phoneNumber: phoneNumber.number,
+        phoneNumber: number,
         phoneId: phoneNumber.id,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
