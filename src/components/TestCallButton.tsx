@@ -113,13 +113,49 @@ export function TestCallButton({
       let aiSpoke = false;
       let callStartTime: number | null = null;
       
-      vapi.on("call-start", () => {
-        console.log("[TestCallButton] Call started");
+      // Progress events for better debugging and user feedback
+      vapi.on("call-start-progress" as any, (progress: any) => {
+        console.log("[TestCallButton] Call progress:", progress);
+        const stage = progress?.stage || "unknown";
+        const stageMessages: Record<string, string> = {
+          "creating-call": "Initializing call...",
+          "fetching-assistant": "Loading AI assistant...",
+          "connecting-to-room": "Establishing voice channel...",
+          "joining-room": "Joining voice session...",
+          "connected": "Connected to voice service...",
+        };
+        setStatusMessage(stageMessages[stage] || `Connecting (${stage})...`);
+      });
+
+      vapi.on("call-start-success" as any, () => {
+        console.log("[TestCallButton] Call started successfully");
         callStarted = true;
         callStartTime = Date.now();
         setCallStatus("connected");
         setStatusMessage("Connected - speak now");
         onCallStart?.();
+      });
+
+      vapi.on("call-start-failed" as any, (error: any) => {
+        console.error("[TestCallButton] Call start failed:", error);
+        const stage = error?.stage || "unknown";
+        const errorMsg = error?.message || error?.error?.message || "Connection failed";
+        
+        setCallStatus("error");
+        setStatusMessage(`Failed at ${stage}: ${errorMsg.substring(0, 80)}`);
+        setShowPhoneOnly(true);
+      });
+
+      // Fallback for older SDK versions - use call-start event
+      vapi.on("call-start", () => {
+        if (!callStarted) {
+          console.log("[TestCallButton] Call started (fallback event)");
+          callStarted = true;
+          callStartTime = Date.now();
+          setCallStatus("connected");
+          setStatusMessage("Connected - speak now");
+          onCallStart?.();
+        }
       });
 
       vapi.on("call-end", () => {
@@ -142,7 +178,7 @@ export function TestCallButton({
 
       vapi.on("speech-start", () => {
         console.log("[TestCallButton] AI speaking");
-        aiSpoke = true; // Mark that AI actually spoke
+        aiSpoke = true;
         setCallStatus("speaking");
         setStatusMessage("AI is speaking...");
       });
@@ -157,7 +193,6 @@ export function TestCallButton({
         console.error("Vapi error:", error);
         setCallStatus("error");
         
-        // Parse error for better messaging
         const errorMsg = error?.message || JSON.stringify(error);
         console.log("[TestCallButton] Vapi error message:", errorMsg);
         
