@@ -57,70 +57,115 @@ serve(async (req) => {
       );
     }
 
-    // If no specific number provided, search for one
-    let numberToBuy = phoneNumber;
-
-    if (!numberToBuy) {
-      let searchUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/AvailablePhoneNumbers/${countryCode}/Local.json?VoiceEnabled=true&Limit=1`;
-      if (areaCode) searchUrl += `&AreaCode=${areaCode}`;
-
-      console.log("Searching for numbers:", searchUrl);
-
-      const searchRes = await fetch(searchUrl, {
-        headers: { Authorization: `Basic ${auth}` },
-      });
-      const searchData = await searchRes.json();
-
-      if (!searchData.available_phone_numbers?.length) {
-        // Try mobile
-        const mobileUrl = searchUrl.replace("/Local.json", "/Mobile.json");
-        const mobileRes = await fetch(mobileUrl, {
-          headers: { Authorization: `Basic ${auth}` },
-        });
-        const mobileData = await mobileRes.json();
-
-        if (!mobileData.available_phone_numbers?.length) {
-          throw new Error(
-            "No phone numbers available in this region. Try a different area code or country."
-          );
-        }
-
-        numberToBuy = mobileData.available_phone_numbers[0].phone_number;
-      } else {
-        numberToBuy = searchData.available_phone_numbers[0].phone_number;
-      }
-    }
-
-    console.log("Purchasing number:", numberToBuy);
-
-    // Build purchase parameters
-    const purchaseParams = new URLSearchParams({
-      PhoneNumber: numberToBuy,
-      VoiceUrl: "https://api.vapi.ai/twilio/inbound",
-      VoiceMethod: "POST",
-    });
-
-    // Purchase from Twilio
-    const purchaseRes = await fetch(
+    // Check if there are already numbers on this Twilio account we can use
+    console.log("Checking for existing Twilio numbers...");
+    const existingTwilioRes = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/IncomingPhoneNumbers.json`,
       {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: purchaseParams.toString(),
+        headers: { Authorization: `Basic ${auth}` },
       }
     );
+    const existingTwilioData = await existingTwilioRes.json();
 
-    const purchased = await purchaseRes.json();
+    let twilioNumber = existingTwilioData.incoming_phone_numbers?.find(
+      (n: any) => n.phone_number && n.capabilities?.voice
+    );
 
-    if (purchased.code || purchaseRes.status >= 400) {
-      console.error("Twilio purchase error:", purchased);
-      throw new Error(
-        purchased.message || "Failed to purchase number from Twilio"
+    let purchased: any = null;
+
+    if (twilioNumber) {
+      // Use existing Twilio number
+      console.log("Found existing Twilio number:", twilioNumber.phone_number);
+      
+      // Update the webhook URL to point to Vapi
+      const updateRes = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/IncomingPhoneNumbers/${twilioNumber.sid}.json`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${auth}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            VoiceUrl: "https://api.vapi.ai/twilio/inbound",
+            VoiceMethod: "POST",
+          }).toString(),
+        }
       );
+      
+      if (updateRes.ok) {
+        console.log("Updated Twilio number webhook to Vapi");
+      }
+      
+      purchased = twilioNumber;
+    } else {
+      // No existing number, try to purchase one
+      let numberToBuy = phoneNumber;
+
+      if (!numberToBuy) {
+        let searchUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/AvailablePhoneNumbers/${countryCode}/Local.json?VoiceEnabled=true&Limit=1`;
+        if (areaCode) searchUrl += `&AreaCode=${areaCode}`;
+
+        console.log("Searching for numbers:", searchUrl);
+
+        const searchRes = await fetch(searchUrl, {
+          headers: { Authorization: `Basic ${auth}` },
+        });
+        const searchData = await searchRes.json();
+
+        if (!searchData.available_phone_numbers?.length) {
+          // Try mobile
+          const mobileUrl = searchUrl.replace("/Local.json", "/Mobile.json");
+          const mobileRes = await fetch(mobileUrl, {
+            headers: { Authorization: `Basic ${auth}` },
+          });
+          const mobileData = await mobileRes.json();
+
+          if (!mobileData.available_phone_numbers?.length) {
+            throw new Error(
+              "No phone numbers available in this region. Try a different area code or country."
+            );
+          }
+
+          numberToBuy = mobileData.available_phone_numbers[0].phone_number;
+        } else {
+          numberToBuy = searchData.available_phone_numbers[0].phone_number;
+        }
+      }
+
+      console.log("Purchasing number:", numberToBuy);
+
+      // Build purchase parameters
+      const purchaseParams = new URLSearchParams({
+        PhoneNumber: numberToBuy,
+        VoiceUrl: "https://api.vapi.ai/twilio/inbound",
+        VoiceMethod: "POST",
+      });
+
+      // Purchase from Twilio
+      const purchaseRes = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/IncomingPhoneNumbers.json`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${auth}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: purchaseParams.toString(),
+        }
+      );
+
+      purchased = await purchaseRes.json();
+
+      if (purchased.code || purchaseRes.status >= 400) {
+        console.error("Twilio purchase error:", purchased);
+        throw new Error(
+          purchased.message || "Failed to purchase number from Twilio"
+        );
+      }
     }
+
+    const numberToBuy = purchased.phone_number;
 
     console.log("Purchased from Twilio:", purchased.sid);
 
