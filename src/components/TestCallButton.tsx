@@ -27,23 +27,20 @@ const checkBrowserSupport = (): { supported: boolean; reason?: string } => {
 
 // Detect if running in sandboxed iframe (Lovable editor preview)
 const isInSandboxedIframe = (): boolean => {
+  // Not in an iframe at all - browser calls should work
+  if (window.self === window.top) {
+    console.log("[TestCallButton] Not in iframe, browser calls enabled");
+    return false;
+  }
+  
+  // We're in an iframe - check if it's sandboxed
   try {
-    // Check if we're in an iframe with sandbox restrictions
-    if (window.self !== window.top) {
-      // We're in an iframe - check if we have restricted permissions
-      // Try to access parent, which will fail in sandboxed iframes
-      try {
-        const parentHref = window.parent.location.href;
-        // If we can access parent, we're not in a restrictive sandbox
-        return false;
-      } catch {
-        // Cross-origin or sandboxed - likely Lovable preview
-        return true;
-      }
-    }
+    // Try to access parent - will throw in sandboxed/cross-origin iframes
+    const _test = window.parent.location.href;
+    console.log("[TestCallButton] In accessible iframe, browser calls enabled");
     return false;
   } catch {
-    // Any error means we're likely in a restricted environment
+    console.log("[TestCallButton] In sandboxed iframe, browser calls blocked");
     return true;
   }
 };
@@ -149,13 +146,14 @@ export function TestCallButton({
         
         // Parse error for better messaging
         const errorMsg = error?.message || JSON.stringify(error);
-        if (errorMsg.includes("Failed to fetch") || errorMsg.includes("network")) {
-          setStatusMessage("Browser calls blocked. Use the phone number below.");
-          setShowPhoneOnly(true);
-        } else if (errorMsg.includes("permission") || errorMsg.includes("NotAllowed")) {
+        console.log("[TestCallButton] Vapi error message:", errorMsg);
+        
+        if (errorMsg.includes("permission") || errorMsg.includes("NotAllowed")) {
           setStatusMessage("Microphone access denied. Please allow microphone access.");
+        } else if (errorMsg.includes("assistant") || errorMsg.includes("not found")) {
+          setStatusMessage("AI assistant not found. Check configuration.");
         } else {
-          setStatusMessage("Call failed. Try the phone number below.");
+          setStatusMessage(`Connection error: ${errorMsg.substring(0, 100)}`);
           setShowPhoneOnly(true);
         }
       });
