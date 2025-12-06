@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Phone, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Phone, Loader2, CheckCircle2, AlertCircle, Sparkles, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -104,60 +104,89 @@ export function PhoneNumberDialog({
     }
   };
 
+  const copyNumber = () => {
+    navigator.clipboard.writeText(purchasedNumber);
+    toast({ title: "Copied to clipboard!" });
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         {status === "success" ? (
           <div className="text-center py-6">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center relative">
+              <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-400" />
+              <div className="absolute inset-0 rounded-full border-4 border-green-200 dark:border-green-800 animate-ping opacity-20" />
             </div>
+            
             <DialogTitle className="text-2xl font-serif mb-2">
-              You're All Set!
+              🎉 You're Live!
             </DialogTitle>
-            <DialogDescription className="mb-6">
-              Your AI receptionist is now live and ready to take calls
+            <DialogDescription className="mb-6 text-base">
+              Your AI receptionist is ready to answer calls
             </DialogDescription>
-            <div className="p-4 rounded-xl bg-muted/50 mb-6">
-              <p className="text-sm text-muted-foreground mb-1">Your AI phone number</p>
-              <p className="text-2xl font-mono font-medium text-foreground">
-                {purchasedNumber}
-              </p>
+            
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 mb-6">
+              <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">Your AI Phone Number</p>
+              <div className="flex items-center justify-center gap-3">
+                <p className="text-3xl font-mono font-bold text-foreground tracking-wide">
+                  {purchasedNumber}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full"
+                  onClick={copyNumber}
+                >
+                  <Copy className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Forward your business calls to this number, or share it directly with customers.
-            </p>
-            <Button onClick={handleClose} className="w-full">
-              Got it!
+
+            <div className="space-y-2 text-sm text-muted-foreground mb-6">
+              <p>✅ Customers can now call this number 24/7</p>
+              <p>✅ Your AI will answer in your configured language</p>
+              <p>✅ All calls are logged to your dashboard</p>
+            </div>
+
+            <Button onClick={handleClose} size="lg" className="w-full gap-2">
+              <Sparkles className="w-4 h-4" />
+              Continue to Dashboard
             </Button>
           </div>
         ) : (
           <>
-            <DialogHeader>
-              <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-primary/10 flex items-center justify-center">
-                <Phone className="w-6 h-6 text-primary" />
+            <DialogHeader className="text-center pb-2">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <Phone className="w-8 h-8 text-primary" />
               </div>
-              <DialogTitle className="text-center font-serif">
+              <DialogTitle className="text-2xl font-serif">
                 Get Your AI Phone Number
               </DialogTitle>
-              <DialogDescription className="text-center">
-                Choose a country to get a local phone number for your AI receptionist
+              <DialogDescription className="text-base">
+                Choose a country for your local phone number
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-5 py-4">
+              {/* Step indicator */}
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">2</span>
+                <span>of 3 steps</span>
+              </div>
+
               <div className="space-y-2">
-                <Label>Select Country</Label>
+                <Label className="text-base font-medium">Select Country</Label>
                 <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-14 text-lg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {COUNTRY_OPTIONS.map((option) => (
-                      <SelectItem key={option.code} value={option.code}>
-                        <span className="flex items-center gap-2">
-                          <span>{option.flag}</span>
-                          <span>{option.country}</span>
+                      <SelectItem key={option.code} value={option.code} className="py-3">
+                        <span className="flex items-center gap-3">
+                          <span className="text-2xl">{option.flag}</span>
+                          <span className="font-medium">{option.country}</span>
                           <span className="text-muted-foreground">+{option.code}</span>
                         </span>
                       </SelectItem>
@@ -166,45 +195,55 @@ export function PhoneNumberDialog({
                 </Select>
               </div>
 
-              <div className="p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
-                <p>
-                  📞 Phone number included in your plan
-                </p>
-                <p className="mt-1">
-                  Your AI will answer calls 24/7 in your configured language
-                </p>
+              <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-green-800 dark:text-green-300">Included in your plan</p>
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      Phone number + 24/7 AI answering
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {status === "error" && (
-                <div className="p-3 rounded-lg bg-destructive/10 text-sm text-destructive flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span>{errorMessage}</span>
+                <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium text-destructive">Something went wrong</p>
+                    <p className="text-sm text-destructive/80">{errorMessage}</p>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={handleClose}
-                className="flex-1"
-                disabled={status === "loading"}
-              >
-                Cancel
-              </Button>
+            <div className="flex flex-col gap-3">
               <Button
                 onClick={handlePurchase}
-                className="flex-1"
+                size="lg"
+                className="w-full text-lg h-14"
                 disabled={status === "loading"}
               >
                 {status === "loading" ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Getting Number...
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Getting Your Number...
                   </>
                 ) : (
-                  "Get Number"
+                  <>
+                    Get My Number
+                    <Phone className="w-5 h-5 ml-2" />
+                  </>
                 )}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleClose}
+                disabled={status === "loading"}
+                className="text-muted-foreground"
+              >
+                I'll do this later
               </Button>
             </div>
           </>
