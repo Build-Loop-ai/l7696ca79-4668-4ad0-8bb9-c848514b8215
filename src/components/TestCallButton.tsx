@@ -25,10 +25,27 @@ const checkBrowserSupport = (): { supported: boolean; reason?: string } => {
   return { supported: true };
 };
 
-// Detect if running in Lovable preview (sandboxed environment)
-const isLovablePreview = (): boolean => {
-  const hostname = window.location.hostname;
-  return hostname.includes('lovableproject.com') || hostname.includes('lovable.dev');
+// Detect if running in sandboxed iframe (Lovable editor preview)
+const isInSandboxedIframe = (): boolean => {
+  try {
+    // Check if we're in an iframe with sandbox restrictions
+    if (window.self !== window.top) {
+      // We're in an iframe - check if we have restricted permissions
+      // Try to access parent, which will fail in sandboxed iframes
+      try {
+        const parentHref = window.parent.location.href;
+        // If we can access parent, we're not in a restrictive sandbox
+        return false;
+      } catch {
+        // Cross-origin or sandboxed - likely Lovable preview
+        return true;
+      }
+    }
+    return false;
+  } catch {
+    // Any error means we're likely in a restricted environment
+    return true;
+  }
 };
 
 export function TestCallButton({
@@ -46,7 +63,7 @@ export function TestCallButton({
   
   // In Lovable preview, browser-based Vapi calls are blocked by sandbox
   // Show phone option directly instead of attempting and failing
-  const inPreview = isLovablePreview();
+  const inPreview = isInSandboxedIframe();
 
   useEffect(() => {
     // Cleanup on unmount
