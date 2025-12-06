@@ -51,7 +51,23 @@ serve(async (req) => {
       .single();
 
     // Build the update payload
-    const updatePayload: Record<string, unknown> = { ...updates };
+    const updatePayload: Record<string, unknown> = {};
+
+    // Handle voice updates - use the voice ID directly (it's the actual ElevenLabs ID)
+    if (updates.voice) {
+      updatePayload.voice = {
+        provider: "11labs",
+        voiceId: updates.voice.voiceId,
+        model: "eleven_multilingual_v2",
+        stability: 0.5,
+        similarityBoost: 0.75,
+      };
+    }
+
+    // Handle transcriber updates
+    if (updates.transcriber) {
+      updatePayload.transcriber = updates.transcriber;
+    }
 
     // If updating voice/transcriber, also update system prompt to enforce language
     if (updates.transcriber || updates.voice) {

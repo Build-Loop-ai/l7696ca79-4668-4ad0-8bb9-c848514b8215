@@ -46,17 +46,9 @@ serve(async (req) => {
     // Build the system prompt based on business info
     const systemPrompt = buildSystemPrompt(org, settings);
 
-    // Map voice IDs to ElevenLabs voice IDs
-    const voiceMapping: Record<string, string> = {
-      rachel: "EXAVITQu4vr4xnSDxMaL",
-      adam: "pNInz6obpgDQGcFmaJgB",
-      bella: "EXAVITQu4vr4xnSDxMaL",
-      josh: "TxGEqnHWrfWFTfGW9XjX",
-      antoni: "ErXwobaYiN019PkySvjV",
-    };
-
-    const voiceId = settings?.ai_config?.voice_id || "rachel";
-    const elevenLabsVoiceId = voiceMapping[voiceId] || voiceMapping.rachel;
+    // Use voice_id directly - it's now stored as the actual ElevenLabs voice ID
+    // Default to Sarah (EXAVITQu4vr4xnSDxMaL) if not set
+    const elevenLabsVoiceId = settings?.voice_id || "EXAVITQu4vr4xnSDxMaL";
 
     console.log("Creating Vapi assistant for org:", org.name);
 
