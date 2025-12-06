@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Phone, PhoneOff, Loader2, Mic, Volume2 } from "lucide-react";
+import { Phone, PhoneOff, Loader2, Mic, Volume2, AlertTriangle } from "lucide-react";
 import { getVapiClient, resetVapiClient } from "@/lib/vapi-client";
 import { cn } from "@/lib/utils";
 
@@ -9,18 +9,32 @@ interface TestCallButtonProps {
   disabled?: boolean;
   onCallStart?: () => void;
   onCallEnd?: () => void;
+  phoneNumber?: string;
 }
 
 type CallStatus = "idle" | "connecting" | "connected" | "speaking" | "listening" | "error";
+
+// Check if browser supports WebRTC
+const checkBrowserSupport = (): { supported: boolean; reason?: string } => {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return { supported: false, reason: "Your browser doesn't support microphone access" };
+  }
+  if (!window.RTCPeerConnection) {
+    return { supported: false, reason: "Your browser doesn't support WebRTC" };
+  }
+  return { supported: true };
+};
 
 export function TestCallButton({
   assistantId,
   disabled = false,
   onCallStart,
   onCallEnd,
+  phoneNumber,
 }: TestCallButtonProps) {
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
+  const [showPhoneOption, setShowPhoneOption] = useState(false);
 
   const publicKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
 
@@ -39,9 +53,19 @@ export function TestCallButton({
   }, [callStatus, publicKey]);
 
   const startTestCall = async () => {
+    // Check browser support first
+    const browserCheck = checkBrowserSupport();
+    if (!browserCheck.supported) {
+      setCallStatus("error");
+      setStatusMessage(browserCheck.reason || "Browser not supported");
+      setShowPhoneOption(true);
+      return;
+    }
+
     if (!publicKey) {
       setCallStatus("error");
-      setStatusMessage("Vapi public key not configured");
+      setStatusMessage("Voice testing not configured. Try calling the phone number directly.");
+      setShowPhoneOption(true);
       return;
     }
 
@@ -52,9 +76,14 @@ export function TestCallButton({
     }
 
     setCallStatus("connecting");
-    setStatusMessage("Connecting...");
+    setStatusMessage("Requesting microphone access...");
+    setShowPhoneOption(false);
 
     try {
+      // Request microphone permission first
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      setStatusMessage("Connecting to AI...");
+
       resetVapiClient();
       const vapi = getVapiClient(publicKey);
 
@@ -83,14 +112,31 @@ export function TestCallButton({
       vapi.on("error", (error) => {
         console.error("Vapi error:", error);
         setCallStatus("error");
-        setStatusMessage("Call error occurred");
+        
+        // Parse error for better messaging
+        const errorMsg = error?.message || JSON.stringify(error);
+        if (errorMsg.includes("Failed to fetch") || errorMsg.includes("network")) {
+          setStatusMessage("Connection failed. Try calling the phone number directly.");
+          setShowPhoneOption(true);
+        } else if (errorMsg.includes("permission") || errorMsg.includes("NotAllowed")) {
+          setStatusMessage("Microphone access denied. Please allow microphone access.");
+        } else {
+          setStatusMessage("Call failed. Try calling the phone number directly.");
+          setShowPhoneOption(true);
+        }
       });
 
       await vapi.start(assistantId);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error starting call:", error);
       setCallStatus("error");
-      setStatusMessage("Failed to start call");
+      
+      if (error.name === "NotAllowedError" || error.message?.includes("permission")) {
+        setStatusMessage("Microphone access denied. Please allow microphone access and try again.");
+      } else {
+        setStatusMessage("Failed to start call. Try calling the phone number directly.");
+        setShowPhoneOption(true);
+      }
     }
   };
 
@@ -103,6 +149,7 @@ export function TestCallButton({
     }
     setCallStatus("idle");
     setStatusMessage("");
+    setShowPhoneOption(false);
     onCallEnd?.();
   };
 
@@ -177,14 +224,29 @@ export function TestCallButton({
       )}
 
       {statusMessage && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground text-center max-w-xs">
           {isActive && (
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
           )}
           {callStatus === "error" && (
-            <span className="w-2 h-2 bg-red-500 rounded-full" />
+            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
           )}
           {statusMessage}
+        </div>
+      )}
+
+      {/* Show phone number option when browser test fails */}
+      {showPhoneOption && phoneNumber && (
+        <div className="flex flex-col items-center gap-2 p-4 bg-muted/50 rounded-lg">
+          <p className="text-sm text-muted-foreground text-center">
+            Call your AI directly:
+          </p>
+          <a 
+            href={`tel:${phoneNumber}`}
+            className="text-lg font-medium text-primary hover:underline"
+          >
+            {phoneNumber}
+          </a>
         </div>
       )}
 

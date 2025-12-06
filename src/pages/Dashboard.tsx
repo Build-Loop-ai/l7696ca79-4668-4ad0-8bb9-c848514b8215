@@ -114,6 +114,7 @@ const Dashboard = () => {
   const [hasPhoneNumber, setHasPhoneNumber] = useState(false);
   const [hasTestCall, setHasTestCall] = useState(false);
   const [assistantId, setAssistantId] = useState<string | undefined>();
+  const [aiPhoneNumber, setAiPhoneNumber] = useState<string | null>(null);
 
   // Dialog state
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
@@ -159,7 +160,7 @@ const Dashboard = () => {
             .single(),
           supabase
             .from("phone_numbers")
-            .select("id")
+            .select("id, phone_number")
             .eq("organization_id", profile.organization_id)
             .eq("is_active", true),
         ]);
@@ -181,6 +182,7 @@ const Dashboard = () => {
 
         if (phonesRes.data && phonesRes.data.length > 0) {
           setHasPhoneNumber(true);
+          setAiPhoneNumber(phonesRes.data[0].phone_number);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -511,6 +513,19 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Last call: {lastCallTime}
               </p>
+
+              {/* AI Phone Number Display */}
+              {aiPhoneNumber && (
+                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Your AI Number</p>
+                  <a 
+                    href={`tel:${aiPhoneNumber}`}
+                    className="text-lg font-medium text-primary hover:underline"
+                  >
+                    {aiPhoneNumber}
+                  </a>
+                </div>
+              )}
             </div>
 
             <div className="border-t border-border pt-6 mt-6">
@@ -570,6 +585,7 @@ const Dashboard = () => {
             open={showTestDialog}
             onOpenChange={setShowTestDialog}
             assistantId={assistantId}
+            phoneNumber={aiPhoneNumber || undefined}
             onCallComplete={handleTestCallComplete}
           />
         </>

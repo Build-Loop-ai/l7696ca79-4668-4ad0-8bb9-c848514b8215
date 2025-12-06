@@ -14,6 +14,7 @@ interface TestCallDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   assistantId?: string;
+  phoneNumber?: string;
   onCallComplete?: () => void;
 }
 
@@ -21,6 +22,7 @@ export function TestCallDialog({
   open,
   onOpenChange,
   assistantId,
+  phoneNumber,
   onCallComplete,
 }: TestCallDialogProps) {
   const [hasCompleted, setHasCompleted] = useState(false);
@@ -84,6 +86,7 @@ export function TestCallDialog({
             <div className="py-6">
               <TestCallButton
                 assistantId={assistantId}
+                phoneNumber={phoneNumber}
                 onCallEnd={handleCallEnd}
               />
             </div>
