@@ -37,7 +37,7 @@ serve(async (req) => {
 
     const auth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
 
-    // Check if org already has an active number
+    // Check if org already has an active number that's a real phone number
     const { data: existingNumber } = await supabase
       .from("phone_numbers")
       .select("*")
@@ -45,13 +45,17 @@ serve(async (req) => {
       .eq("status", "active")
       .maybeSingle();
 
-    if (existingNumber && existingNumber.phone_number.match(/^\+?[\d\s\-()]+$/)) {
+    if (existingNumber && existingNumber.phone_number?.startsWith('+')) {
+      console.log("Organization already has active number:", existingNumber.phone_number);
       return new Response(
         JSON.stringify({
           success: true,
           phoneNumber: existingNumber.phone_number,
           phoneNumberId: existingNumber.id,
+          vapiPhoneId: existingNumber.vapi_phone_id,
+          twilioSid: existingNumber.twilio_sid,
           alreadyExists: true,
+          connected: !!existingNumber.vapi_phone_id,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -166,35 +170,71 @@ serve(async (req) => {
     }
 
     const numberToBuy = purchased.phone_number;
+    console.log("Using Twilio number:", numberToBuy, "SID:", purchased.sid);
 
-    console.log("Purchased from Twilio:", purchased.sid);
-
-    // Import to Vapi
+    // Import to Vapi - handle case where number already exists
     let vapiPhoneId: string | null = null;
 
     if (VAPI_API_KEY) {
       try {
-        const vapiRes = await fetch("https://api.vapi.ai/phone-number", {
-          method: "POST",
+        // First, check if the number already exists in Vapi
+        console.log("Checking if number exists in Vapi...");
+        const vapiListRes = await fetch("https://api.vapi.ai/phone-number", {
           headers: {
             Authorization: `Bearer ${VAPI_API_KEY}`,
-            "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            provider: "twilio",
-            number: numberToBuy,
-            twilioAccountSid: TWILIO_ACCOUNT_SID,
-            twilioAuthToken: TWILIO_AUTH_TOKEN,
-          }),
         });
+        
+        if (vapiListRes.ok) {
+          const vapiNumbers = await vapiListRes.json();
+          const existingVapiNumber = vapiNumbers.find(
+            (n: any) => n.number === numberToBuy || n.twilioPhoneNumber === numberToBuy
+          );
+          
+          if (existingVapiNumber) {
+            vapiPhoneId = existingVapiNumber.id;
+            console.log("Found existing Vapi number:", vapiPhoneId);
+          }
+        }
 
-        const vapiNumber = await vapiRes.json();
+        // If not found, import it
+        if (!vapiPhoneId) {
+          console.log("Importing number to Vapi...");
+          const vapiRes = await fetch("https://api.vapi.ai/phone-number", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${VAPI_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              provider: "twilio",
+              number: numberToBuy,
+              twilioAccountSid: TWILIO_ACCOUNT_SID,
+              twilioAuthToken: TWILIO_AUTH_TOKEN,
+            }),
+          });
 
-        if (vapiRes.ok && vapiNumber.id) {
-          vapiPhoneId = vapiNumber.id;
-          console.log("Imported to Vapi:", vapiPhoneId);
+          const vapiNumber = await vapiRes.json();
 
-          // Get assistant ID and assign
+          if (vapiRes.ok && vapiNumber.id) {
+            vapiPhoneId = vapiNumber.id;
+            console.log("Imported to Vapi:", vapiPhoneId);
+          } else {
+            console.error("Vapi import failed:", vapiNumber);
+            // Check if it's a duplicate error
+            if (vapiNumber.message?.includes("Existing Phone Number")) {
+              // Extract the ID from the error message if possible
+              const match = vapiNumber.message.match(/Existing Phone Number ([a-f0-9-]+)/);
+              if (match) {
+                vapiPhoneId = match[1];
+                console.log("Extracted existing Vapi phone ID:", vapiPhoneId);
+              }
+            }
+          }
+        }
+
+        // Assign assistant to the Vapi number
+        if (vapiPhoneId) {
           const { data: orgSettings } = await supabase
             .from("organization_settings")
             .select("vapi_assistant_id")
@@ -202,7 +242,8 @@ serve(async (req) => {
             .maybeSingle();
 
           if (orgSettings?.vapi_assistant_id) {
-            await fetch(`https://api.vapi.ai/phone-number/${vapiPhoneId}`, {
+            console.log("Assigning assistant to phone number...");
+            const patchRes = await fetch(`https://api.vapi.ai/phone-number/${vapiPhoneId}`, {
               method: "PATCH",
               headers: {
                 Authorization: `Bearer ${VAPI_API_KEY}`,
@@ -212,13 +253,19 @@ serve(async (req) => {
                 assistantId: orgSettings.vapi_assistant_id,
               }),
             });
-            console.log("Assigned assistant:", orgSettings.vapi_assistant_id);
+            
+            if (patchRes.ok) {
+              console.log("Successfully assigned assistant:", orgSettings.vapi_assistant_id);
+            } else {
+              const patchError = await patchRes.json();
+              console.error("Failed to assign assistant:", patchError);
+            }
+          } else {
+            console.log("No assistant configured for organization");
           }
-        } else {
-          console.error("Vapi import failed:", vapiNumber);
         }
       } catch (vapiError) {
-        console.error("Vapi import error:", vapiError);
+        console.error("Vapi integration error:", vapiError);
       }
     }
 
@@ -232,15 +279,15 @@ serve(async (req) => {
     const orgName = org?.name || "Main";
     const friendlyName = orgName.substring(0, 30) + " Line";
 
-    // Delete any existing web-only endpoints
+    // Mark any existing invalid entries as replaced
     if (existingNumber) {
       await supabase
         .from("phone_numbers")
-        .update({ status: "replaced" })
+        .update({ status: "replaced", is_active: false })
         .eq("id", existingNumber.id);
     }
 
-    // Save to database
+    // Save to database (without is_primary which doesn't exist)
     const { data: savedNumber, error: dbError } = await supabase
       .from("phone_numbers")
       .insert({
@@ -252,7 +299,6 @@ serve(async (req) => {
         twilio_sid: purchased.sid,
         vapi_phone_id: vapiPhoneId,
         status: "active",
-        is_primary: true,
         is_active: true,
       })
       .select()
@@ -260,7 +306,10 @@ serve(async (req) => {
 
     if (dbError) {
       console.error("Database error:", dbError);
+      throw new Error("Failed to save phone number to database");
     }
+
+    console.log("Successfully saved phone number:", savedNumber?.id);
 
     return new Response(
       JSON.stringify({
@@ -269,6 +318,7 @@ serve(async (req) => {
         phoneNumberId: savedNumber?.id,
         twilioSid: purchased.sid,
         vapiPhoneId,
+        connected: !!vapiPhoneId,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

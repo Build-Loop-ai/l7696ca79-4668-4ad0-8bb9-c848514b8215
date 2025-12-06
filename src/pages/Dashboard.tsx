@@ -14,6 +14,10 @@ import {
   PhoneForwarded,
   PhoneMissed,
   Voicemail,
+  Copy,
+  Loader2,
+  AlertCircle,
+  Link2,
 } from "lucide-react";
 import {
   Table,
@@ -115,6 +119,8 @@ const Dashboard = () => {
   const [hasTestCall, setHasTestCall] = useState(false);
   const [assistantId, setAssistantId] = useState<string | undefined>();
   const [aiPhoneNumber, setAiPhoneNumber] = useState<string | null>(null);
+  const [vapiPhoneId, setVapiPhoneId] = useState<string | null>(null);
+  const [isPhoneConnected, setIsPhoneConnected] = useState(false);
 
   // Dialog state
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
@@ -160,7 +166,7 @@ const Dashboard = () => {
             .single(),
           supabase
             .from("phone_numbers")
-            .select("id, phone_number")
+            .select("id, phone_number, vapi_phone_id, status")
             .eq("organization_id", profile.organization_id)
             .eq("is_active", true),
         ]);
@@ -186,6 +192,8 @@ const Dashboard = () => {
           if (activePhone.phone_number?.startsWith('+')) {
             setHasPhoneNumber(true);
             setAiPhoneNumber(activePhone.phone_number);
+            setVapiPhoneId(activePhone.vapi_phone_id || null);
+            setIsPhoneConnected(!!activePhone.vapi_phone_id);
           }
         }
       } catch (error) {
@@ -507,27 +515,79 @@ const Dashboard = () => {
             <CardTitle className="font-serif">Live Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-                <div className="w-4 h-4 rounded-full bg-green-500 pulse-indicator" />
+            <div className="text-center py-6">
+              {/* Status indicator */}
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                hasPhoneNumber && isPhoneConnected 
+                  ? "bg-green-100 dark:bg-green-900/30" 
+                  : hasPhoneNumber 
+                    ? "bg-yellow-100 dark:bg-yellow-900/30"
+                    : "bg-muted"
+              }`}>
+                {hasPhoneNumber && isPhoneConnected ? (
+                  <div className="w-4 h-4 rounded-full bg-green-500 animate-pulse" />
+                ) : hasPhoneNumber ? (
+                  <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                ) : (
+                  <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
+                )}
               </div>
+              
               <h3 className="text-lg font-medium text-foreground mb-1">
-                {hasPhoneNumber ? "Ready to receive calls" : "Setup in progress"}
+                {hasPhoneNumber && isPhoneConnected 
+                  ? "Ready to receive calls" 
+                  : hasPhoneNumber 
+                    ? "Phone number not connected to AI"
+                    : "Setup in progress"}
               </h3>
               <p className="text-sm text-muted-foreground">
-                Last call: {lastCallTime}
+                {hasPhoneNumber && isPhoneConnected
+                  ? `Last call: ${lastCallTime}`
+                  : hasPhoneNumber
+                    ? "Re-provision to connect to your AI assistant"
+                    : "Complete the setup to start receiving calls"}
               </p>
 
-              {/* AI Phone Number Display */}
+              {/* AI Phone Number Display with connection status */}
               {aiPhoneNumber && (
-                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">Your AI Number</p>
-                  <a 
-                    href={`tel:${aiPhoneNumber}`}
-                    className="text-lg font-medium text-primary hover:underline"
-                  >
-                    {aiPhoneNumber}
-                  </a>
+                <div className={`mt-4 p-4 rounded-xl border ${
+                  isPhoneConnected 
+                    ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                    : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
+                }`}>
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    {isPhoneConnected ? (
+                      <Link2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                    )}
+                    <p className={`text-xs font-medium uppercase tracking-wide ${
+                      isPhoneConnected 
+                        ? "text-green-700 dark:text-green-300"
+                        : "text-yellow-700 dark:text-yellow-300"
+                    }`}>
+                      {isPhoneConnected ? "Connected to AI" : "Not Connected"}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <a 
+                      href={`tel:${aiPhoneNumber}`}
+                      className="text-xl font-mono font-bold text-foreground hover:text-primary transition-colors"
+                    >
+                      {aiPhoneNumber}
+                    </a>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        navigator.clipboard.writeText(aiPhoneNumber);
+                        toast.success("Copied to clipboard");
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
