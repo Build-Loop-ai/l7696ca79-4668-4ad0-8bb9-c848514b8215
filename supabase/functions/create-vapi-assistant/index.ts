@@ -50,6 +50,10 @@ serve(async (req) => {
     // Default to Sarah (EXAVITQu4vr4xnSDxMaL) if not set
     const elevenLabsVoiceId = settings?.voice_id || "EXAVITQu4vr4xnSDxMaL";
 
+    // Map stored language codes to Deepgram-compatible codes
+    const storedLanguage = settings?.language || settings?.ai_config?.language || "en";
+    const transcriberLanguage = mapToTranscriberLanguage(storedLanguage);
+
     console.log("Creating Vapi assistant for org:", org.name);
 
     // Create assistant via Vapi API
@@ -66,7 +70,7 @@ serve(async (req) => {
         transcriber: {
           provider: "deepgram",
           model: "nova-2",
-          language: settings?.ai_config?.language || "en",
+          language: transcriberLanguage,
         },
 
         // LLM settings
@@ -315,4 +319,62 @@ function formatBusinessHours(hours: any): string {
       return `${day}: ${dayHours.open} - ${dayHours.close}`;
     })
     .join("\n");
+}
+
+// Map stored language codes (like nl-NL) to Deepgram-compatible codes (like nl)
+function mapToTranscriberLanguage(language: string): string {
+  const languageMap: Record<string, string> = {
+    // Full locale to Deepgram code
+    "nl-NL": "nl",
+    "nl-BE": "nl-BE",
+    "de-DE": "de",
+    "de-CH": "de-CH",
+    "fr-FR": "fr",
+    "fr-CA": "fr-CA",
+    "es-ES": "es",
+    "es-419": "es-419",
+    "it-IT": "it",
+    "pt-PT": "pt",
+    "pt-BR": "pt-BR",
+    "en-US": "en-US",
+    "en-GB": "en-GB",
+    "en-AU": "en-AU",
+    "en-NZ": "en-NZ",
+    "en-IN": "en-IN",
+    "da-DK": "da-DK",
+    "sv-SE": "sv-SE",
+    "no-NO": "no",
+    "fi-FI": "fi",
+    "pl-PL": "pl",
+    "ja-JP": "ja",
+    "ko-KR": "ko-KR",
+    "zh-CN": "zh-CN",
+    "zh-TW": "zh-TW",
+    "tr-TR": "tr",
+    "ru-RU": "ru",
+    "ar-SA": "multi", // Arabic uses multi model
+    "hi-IN": "hi",
+  };
+
+  // Check if we have an exact match
+  if (languageMap[language]) {
+    return languageMap[language];
+  }
+
+  // Extract base language code (e.g., "nl" from "nl-NL")
+  const baseLanguage = language.split("-")[0];
+  
+  // Valid Deepgram base languages
+  const validBaseLanguages = [
+    "en", "bg", "ca", "zh", "cs", "da", "nl", "et", "fi", "fr", "de", 
+    "el", "hi", "hu", "id", "it", "ja", "ko", "lv", "lt", "ms", "multi", 
+    "no", "pl", "pt", "ro", "ru", "sk", "es", "sv", "th", "tr", "uk", "vi"
+  ];
+
+  if (validBaseLanguages.includes(baseLanguage)) {
+    return baseLanguage;
+  }
+
+  // Fallback to English
+  return "en";
 }
