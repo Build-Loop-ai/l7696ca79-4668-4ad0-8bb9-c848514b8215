@@ -64,12 +64,16 @@ export function PhoneNumberDialog({
         throw new Error(data.error);
       }
 
-      if (data?.success && data?.phoneNumber) {
+          if (data?.success && data?.phoneNumber) {
         setStatus("success");
         setPurchasedNumber(data.phoneNumber);
+        
+        const isConnected = data.connected || data.vapiPhoneId;
         toast({
-          title: "Phone number activated!",
-          description: `Your AI is now reachable at ${formatPhoneNumber(data.phoneNumber)}`,
+          title: isConnected ? "Phone number activated!" : "Phone number added",
+          description: isConnected 
+            ? `Your AI is now reachable at ${formatPhoneNumber(data.phoneNumber)}`
+            : `Number ${formatPhoneNumber(data.phoneNumber)} added. Connecting to AI...`,
         });
         onSuccess?.(data.phoneNumber);
       } else {
@@ -138,11 +142,20 @@ export function PhoneNumberDialog({
               </div>
             </div>
 
-            <div className="space-y-2 text-sm text-muted-foreground mb-6 text-left">
+            <div className="space-y-3 text-sm text-muted-foreground mb-6 text-left">
               <p className="font-medium text-foreground">Next steps:</p>
-              <p>1. Forward your business phone to this number</p>
-              <p>2. Your AI will answer calls 24/7</p>
-              <p>3. All calls are logged to your dashboard</p>
+              <div className="flex items-start gap-2">
+                <span className="text-primary">1.</span>
+                <p>Forward your business phone to this number</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-primary">2.</span>
+                <p>Your AI will answer calls 24/7</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-primary">3.</span>
+                <p>All calls are logged to your dashboard</p>
+              </div>
             </div>
 
             <Button onClick={handleClose} size="lg" className="w-full gap-2">
