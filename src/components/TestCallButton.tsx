@@ -91,27 +91,39 @@ export function TestCallButton({
       const vapi = getVapiClient(publicKey);
 
       let callStarted = false;
+      let aiSpoke = false;
+      let callStartTime: number | null = null;
       
       vapi.on("call-start", () => {
         console.log("[TestCallButton] Call started");
         callStarted = true;
+        callStartTime = Date.now();
         setCallStatus("connected");
         setStatusMessage("Connected - speak now");
         onCallStart?.();
       });
 
       vapi.on("call-end", () => {
-        console.log("[TestCallButton] Call ended, was started:", callStarted);
+        const callDuration = callStartTime ? (Date.now() - callStartTime) / 1000 : 0;
+        console.log(`[TestCallButton] Call ended - started: ${callStarted}, duration: ${callDuration}s, AI spoke: ${aiSpoke}`);
+        
         setCallStatus("idle");
         setStatusMessage("");
-        // Only trigger onCallEnd if the call actually started and connected
-        if (callStarted) {
+        
+        // Only show "Test Complete" if there was a real conversation
+        // (AI spoke OR call lasted more than 5 seconds)
+        if (callStarted && (aiSpoke || callDuration > 5)) {
           onCallEnd?.();
+        } else if (callStarted) {
+          // Call connected but ended immediately without conversation
+          setStatusMessage("Call disconnected too quickly. Try calling the phone number instead.");
+          setShowPhoneOnly(true);
         }
       });
 
       vapi.on("speech-start", () => {
         console.log("[TestCallButton] AI speaking");
+        aiSpoke = true; // Mark that AI actually spoke
         setCallStatus("speaking");
         setStatusMessage("AI is speaking...");
       });
