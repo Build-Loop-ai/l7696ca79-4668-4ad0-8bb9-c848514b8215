@@ -41,6 +41,14 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
+            <Link
+              to="/demo"
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isScrolled ? "text-muted-foreground" : "text-white/80"
+              }`}
+            >
+              Try Demo
+            </Link>
             <a
               href="#features"
               className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -109,6 +117,9 @@ const Navbar = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden mt-4 p-4 bg-white rounded-2xl shadow-xl animate-fade-in-down">
             <div className="flex flex-col gap-4">
+              <Link to="/demo" className="text-foreground font-medium py-2">
+                Try Demo
+              </Link>
               <a href="#features" className="text-foreground font-medium py-2">
                 Features
               </a>
