@@ -1,22 +1,99 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Phone, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { loginSchema } from "@/lib/validations";
+import { z } from "zod";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { signIn, signInWithGoogle, user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+  
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate("/dashboard");
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // TODO: Implement login logic
-    setTimeout(() => setIsLoading(false), 1000);
+    setErrors({});
+    
+    try {
+      const data = loginSchema.parse({ email, password });
+      setIsLoading(true);
+      
+      const { error } = await signIn(data.email, data.password);
+      
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          toast({
+            variant: "destructive",
+            title: "Invalid credentials",
+            description: "Please check your email and password and try again.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Sign in failed",
+            description: error.message,
+          });
+        }
+        return;
+      }
+      
+      toast({
+        title: "Welcome back!",
+        description: "You've been signed in successfully.",
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        err.errors.forEach((error) => {
+          if (error.path[0]) {
+            fieldErrors[error.path[0].toString()] = error.message;
+          }
+        });
+        setErrors(fieldErrors);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const handleGoogleSignIn = async () => {
+    const { error } = await signInWithGoogle();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Google sign in failed",
+        description: error.message,
+      });
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal to-teal-light flex items-center justify-center animate-pulse">
+          <Phone className="w-5 h-5 text-white" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -43,7 +120,13 @@ const Login = () => {
           </div>
 
           {/* Google OAuth */}
-          <Button variant="outline" size="lg" className="w-full mb-6">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="w-full mb-6"
+            onClick={handleGoogleSignIn}
+            type="button"
+          >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
@@ -85,12 +168,15 @@ const Login = () => {
                   id="email"
                   type="email"
                   placeholder="you@clinic.com"
-                  className="pl-10"
+                  className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -109,7 +195,7 @@ const Login = () => {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10"
+                  className={`pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -126,6 +212,9 @@ const Login = () => {
                   )}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password}</p>
+              )}
             </div>
 
             <Button

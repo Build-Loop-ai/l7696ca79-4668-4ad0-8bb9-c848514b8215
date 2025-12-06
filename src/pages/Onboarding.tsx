@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,11 @@ import {
   ArrowLeft,
   Play,
   Sparkles,
+  Loader2,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const STEPS = [
   { id: 1, title: "Business Basics", icon: Building },
@@ -57,10 +61,16 @@ const DENTAL_SERVICES = [
   "Extraction",
 ];
 
+type BusinessType = 'dental_clinic' | 'medical_practice' | 'salon' | 'restaurant' | 'other';
+
 const Onboarding = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form state
   const [businessData, setBusinessData] = useState({
@@ -70,7 +80,7 @@ const Onboarding = () => {
     postalCode: "",
     phone: "",
     website: "",
-    type: "dental",
+    type: "dental_clinic" as BusinessType,
   });
 
   const [hours, setHours] = useState<
@@ -103,11 +113,46 @@ const Onboarding = () => {
     areaCode: "+31",
   });
 
+  // Load saved clinic name from signup
+  useEffect(() => {
+    const savedClinicName = sessionStorage.getItem('pendingClinicName');
+    if (savedClinicName) {
+      setBusinessData(prev => ({ ...prev, name: savedClinicName }));
+      sessionStorage.removeItem('pendingClinicName');
+    }
+  }, []);
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/signup");
+    }
+  }, [user, authLoading, navigate]);
+
+  // Check if user already completed onboarding
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user) return;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed, organization_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (profile?.onboarding_completed && profile?.organization_id) {
+        navigate('/dashboard');
+      }
+    };
+    
+    checkOnboardingStatus();
+  }, [user, navigate]);
+
   const handleNext = () => {
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     } else {
-      setIsCompleted(true);
+      handleComplete();
     }
   };
 
@@ -117,9 +162,115 @@ const Onboarding = () => {
     }
   };
 
+  const handleComplete = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    
+    try {
+      // 1. Create organization
+      const { data: org, error: orgError } = await supabase
+        .from('organizations')
+        .insert({
+          name: businessData.name,
+          business_type: businessData.type,
+          address: {
+            street: businessData.address,
+            city: businessData.city,
+            postal_code: businessData.postalCode,
+          },
+          phone: businessData.phone,
+          website: businessData.website || null,
+        })
+        .select()
+        .single();
+
+      if (orgError) throw orgError;
+
+      // 2. Create organization settings
+      const { error: settingsError } = await supabase
+        .from('organization_settings')
+        .insert({
+          organization_id: org.id,
+          business_hours: hours,
+          services: services.map(name => ({ name, duration: 30 })),
+          ai_config: {
+            voice_id: aiConfig.voice,
+            personality: aiConfig.tone > 50 ? 'friendly' : 'professional',
+            greeting: aiConfig.greeting,
+            language: aiConfig.language,
+            additional_languages: [],
+          },
+        });
+
+      if (settingsError) throw settingsError;
+
+      // 3. Create user role (owner)
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: user.id,
+          organization_id: org.id,
+          role: 'owner',
+        });
+
+      if (roleError) throw roleError;
+
+      // 4. Update profile with organization
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          organization_id: org.id,
+          onboarding_completed: true,
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // 5. Create subscription (trial)
+      const { error: subError } = await supabase
+        .from('subscriptions')
+        .insert({
+          organization_id: org.id,
+          plan: 'starter',
+          status: 'trialing',
+          minutes_included: 100,
+          minutes_used: 0,
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+
+      if (subError) throw subError;
+
+      toast({
+        title: "Setup complete!",
+        description: "Your AI receptionist is ready to go.",
+      });
+      
+      setIsCompleted(true);
+    } catch (error: any) {
+      console.error('Onboarding error:', error);
+      toast({
+        variant: "destructive",
+        title: "Setup failed",
+        description: error.message || "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleLaunch = () => {
     navigate("/dashboard");
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (isCompleted) {
     return (
@@ -226,7 +377,7 @@ const Onboarding = () => {
               <div className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="businessName">Business Name</Label>
+                    <Label htmlFor="businessName">Business Name *</Label>
                     <Input
                       id="businessName"
                       placeholder="Amsterdam Dental Care"
@@ -234,13 +385,14 @@ const Onboarding = () => {
                       onChange={(e) =>
                         setBusinessData({ ...businessData, name: e.target.value })
                       }
+                      required
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="businessType">Business Type</Label>
                     <Select
                       value={businessData.type}
-                      onValueChange={(value) =>
+                      onValueChange={(value: BusinessType) =>
                         setBusinessData({ ...businessData, type: value })
                       }
                     >
@@ -248,8 +400,8 @@ const Onboarding = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="dental">Dental Clinic</SelectItem>
-                        <SelectItem value="medical">Medical Practice</SelectItem>
+                        <SelectItem value="dental_clinic">Dental Clinic</SelectItem>
+                        <SelectItem value="medical_practice">Medical Practice</SelectItem>
                         <SelectItem value="salon">Salon</SelectItem>
                         <SelectItem value="restaurant">Restaurant</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
@@ -660,15 +812,30 @@ const Onboarding = () => {
               variant="outline"
               size="lg"
               onClick={handleBack}
-              disabled={currentStep === 1}
+              disabled={currentStep === 1 || isSaving}
               className="gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
-            <Button variant="hero" size="lg" onClick={handleNext} className="gap-2">
-              {currentStep === 5 ? "Launch Your AI" : "Continue"}
-              <ArrowRight className="w-4 h-4" />
+            <Button 
+              variant="hero" 
+              size="lg" 
+              onClick={handleNext} 
+              className="gap-2"
+              disabled={isSaving || (currentStep === 1 && !businessData.name.trim())}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : currentStep === 5 ? (
+                "Launch Your AI"
+              ) : (
+                "Continue"
+              )}
+              {!isSaving && <ArrowRight className="w-4 h-4" />}
             </Button>
           </div>
         </div>
