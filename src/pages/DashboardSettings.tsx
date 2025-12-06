@@ -29,11 +29,13 @@ import {
   Trash2,
   Plus,
   Loader2,
+  PhoneForwarded,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VoiceLanguageSettings } from "@/components/settings/VoiceLanguageSettings";
+import { PhoneNumberDialog } from "@/components/dashboard/PhoneNumberDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -94,6 +96,9 @@ const DashboardSettings = () => {
     timezone: "",
     address: "",
   });
+
+  // Phone number dialog
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -401,7 +406,7 @@ const DashboardSettings = () => {
                   Manage your AI receptionist phone numbers.
                 </CardDescription>
               </div>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={() => setShowPhoneDialog(true)}>
                 <Plus className="w-4 h-4" />
                 Add Number
               </Button>
@@ -411,9 +416,12 @@ const DashboardSettings = () => {
                 <div className="text-center py-12 text-muted-foreground">
                   <Phone className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>No phone numbers configured</p>
-                  <p className="text-sm mt-1">
+                  <p className="text-sm mt-1 mb-4">
                     Add a phone number to start receiving AI-powered calls
                   </p>
+                  <Button onClick={() => setShowPhoneDialog(true)}>
+                    Get Phone Number
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -454,6 +462,61 @@ const DashboardSettings = () => {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Call Forwarding Instructions */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <PhoneForwarded className="w-5 h-5 text-primary" />
+                <CardTitle>Forward Your Existing Number</CardTitle>
+              </div>
+              <CardDescription>
+                Keep your current business number and forward calls to your AI
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 rounded-xl bg-muted/50 space-y-3">
+                <p className="font-medium text-foreground">How to set up call forwarding:</p>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                  <li>Contact your phone provider or access your phone settings</li>
+                  <li>Set up "No Answer" or "Busy" call forwarding</li>
+                  <li>Enter your AI phone number as the forwarding destination</li>
+                  <li>Save the settings - calls will now route to your AI when you can't answer</li>
+                </ol>
+              </div>
+
+              {phoneNumbers.length > 0 && (
+                <div className="p-4 rounded-xl border border-primary/20 bg-primary/5">
+                  <p className="text-sm text-muted-foreground mb-2">Forward calls to:</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-mono font-medium text-foreground">
+                      {phoneNumbers[0]?.phone_number}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        navigator.clipboard.writeText(phoneNumbers[0]?.phone_number || "");
+                        toast({ title: "Copied to clipboard" });
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground mb-2">Common provider instructions:</p>
+                <ul className="space-y-1">
+                  <li>• <strong>iPhone:</strong> Settings → Phone → Call Forwarding</li>
+                  <li>• <strong>Android:</strong> Phone app → Settings → Call forwarding</li>
+                  <li>• <strong>Landline/VoIP:</strong> Contact your provider for setup codes</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -649,6 +712,28 @@ const DashboardSettings = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Phone Number Dialog */}
+      {organizationId && (
+        <PhoneNumberDialog
+          open={showPhoneDialog}
+          onOpenChange={setShowPhoneDialog}
+          organizationId={organizationId}
+          onSuccess={(phoneNumber) => {
+            // Add the new phone number to the list
+            setPhoneNumbers((prev) => [
+              ...prev,
+              {
+                id: crypto.randomUUID(),
+                phone_number: phoneNumber,
+                friendly_name: "Main Line",
+                is_active: true,
+              },
+            ]);
+            setShowPhoneDialog(false);
+          }}
+        />
+      )}
     </div>
   );
 };
