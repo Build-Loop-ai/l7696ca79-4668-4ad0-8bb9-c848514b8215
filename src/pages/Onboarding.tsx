@@ -648,7 +648,7 @@ const Onboarding = () => {
                 {/* Language & Voice selection */}
                 <VoicePreview
                   selectedVoice={aiConfig.voice}
-                  onSelectVoice={(voiceId) => setAiConfig({ ...aiConfig, voice: voiceId })}
+                  onSelectVoice={(voiceId, provider) => setAiConfig({ ...aiConfig, voice: voiceId, voiceProvider: provider })}
                   selectedLanguage={aiConfig.language}
                   onSelectLanguage={(lang) => setAiConfig({ ...aiConfig, language: lang })}
                   greeting={aiConfig.greeting}

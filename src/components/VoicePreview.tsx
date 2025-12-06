@@ -137,7 +137,7 @@ function VoiceCard({
 
 interface VoicePreviewProps {
   selectedVoice: string;
-  onSelectVoice: (voiceId: string) => void;
+  onSelectVoice: (voiceId: string, provider: 'azure' | '11labs' | 'playht') => void;
   selectedLanguage?: string;
   onSelectLanguage?: (languageCode: string) => void;
   greeting?: string;
@@ -164,10 +164,13 @@ export function VoicePreview({
 
   // Auto-select recommended voice when language changes
   useEffect(() => {
-    if (currentLanguage) {
-      const recommendedVoice = getRecommendedVoice(currentLanguage);
-      if (recommendedVoice && !voices.find(v => v.id === selectedVoice)) {
-        onSelectVoice(recommendedVoice.id);
+    if (currentLanguage && voices.length > 0) {
+      const currentVoiceExists = voices.find(v => v.id === selectedVoice);
+      if (!currentVoiceExists) {
+        const recommendedVoice = getRecommendedVoice(currentLanguage);
+        if (recommendedVoice) {
+          onSelectVoice(recommendedVoice.id, recommendedVoice.provider);
+        }
       }
     }
   }, [selectedLanguage, currentLanguage, voices, selectedVoice, onSelectVoice]);
@@ -182,7 +185,7 @@ export function VoicePreview({
     if (lang) {
       const recommended = getRecommendedVoice(lang);
       if (recommended) {
-        onSelectVoice(recommended.id);
+        onSelectVoice(recommended.id, recommended.provider);
       }
       
       // Update greeting if handler provided
@@ -191,6 +194,10 @@ export function VoicePreview({
         onGreetingChange(defaultGreeting);
       }
     }
+  };
+
+  const handleVoiceSelect = (voice: VoiceConfig) => {
+    onSelectVoice(voice.id, voice.provider);
   };
 
   const handlePlay = async (voiceId: string) => {
@@ -280,7 +287,7 @@ export function VoicePreview({
               key={voice.id}
               voice={voice}
               selected={selectedVoice === voice.id}
-              onSelect={() => onSelectVoice(voice.id)}
+              onSelect={() => handleVoiceSelect(voice)}
               isPlaying={playingVoice === voice.id}
               onPlay={() => handlePlay(voice.id)}
               onStop={handleStop}
