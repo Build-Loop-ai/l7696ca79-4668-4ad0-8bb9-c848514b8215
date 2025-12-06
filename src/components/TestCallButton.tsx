@@ -119,24 +119,34 @@ export function TestCallButton({
       resetVapiClient();
       const vapi = getVapiClient(publicKey);
 
+      let callStarted = false;
+      
       vapi.on("call-start", () => {
+        console.log("[TestCallButton] Call started");
+        callStarted = true;
         setCallStatus("connected");
         setStatusMessage("Connected - speak now");
         onCallStart?.();
       });
 
       vapi.on("call-end", () => {
+        console.log("[TestCallButton] Call ended, was started:", callStarted);
         setCallStatus("idle");
         setStatusMessage("");
-        onCallEnd?.();
+        // Only trigger onCallEnd if the call actually started and connected
+        if (callStarted) {
+          onCallEnd?.();
+        }
       });
 
       vapi.on("speech-start", () => {
+        console.log("[TestCallButton] AI speaking");
         setCallStatus("speaking");
         setStatusMessage("AI is speaking...");
       });
 
       vapi.on("speech-end", () => {
+        console.log("[TestCallButton] AI stopped speaking");
         setCallStatus("listening");
         setStatusMessage("Listening...");
       });
