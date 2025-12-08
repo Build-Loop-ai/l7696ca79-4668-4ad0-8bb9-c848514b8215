@@ -74,12 +74,17 @@ export function VoiceLanguageSettings({ organizationId, organizationName = "our 
         if (error && error.code !== "PGRST116") throw error;
 
         if (data) {
-          setLanguage(data.language || "en-US");
+          const lang = data.language || "en-US";
+          setLanguage(lang);
           // Migrate old voice ID if necessary
           const migratedVoiceId = migrateOldVoiceId(data.voice_id || getDefaultVoiceId());
           setVoiceId(migratedVoiceId);
-          setCustomGreeting(data.custom_greeting || "");
+          // Use saved greeting or generate default with business name
+          setCustomGreeting(data.custom_greeting || getDefaultGreeting(lang, organizationName));
           setAssistantId(data.vapi_assistant_id);
+        } else {
+          // No settings yet, use defaults
+          setCustomGreeting(getDefaultGreeting(language, organizationName));
         }
       } catch (error) {
         console.error("Error loading settings:", error);
