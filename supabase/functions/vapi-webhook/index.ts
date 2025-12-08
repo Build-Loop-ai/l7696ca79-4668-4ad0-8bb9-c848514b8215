@@ -108,15 +108,12 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
   console.log("Organization ID:", orgId);
   console.log("Current server date:", new Date().toISOString());
 
-  // Check if organization has Google Calendar connected and get language
+  // Check if organization has Google Calendar connected
   const { data: settings } = await supabase
     .from("organization_settings")
-    .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id, business_hours, language")
+    .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id, business_hours")
     .eq("organization_id", orgId)
     .single();
-  
-  const language = settings?.language || 'en-US';
-  const isNL = language.startsWith('nl');
 
   console.log("Google Calendar connected:", settings?.google_calendar_connected);
   console.log("Business hours config:", JSON.stringify(settings?.business_hours));
@@ -140,24 +137,13 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
       console.log("Calendar slots found:", slots.length);
       console.log("=== AVAILABILITY CHECK END ===");
       
+      // Return data only - let AI formulate the response in its configured language
       return {
         available: slots.length > 0,
-        slots,
-        message: slots.length > 0 
-          ? isNL 
-            ? `Ik heb de volgende tijden beschikbaar op ${date}: ${slots.join(", ")}`
-            : `I have the following times available on ${date}: ${slots.join(", ")}`
-          : isNL
-            ? `Het spijt me, er zijn geen beschikbare tijden op ${date}. Wilt u een andere dag proberen?`
-            : `I'm sorry, there are no available times on ${date}. Would you like to try another day?`,
-        _debug: {
-          requestedDate: date,
-          parsedDayOfWeek: dayOfWeek,
-          calendarConnected: true,
-          businessHoursForDay: dayHours,
-          totalSlotsGenerated: slots.length,
-          slotsAfterFiltering: slots.length,
-        }
+        date: date,
+        dayOfWeek: dayOfWeek,
+        slots: slots,
+        businessClosed: false,
       };
     } catch (error) {
       console.error("Calendar availability error:", error);
@@ -171,21 +157,13 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
   if (!dayHours?.isOpen) {
     console.log("Business is CLOSED on", dayOfWeek);
     console.log("=== AVAILABILITY CHECK END ===");
+    // Return data only - let AI formulate the response in its configured language
     return {
       available: false,
+      date: date,
+      dayOfWeek: dayOfWeek,
       slots: [],
-      message: isNL 
-        ? `Het spijt me, we zijn gesloten op ${dayOfWeek}. Wilt u een andere dag proberen?`
-        : `I'm sorry, we're closed on ${dayOfWeek}. Would you like to try another day?`,
-      _debug: {
-        requestedDate: date,
-        parsedDayOfWeek: dayOfWeek,
-        calendarConnected: false,
-        businessHoursForDay: dayHours,
-        totalSlotsGenerated: 0,
-        slotsAfterFiltering: 0,
-        reason: "Business closed on this day",
-      }
+      businessClosed: true,
     };
   }
 
@@ -194,20 +172,13 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
   console.log("Generated slots:", allSlots.length, "from", dayHours.open, "to", dayHours.close);
   console.log("=== AVAILABILITY CHECK END ===");
   
+  // Return data only - let AI formulate the response in its configured language
   return {
     available: allSlots.length > 0,
+    date: date,
+    dayOfWeek: dayOfWeek,
     slots: allSlots,
-    message: isNL 
-      ? `Ik heb de volgende tijden beschikbaar op ${date}: ${allSlots.join(", ")}`
-      : `I have the following times available on ${date}: ${allSlots.join(", ")}`,
-    _debug: {
-      requestedDate: date,
-      parsedDayOfWeek: dayOfWeek,
-      calendarConnected: false,
-      businessHoursForDay: dayHours,
-      totalSlotsGenerated: allSlots.length,
-      slotsAfterFiltering: allSlots.length,
-    }
+    businessClosed: false,
   };
 }
 
@@ -331,15 +302,12 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
 
   console.log("Booking appointment for org:", orgId, args);
 
-  // Fetch language setting outside try block so it's available in catch
+  // Fetch settings for Google Calendar integration
   const { data: settings } = await supabase
     .from("organization_settings")
-    .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id, language")
+    .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id")
     .eq("organization_id", orgId)
     .single();
-  
-  const language = settings?.language || 'en-US';
-  const isNL = language.startsWith('nl');
 
   try {
     let googleEventId = null;
@@ -373,28 +341,21 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
 
     if (error) throw error;
 
-    const formattedDate = new Date(datetime).toLocaleString(isNL ? "nl-NL" : "en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-
+    // Return data only - let AI formulate the response in its configured language
     return {
       success: true,
       appointmentId: appointment.id,
-      message: isNL
-        ? `Geweldig! Ik heb uw ${service} afspraak voor ${patientName} geboekt op ${formattedDate}. U ontvangt binnenkort een bevestiging.`
-        : `Great! I've booked your ${service} appointment for ${patientName} on ${formattedDate}. You'll receive a confirmation shortly.`,
+      patientName: patientName,
+      service: service,
+      datetime: datetime,
+      calendarEventCreated: !!googleEventId,
     };
   } catch (error) {
     console.error("Booking error:", error);
+    // Return data only - let AI formulate the response in its configured language
     return {
       success: false,
-      message: isNL
-        ? "Het spijt me, ik kon de boeking niet voltooien. Ik verbind u door met onze medewerkers."
-        : "I'm sorry, I couldn't complete the booking. Let me transfer you to our staff.",
+      error: "booking_failed",
     };
   }
 }
