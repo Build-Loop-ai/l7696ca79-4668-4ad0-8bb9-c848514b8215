@@ -1,34 +1,23 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Phone } from "lucide-react";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const hasHandled = useRef(false);
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
+    // Prevent double handling
+    if (hasHandled.current) return;
+
+    const handleRedirect = async (userId: string) => {
       try {
-        // Get the current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("Session error:", sessionError);
-          navigate("/login");
-          return;
-        }
-
-        if (!session?.user) {
-          // No session, redirect to login
-          navigate("/login");
-          return;
-        }
-
         // Check if user has completed onboarding
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("onboarding_completed")
-          .eq("id", session.user.id)
+          .eq("id", userId)
           .single();
 
         if (profileError) {
@@ -46,11 +35,51 @@ const AuthCallback = () => {
         }
       } catch (error) {
         console.error("Auth callback error:", error);
-        navigate("/login");
+        navigate("/login", { replace: true });
       }
     };
 
-    handleAuthCallback();
+    // Listen for auth state changes - this catches the OAuth callback
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth callback event:", event, "session:", !!session);
+        
+        if (hasHandled.current) return;
+
+        if (event === "SIGNED_IN" && session?.user) {
+          hasHandled.current = true;
+          await handleRedirect(session.user.id);
+        } else if (event === "TOKEN_REFRESHED" && session?.user) {
+          hasHandled.current = true;
+          await handleRedirect(session.user.id);
+        }
+      }
+    );
+
+    // Also check for existing session (in case auth state already established)
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user && !hasHandled.current) {
+        hasHandled.current = true;
+        await handleRedirect(session.user.id);
+      }
+    };
+
+    // Small delay to allow OAuth tokens to be processed
+    setTimeout(checkExistingSession, 100);
+
+    // Fallback timeout - if nothing happens in 5 seconds, go to login
+    const timeout = setTimeout(() => {
+      if (!hasHandled.current) {
+        console.log("Auth callback timeout, redirecting to login");
+        navigate("/login", { replace: true });
+      }
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [navigate]);
 
   return (
