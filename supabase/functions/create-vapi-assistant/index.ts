@@ -47,8 +47,9 @@ serve(async (req) => {
     const systemPrompt = buildSystemPrompt(org, settings);
 
     // Use voice_id directly - it's now stored as the actual ElevenLabs voice ID
-    // Default to Sarah (EXAVITQu4vr4xnSDxMaL) if not set
-    const elevenLabsVoiceId = settings?.voice_id || "EXAVITQu4vr4xnSDxMaL";
+    // Default to first recommended voice (Sarah) if not set
+    const defaultVoiceId = "EXAVITQu4vr4xnSDxMaL"; // Sarah - first recommended voice
+    const elevenLabsVoiceId = settings?.voice_id || defaultVoiceId;
 
     // Map stored language codes to Deepgram-compatible codes
     const storedLanguage = settings?.language || settings?.ai_config?.language || "en";

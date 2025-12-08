@@ -12,6 +12,7 @@ import {
   getLanguageByCode, 
   getRecommendedVoice,
   getDefaultGreeting,
+  getDefaultVoiceId,
   migrateOldVoiceId,
 } from "@/lib/voice-config";
 import { TestCallButton } from "@/components/TestCallButton";
@@ -30,7 +31,7 @@ export function VoiceLanguageSettings({ organizationId, organizationName = "our 
   
   // Settings state
   const [language, setLanguage] = useState("en-US");
-  const [voiceId, setVoiceId] = useState("EXAVITQu4vr4xnSDxMaL"); // Default to Sarah
+  const [voiceId, setVoiceId] = useState(getDefaultVoiceId());
   const [customGreeting, setCustomGreeting] = useState("");
   const [assistantId, setAssistantId] = useState<string | null>(null);
 
@@ -75,7 +76,7 @@ export function VoiceLanguageSettings({ organizationId, organizationName = "our 
         if (data) {
           setLanguage(data.language || "en-US");
           // Migrate old voice ID if necessary
-          const migratedVoiceId = migrateOldVoiceId(data.voice_id || "EXAVITQu4vr4xnSDxMaL");
+          const migratedVoiceId = migrateOldVoiceId(data.voice_id || getDefaultVoiceId());
           setVoiceId(migratedVoiceId);
           setCustomGreeting(data.custom_greeting || "");
           setAssistantId(data.vapi_assistant_id);
