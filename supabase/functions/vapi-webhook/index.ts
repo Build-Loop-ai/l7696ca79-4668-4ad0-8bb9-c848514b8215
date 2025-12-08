@@ -66,7 +66,10 @@ async function handleToolCalls(payload: any, supabase: any) {
 
   for (const toolCall of toolCalls) {
     const { id, function: func } = toolCall;
-    const args = JSON.parse(func.arguments || "{}");
+    // Handle both string and object arguments (Vapi can send either)
+    const args = typeof func.arguments === 'string' 
+      ? JSON.parse(func.arguments || "{}") 
+      : (func.arguments || {});
 
     let result;
 
@@ -400,6 +403,15 @@ async function createCalendarEvent(
   return createdEvent.id;
 }
 
+// Normalize Vapi call types to valid database enum values
+function normalizeCallDirection(vapiType: string | undefined): 'inbound' | 'outbound' {
+  if (vapiType === 'outbound' || vapiType === 'outboundPhoneCall') {
+    return 'outbound';
+  }
+  // All other types (inbound, webCall, inboundPhoneCall, etc.) treated as inbound
+  return 'inbound';
+}
+
 async function handleEndOfCallReport(payload: any, supabase: any) {
   const call = payload.message?.call;
   const orgId =
@@ -426,7 +438,7 @@ async function handleEndOfCallReport(payload: any, supabase: any) {
     organization_id: orgId,
     vapi_call_id: call?.id,
     caller_number: call?.customer?.number,
-    direction: call?.type || "inbound",
+    direction: normalizeCallDirection(call?.type),
     started_at: call?.startedAt,
     ended_at: call?.endedAt,
     duration_seconds: call?.duration ? Math.round(call.duration) : null,
