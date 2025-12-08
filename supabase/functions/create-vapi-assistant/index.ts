@@ -162,6 +162,7 @@ serve(async (req) => {
         voice: {
           provider: "11labs",
           voiceId: elevenLabsVoiceId,
+          model: "eleven_multilingual_v2",
           stability: 0.5,
           similarityBoost: 0.75,
         },
