@@ -65,18 +65,18 @@ const CallDetailSheet = ({ isOpen, onClose, call }: CallDetailSheetProps) => {
       {/* Backdrop */}
       <div 
         className={cn(
-          "fixed inset-0 bg-background/80 backdrop-blur-sm z-50 transition-opacity",
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          "fixed inset-0 bg-background/80 backdrop-blur-sm transition-opacity",
+          isOpen ? "opacity-100 z-[100]" : "opacity-0 pointer-events-none -z-10"
         )}
         onClick={onClose}
       />
 
-      {/* Sheet */}
+      {/* Sheet - slides in from right edge of viewport */}
       <div 
         className={cn(
-          "fixed right-0 top-0 h-full w-full max-w-lg bg-card border-l border-border z-50",
-          "transform transition-transform duration-300 ease-out",
-          isOpen ? "translate-x-0" : "translate-x-full"
+          "fixed top-0 right-0 h-screen w-full max-w-md bg-card border-l border-border shadow-2xl",
+          "transition-transform duration-300 ease-out",
+          isOpen ? "translate-x-0 z-[101]" : "translate-x-full z-[101]"
         )}
       >
         {/* Header */}
