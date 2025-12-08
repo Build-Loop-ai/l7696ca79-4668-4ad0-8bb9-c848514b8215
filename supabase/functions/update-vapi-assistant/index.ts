@@ -62,11 +62,19 @@ serve(async (req) => {
         stability: 0.5,
         similarityBoost: 0.75,
       };
+      console.log("Updating voice to:", updates.voice.voiceId);
     }
 
     // Handle transcriber updates
     if (updates.transcriber) {
       updatePayload.transcriber = updates.transcriber;
+      console.log("Updating transcriber to:", updates.transcriber.language);
+    }
+
+    // Handle first message / greeting updates
+    if (updates.firstMessage) {
+      updatePayload.firstMessage = updates.firstMessage;
+      console.log("Updating firstMessage to:", updates.firstMessage);
     }
 
     // If updating voice/transcriber, also update system prompt to enforce language

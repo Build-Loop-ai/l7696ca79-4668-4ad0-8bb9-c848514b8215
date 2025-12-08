@@ -140,7 +140,13 @@ export function VoiceLanguageSettings({ organizationId, organizationName = "our 
 
       // Update Vapi assistant if exists
       if (assistantId) {
-        const { error: updateError } = await supabase.functions.invoke("update-vapi-assistant", {
+        console.log("Updating Vapi assistant with:", {
+          voiceId,
+          transcriberLanguage,
+          customGreeting,
+        });
+        
+        const { data: updateResult, error: updateError } = await supabase.functions.invoke("update-vapi-assistant", {
           body: {
             organizationId: orgId,
             updates: {
@@ -160,9 +166,11 @@ export function VoiceLanguageSettings({ organizationId, organizationName = "our 
 
         if (updateError) {
           console.error("Error updating Vapi assistant:", updateError);
-          toast.error("Settings saved, but failed to update AI assistant");
+          toast.error("Settings saved locally, but failed to update AI assistant. Try saving again.");
           return;
         }
+        
+        console.log("Vapi assistant updated successfully:", updateResult);
       }
 
       toast.success("Voice settings saved successfully");
