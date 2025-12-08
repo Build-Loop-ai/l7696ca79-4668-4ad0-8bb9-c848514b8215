@@ -86,30 +86,72 @@ serve(async (req) => {
         });
       }
 
-      // Handle monthly price
+      // Handle monthly price - check if price changed
       let monthlyPriceId = plan.stripe_price_id_monthly;
-      if (!monthlyPriceId && plan.price_monthly_cents) {
-        const price = await stripe.prices.create({
-          product: product.id,
-          unit_amount: plan.price_monthly_cents,
-          currency: "eur",
-          recurring: { interval: "month" },
-          metadata: { plan_slug: plan.slug, billing_period: "monthly" },
-        });
-        monthlyPriceId = price.id;
+      if (plan.price_monthly_cents) {
+        let needsNewMonthlyPrice = !monthlyPriceId;
+        
+        // Check if existing price has different amount
+        if (monthlyPriceId) {
+          try {
+            const existingPrice = await stripe.prices.retrieve(monthlyPriceId);
+            if (existingPrice.unit_amount !== plan.price_monthly_cents) {
+              console.log(`Monthly price changed for ${plan.name}: ${existingPrice.unit_amount} -> ${plan.price_monthly_cents}`);
+              // Archive old price
+              await stripe.prices.update(monthlyPriceId, { active: false });
+              needsNewMonthlyPrice = true;
+            }
+          } catch (e) {
+            console.log(`Could not retrieve price ${monthlyPriceId}, creating new one`);
+            needsNewMonthlyPrice = true;
+          }
+        }
+        
+        if (needsNewMonthlyPrice) {
+          const price = await stripe.prices.create({
+            product: product.id,
+            unit_amount: plan.price_monthly_cents,
+            currency: "eur",
+            recurring: { interval: "month" },
+            metadata: { plan_slug: plan.slug, billing_period: "monthly" },
+          });
+          monthlyPriceId = price.id;
+          console.log(`Created new monthly price: ${price.id}`);
+        }
       }
 
-      // Handle annual price
+      // Handle annual price - check if price changed
       let annualPriceId = plan.stripe_price_id_annual;
-      if (!annualPriceId && plan.price_annual_cents) {
-        const price = await stripe.prices.create({
-          product: product.id,
-          unit_amount: plan.price_annual_cents,
-          currency: "eur",
-          recurring: { interval: "year" },
-          metadata: { plan_slug: plan.slug, billing_period: "annual" },
-        });
-        annualPriceId = price.id;
+      if (plan.price_annual_cents) {
+        let needsNewAnnualPrice = !annualPriceId;
+        
+        // Check if existing price has different amount
+        if (annualPriceId) {
+          try {
+            const existingPrice = await stripe.prices.retrieve(annualPriceId);
+            if (existingPrice.unit_amount !== plan.price_annual_cents) {
+              console.log(`Annual price changed for ${plan.name}: ${existingPrice.unit_amount} -> ${plan.price_annual_cents}`);
+              // Archive old price
+              await stripe.prices.update(annualPriceId, { active: false });
+              needsNewAnnualPrice = true;
+            }
+          } catch (e) {
+            console.log(`Could not retrieve price ${annualPriceId}, creating new one`);
+            needsNewAnnualPrice = true;
+          }
+        }
+        
+        if (needsNewAnnualPrice) {
+          const price = await stripe.prices.create({
+            product: product.id,
+            unit_amount: plan.price_annual_cents,
+            currency: "eur",
+            recurring: { interval: "year" },
+            metadata: { plan_slug: plan.slug, billing_period: "annual" },
+          });
+          annualPriceId = price.id;
+          console.log(`Created new annual price: ${price.id}`);
+        }
       }
 
       // Update plan with Stripe IDs
