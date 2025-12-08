@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,12 +16,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Building, Clock, Briefcase, Save } from "lucide-react";
+import { Loader2, Building, Clock, Briefcase } from "lucide-react";
 import { BusinessHoursEditor } from "./BusinessHoursEditor";
 import { ServicesEditor } from "./ServicesEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Json } from "@/integrations/supabase/types";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { SaveStatusIndicator } from "@/components/ui/save-status";
 
 interface BusinessSettingsProps {
   organizationId: string;
@@ -47,7 +48,7 @@ interface BusinessHours {
 export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Organization data (no AI-related fields)
   const [formData, setFormData] = useState({
@@ -66,6 +67,59 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
   // Settings data
   const [businessHours, setBusinessHours] = useState<BusinessHours>({});
   const [services, setServices] = useState<Service[]>([]);
+
+  // Memoized data for auto-save
+  const settingsData = useMemo(() => ({
+    formData,
+    businessHours,
+    services,
+  }), [formData, businessHours, services]);
+
+  // Save function for database
+  const saveToDatabase = useCallback(async (data: typeof settingsData) => {
+    // Update organization
+    const { error: orgError } = await supabase
+      .from("organizations")
+      .update({
+        name: data.formData.name,
+        business_type: data.formData.business_type as any,
+        phone: data.formData.phone,
+        timezone: data.formData.timezone,
+        description: data.formData.description,
+        address: data.formData.address as unknown as Json,
+      })
+      .eq("id", organizationId);
+
+    if (orgError) throw orgError;
+
+    // Update settings
+    const { error: settingsError } = await supabase
+      .from("organization_settings")
+      .update({
+        business_hours: data.businessHours as unknown as Json,
+        services: data.services as unknown as Json,
+      })
+      .eq("organization_id", organizationId);
+
+    if (settingsError) throw settingsError;
+  }, [organizationId]);
+
+  // Sync function for Vapi
+  const syncToVapi = useCallback(async () => {
+    await supabase.functions.invoke("create-vapi-assistant", {
+      body: { organizationId },
+    });
+  }, [organizationId]);
+
+  // Auto-save hook
+  const { status, syncStatus } = useAutoSave({
+    data: settingsData,
+    onSave: saveToDatabase,
+    onSync: syncToVapi,
+    debounceMs: 1500,
+    syncDebounceMs: 4000,
+    enabled: dataLoaded && !!organizationId,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -105,8 +159,16 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
           setBusinessHours((settingsRes.data.business_hours as unknown as BusinessHours) || {});
           setServices((settingsRes.data.services as unknown as Service[]) || []);
         }
+
+        // Enable auto-save after initial load
+        setTimeout(() => setDataLoaded(true), 100);
       } catch (error) {
         console.error("Error fetching business data:", error);
+        toast({
+          title: "Error loading settings",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -115,56 +177,7 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
     if (organizationId) {
       fetchData();
     }
-  }, [organizationId]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      // Update organization (no special_instructions - moved to AI tab)
-      const { error: orgError } = await supabase
-        .from("organizations")
-        .update({
-          name: formData.name,
-          business_type: formData.business_type as any,
-          phone: formData.phone,
-          timezone: formData.timezone,
-          description: formData.description,
-          address: formData.address as unknown as Json,
-        })
-        .eq("id", organizationId);
-
-      if (orgError) throw orgError;
-
-      // Update settings
-      const { error: settingsError } = await supabase
-        .from("organization_settings")
-        .update({
-          business_hours: businessHours as unknown as Json,
-          services: services as unknown as Json,
-        })
-        .eq("organization_id", organizationId);
-
-      if (settingsError) throw settingsError;
-
-      // Sync to AI assistant automatically
-      await supabase.functions.invoke("create-vapi-assistant", {
-        body: { organizationId },
-      });
-
-      toast({
-        title: "Settings saved",
-        description: "Your business information has been updated.",
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error saving",
-        description: error.message,
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  }, [organizationId, toast]);
 
   if (loading) {
     return (
@@ -180,6 +193,11 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
 
   return (
     <div className="space-y-6">
+      {/* Save Status Indicator */}
+      <div className="flex justify-end">
+        <SaveStatusIndicator status={status} syncStatus={syncStatus} />
+      </div>
+
       <Accordion type="multiple" defaultValue={["info", "hours", "services"]} className="space-y-4">
         {/* Basic Information */}
         <AccordionItem value="info" className="border rounded-lg px-4">
@@ -348,14 +366,6 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? "Saving..." : "Save Business Info"}
-        </Button>
-      </div>
     </div>
   );
 }
