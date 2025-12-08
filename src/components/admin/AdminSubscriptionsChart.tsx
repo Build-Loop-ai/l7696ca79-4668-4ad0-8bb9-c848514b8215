@@ -6,7 +6,6 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 interface SubscriptionData {
   name: string;
   value: number;
-  color: string;
 }
 
 interface AdminSubscriptionsChartProps {
@@ -15,48 +14,53 @@ interface AdminSubscriptionsChartProps {
 }
 
 export const AdminSubscriptionsChart = ({ data, loading }: AdminSubscriptionsChartProps) => {
-  const COLORS = {
-    starter: '#8b5cf6',
-    growth: '#3b82f6',
-    enterprise: '#10b981',
+  const COLORS: Record<string, string> = {
+    starter: 'hsl(var(--primary))',
+    growth: 'hsl(var(--info))',
+    enterprise: 'hsl(var(--success))',
   };
 
   const formattedData = data.map(item => ({
     ...item,
-    color: COLORS[item.name as keyof typeof COLORS] || '#6b7280',
+    displayName: item.name.charAt(0).toUpperCase() + item.name.slice(1),
   }));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
+    <Card className="border border-border">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base font-medium">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <CreditCard className="h-4 w-4 text-primary" />
+          </div>
           Subscription Distribution
         </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[250px] w-full" />
         ) : data.length === 0 ? (
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
             No subscription data
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 data={formattedData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={100}
+                innerRadius={50}
+                outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
-                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                label={({ displayName, percent }) => `${displayName} (${(percent * 100).toFixed(0)}%)`}
                 labelLine={false}
               >
                 {formattedData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[entry.name] || 'hsl(var(--muted-foreground))'} 
+                  />
                 ))}
               </Pie>
               <Tooltip
@@ -66,7 +70,6 @@ export const AdminSubscriptionsChart = ({ data, loading }: AdminSubscriptionsCha
                   borderRadius: '8px',
                 }}
               />
-              <Legend />
             </PieChart>
           </ResponsiveContainer>
         )}
