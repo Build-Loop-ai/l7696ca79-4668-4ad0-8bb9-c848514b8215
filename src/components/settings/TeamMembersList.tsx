@@ -127,16 +127,60 @@ export const TeamMembersList = ({
 
   const handleResendInvitation = async (invitation: Invitation) => {
     try {
-      // Update the invitation with a new expiry date
-      const { error } = await supabase
+      // Get the current user and organization info
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, organization_id, organization:organizations(name)")
+        .eq("id", user.id)
+        .single();
+
+      // Update the invitation with a new expiry date and token
+      const newToken = crypto.randomUUID();
+      const { error: updateError } = await supabase
         .from("invitations")
         .update({ 
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          token: newToken
         })
         .eq("id", invitation.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Actually send the email
+      const inviteUrl = `${window.location.origin}/signup?invite=${newToken}`;
+      const orgName = (profile?.organization as any)?.name || "the team";
+      
+      const { error: emailError } = await supabase.functions.invoke("send-email", {
+        body: {
+          to: invitation.email,
+          subject: `You're invited to join ${orgName}`,
+          html: `
+            <h1>You've been invited!</h1>
+            <p>${profile?.full_name || "A team member"} has invited you to join <strong>${orgName}</strong>.</p>
+            <p>Click the link below to accept your invitation:</p>
+            <p><a href="${inviteUrl}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">Accept Invitation</a></p>
+            <p>This invitation expires in 7 days.</p>
+          `,
+          type: "team-invitation",
+          organization_id: organizationId,
+          sent_by: user.id,
+          metadata: {
+            invitee_email: invitation.email,
+            inviter_name: profile?.full_name,
+            organization_name: orgName,
+            role: invitation.role
+          }
+        }
+      });
+
+      if (emailError) {
+        console.error("Email sending failed:", emailError);
+        // Still show success for the invitation update
+      }
 
       toast({
         title: "Invitation resent",
