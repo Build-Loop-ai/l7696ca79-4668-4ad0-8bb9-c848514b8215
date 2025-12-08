@@ -304,38 +304,69 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
         </CardContent>
       </Card>
 
-      {/* Test & Save */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Test Your AI</CardTitle>
-          <CardDescription>
-            Try a test call to hear how your AI sounds
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <div className="flex-1">
+      {/* Test & Save - Eye-catching Hero Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 text-primary-foreground">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 18.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Z" />
+                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+                <path d="M12 2v2" />
+                <path d="M12 20v2" />
+                <path d="m4.93 4.93 1.41 1.41" />
+                <path d="m17.66 17.66 1.41 1.41" />
+                <path d="M2 12h2" />
+                <path d="M20 12h2" />
+                <path d="m6.34 17.66-1.41 1.41" />
+                <path d="m19.07 4.93-1.41 1.41" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold tracking-tight">Ready to Test?</h3>
+              <p className="text-primary-foreground/80 text-sm">
+                Experience your AI receptionist in action
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
               <TestCallButton 
                 assistantId={assistantId || undefined}
                 phoneNumber={phoneNumber || undefined}
               />
             </div>
-            <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+            
+            <Button 
+              onClick={handleSave} 
+              disabled={saving} 
+              size="lg"
+              className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg h-auto py-4 px-6"
+            >
               {saving ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="mr-2 h-5 w-5" />
                   Save AI Settings
                 </>
               )}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+
+          <p className="mt-4 text-xs text-primary-foreground/60 text-center sm:text-left">
+            Call your AI to hear your greeting, voice, and test how it handles questions
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
