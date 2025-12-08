@@ -144,6 +144,16 @@
       radial-gradient(at 80% 0%, hsl(var(--info) / 0.02) 0px, transparent 50%),
       hsl(var(--background));
   }
+  .hero-gradient {
+    background: 
+      radial-gradient(at 40% 20%, hsl(166 76% 36% / 0.3) 0px, transparent 50%),
+      radial-gradient(at 80% 60%, hsl(166 76% 28% / 0.2) 0px, transparent 50%),
+      radial-gradient(at 20% 80%, hsl(220 60% 15% / 0.4) 0px, transparent 50%),
+      hsl(220 60% 15%);
+  }
+  .grain-overlay {
+    position: relative;
+  }
   .pulse-live { animation: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
   @keyframes pulse-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   .tabular-nums { font-variant-numeric: tabular-nums; }
