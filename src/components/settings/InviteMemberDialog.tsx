@@ -104,23 +104,25 @@ export const InviteMemberDialog = ({
       const inviterName = profileResult.data?.full_name || user.email || "A team member";
       const organizationName = orgResult.data?.name || "Your organization";
 
-      // Create invitation
-      const { error: insertError } = await supabase
+      // Create invitation and get the token
+      const { data: invitationData, error: insertError } = await supabase
         .from("invitations")
         .insert([{
           organization_id: organizationId,
           email: email.trim().toLowerCase(),
           role: role as "admin" | "viewer" | "owner" | "manager",
           invited_by: user.id,
-        }]);
+        }])
+        .select("token")
+        .single();
 
       if (insertError) {
         console.error("Invitation error:", insertError);
         throw new Error("Failed to create invitation");
       }
 
-      // Send invitation email
-      const signupUrl = `${window.location.origin}/signup?email=${encodeURIComponent(email.trim().toLowerCase())}`;
+      // Send invitation email with the accept-invitation URL
+      const signupUrl = `${window.location.origin}/accept-invitation?token=${invitationData.token}`;
       
       try {
         const emailResponse = await supabase.functions.invoke("send-email", {
