@@ -89,7 +89,12 @@ export function TestCallButton({
       vapi.on("error", (error) => {
         console.error("Vapi error:", error);
         setCallStatus("error");
-        setStatusMessage("Connection error. Try calling the phone number instead.");
+        if (phoneNumber) {
+          setStatusMessage(`Browser calls are limited in preview. Call ${phoneNumber} instead.`);
+        } else {
+          setStatusMessage("Browser calls may not work in preview mode. Deploy to test or use a phone number.");
+        }
+        setShowBrowserCall(false);
       });
 
       await vapi.start(assistantId);
