@@ -214,6 +214,7 @@ export type Database = {
           business_type: Database["public"]["Enums"]["business_type"] | null
           created_at: string
           customer_phone_number: string | null
+          description: string | null
           forwarding_active: boolean | null
           forwarding_confirmed_at: string | null
           id: string
@@ -222,6 +223,7 @@ export type Database = {
           phone: string | null
           phone_carrier: string | null
           slug: string | null
+          special_instructions: string | null
           timezone: string | null
           updated_at: string
           website: string | null
@@ -231,6 +233,7 @@ export type Database = {
           business_type?: Database["public"]["Enums"]["business_type"] | null
           created_at?: string
           customer_phone_number?: string | null
+          description?: string | null
           forwarding_active?: boolean | null
           forwarding_confirmed_at?: string | null
           id?: string
@@ -239,6 +242,7 @@ export type Database = {
           phone?: string | null
           phone_carrier?: string | null
           slug?: string | null
+          special_instructions?: string | null
           timezone?: string | null
           updated_at?: string
           website?: string | null
@@ -248,6 +252,7 @@ export type Database = {
           business_type?: Database["public"]["Enums"]["business_type"] | null
           created_at?: string
           customer_phone_number?: string | null
+          description?: string | null
           forwarding_active?: boolean | null
           forwarding_confirmed_at?: string | null
           id?: string
@@ -256,6 +261,7 @@ export type Database = {
           phone?: string | null
           phone_carrier?: string | null
           slug?: string | null
+          special_instructions?: string | null
           timezone?: string | null
           updated_at?: string
           website?: string | null

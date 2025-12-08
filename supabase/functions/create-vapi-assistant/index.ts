@@ -168,8 +168,9 @@ serve(async (req) => {
           similarityBoost: 0.75,
         },
 
-        // First message when call is answered
+        // First message when call is answered - prioritize custom_greeting
         firstMessage:
+          settings?.custom_greeting ||
           settings?.ai_config?.greeting ||
           `Hello, thank you for calling ${org.name}. How may I help you today?`,
 
@@ -269,6 +270,16 @@ function buildSystemPrompt(org: any, settings: any): string {
     fr: "French",
   };
 
+  // Include business description if available
+  const descriptionSection = org.description 
+    ? `\n## About the Business\n${org.description}\n` 
+    : "";
+
+  // Include special instructions if available
+  const specialInstructionsSection = org.special_instructions 
+    ? `\n## Special Instructions\n${org.special_instructions}\n` 
+    : "";
+
   return `You are a friendly and professional virtual receptionist for ${org.name}, a ${businessType}.
 
 ## Your Role
@@ -282,7 +293,7 @@ function buildSystemPrompt(org: any, settings: any): string {
 - Address: ${address}
 - Phone: ${org.phone || "Not available"}
 - Website: ${org.website || "Not available"}
-
+${descriptionSection}
 ## Business Hours
 ${businessHours}
 
@@ -302,7 +313,7 @@ ${services}
 5. If the caller asks to speak with a person, has an emergency, or you cannot help, use transferCall
 6. Be concise but friendly - don't over-explain
 7. If unsure about something, offer to transfer to staff
-
+${specialInstructionsSection}
 ## Tone
 ${personality === "professional" ? "Maintain a professional, business-like tone" : personality === "casual" ? "Be casual and friendly, like talking to a neighbor" : "Be warm and friendly while remaining professional"}
 

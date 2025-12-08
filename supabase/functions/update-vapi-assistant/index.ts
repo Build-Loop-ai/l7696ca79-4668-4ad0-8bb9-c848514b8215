@@ -26,7 +26,7 @@ serve(async (req) => {
     // Get organization settings including language config
     const { data: settings, error: settingsError } = await supabase
       .from("organization_settings")
-      .select("vapi_assistant_id, vapi_api_key, language, transcriber_language")
+      .select("vapi_assistant_id, vapi_api_key, language, transcriber_language, custom_greeting")
       .eq("organization_id", organizationId)
       .single();
 
@@ -71,10 +71,14 @@ serve(async (req) => {
       console.log("Updating transcriber to:", updates.transcriber.language);
     }
 
-    // Handle first message / greeting updates
+    // Handle first message / greeting updates - always sync from database if not explicitly provided
     if (updates.firstMessage) {
       updatePayload.firstMessage = updates.firstMessage;
       console.log("Updating firstMessage to:", updates.firstMessage);
+    } else if (settings.custom_greeting) {
+      // Always sync the greeting from database when updating voice/language
+      updatePayload.firstMessage = settings.custom_greeting;
+      console.log("Syncing firstMessage from database:", settings.custom_greeting);
     }
 
     // If updating voice/transcriber, also update system prompt to enforce language
