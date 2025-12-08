@@ -211,7 +211,7 @@ const Admin = () => {
         <title>Admin Dashboard | Callisto</title>
       </Helmet>
       
-      <div className="min-h-screen flex w-full bg-background gradient-mesh">
+      <div className="admin-theme min-h-screen flex w-full bg-background gradient-mesh">
         {/* Sidebar */}
         <aside
           className={cn(
@@ -223,7 +223,7 @@ const Admin = () => {
           <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
             {!isCollapsed && (
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-800 flex items-center justify-center">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <span className="font-serif text-xl font-medium text-sidebar-foreground">
@@ -232,7 +232,7 @@ const Admin = () => {
               </div>
             )}
             {isCollapsed && (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-800 flex items-center justify-center mx-auto">
                 <Shield className="w-5 h-5 text-white" />
               </div>
             )}
@@ -304,10 +304,10 @@ const Admin = () => {
           <header className="md:hidden border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-800 flex items-center justify-center">
                   <Shield className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-serif text-lg font-medium">Admin</span>
+                <span className="font-serif text-lg font-medium text-foreground">Admin</span>
               </div>
               <Link to="/dashboard">
                 <Button variant="ghost" size="sm">
