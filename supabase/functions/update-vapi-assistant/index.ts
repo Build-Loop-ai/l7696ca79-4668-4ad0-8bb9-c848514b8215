@@ -57,6 +57,24 @@ serve(async (req) => {
       silenceTimeoutSeconds: 30,
       responseDelaySeconds: 0.2,
       interruptionsEnabled: true,
+
+      // Turn detection - when to start speaking after user stops
+      startSpeakingPlan: {
+        waitSeconds: 0.4,
+        smartEndpointingEnabled: true,
+        transcriptionEndpointingPlan: {
+          onPunctuationSeconds: 0.1,
+          onNoPunctuationSeconds: 1.5,
+          onNumberSeconds: 0.5,
+        },
+      },
+
+      // Turn detection - when to stop speaking if user interrupts
+      stopSpeakingPlan: {
+        numWords: 2,
+        voiceSeconds: 0.2,
+        backoffSeconds: 1,
+      },
     };
 
     // Handle voice updates - use the voice ID directly (it's the actual ElevenLabs ID)
