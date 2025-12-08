@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { ArrowDown } from "lucide-react";
+import { ConnectVisual, CustomizeVisual, LaunchVisual } from "./HowItWorksVisuals";
 
 const HowItWorks = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,7 +120,7 @@ const HowItWorks = () => {
 
               {/* Visual */}
               <div className={`pl-20 md:pl-0 ${idx % 2 === 1 ? 'md:pl-16 md:order-1' : 'md:pl-16'}`}>
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-card to-muted border border-border/50">
+                <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-card via-background to-muted border border-border/30 shadow-2xl shadow-primary/5">
                   {step.visual === "connect" && <ConnectVisual />}
                   {step.visual === "customize" && <CustomizeVisual />}
                   {step.visual === "launch" && <LaunchVisual />}
@@ -148,168 +149,5 @@ const HowItWorks = () => {
     </section>
   );
 };
-
-// Custom visual components for each step
-const ConnectVisual = () => (
-  <div className="absolute inset-0 flex items-center justify-center p-8">
-    <div className="relative">
-      {/* Phone icon */}
-      <motion.div
-        initial={{ x: -50, opacity: 0 }}
-        whileInView={{ x: 0, opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.3 }}
-        className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-teal flex items-center justify-center shadow-xl"
-      >
-        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-        </svg>
-      </motion.div>
-      
-      {/* Connection arrow */}
-      <motion.div
-        initial={{ scaleX: 0 }}
-        whileInView={{ scaleX: 1 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.5 }}
-        className="absolute left-full top-1/2 -translate-y-1/2 w-16 h-0.5 bg-gradient-to-r from-primary to-teal origin-left"
-      />
-      <motion.div
-        initial={{ scale: 0 }}
-        whileInView={{ scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.7 }}
-        className="absolute left-[calc(100%+4rem)] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-teal"
-      />
-      
-      {/* AI icon */}
-      <motion.div
-        initial={{ x: 50, opacity: 0 }}
-        whileInView={{ x: 0, opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.8 }}
-        className="absolute left-[calc(100%+5rem)] top-1/2 -translate-y-1/2 w-20 h-20 rounded-2xl bg-gradient-to-br from-teal to-teal-dark flex items-center justify-center shadow-xl"
-      >
-        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      </motion.div>
-    </div>
-  </div>
-);
-
-const CustomizeVisual = () => (
-  <div className="absolute inset-0 flex items-center justify-center p-6">
-    <div className="w-full max-w-[240px] space-y-3">
-      {/* Voice selector */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.3 }}
-        className="bg-background rounded-xl p-3 border border-border shadow-sm"
-      >
-        <div className="text-xs text-muted-foreground mb-1">Voice</div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-teal" />
-          <span className="text-sm font-medium text-foreground">Sophie (Dutch)</span>
-        </div>
-      </motion.div>
-      
-      {/* Language selector */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.4 }}
-        className="bg-background rounded-xl p-3 border border-border shadow-sm"
-      >
-        <div className="text-xs text-muted-foreground mb-1">Language</div>
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🇳🇱</span>
-          <span className="text-sm font-medium text-foreground">Nederlands</span>
-        </div>
-      </motion.div>
-      
-      {/* Personality slider */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.5 }}
-        className="bg-background rounded-xl p-3 border border-border shadow-sm"
-      >
-        <div className="text-xs text-muted-foreground mb-2">Personality</div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            whileInView={{ width: "70%" }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-            className="h-full bg-gradient-to-r from-primary to-teal rounded-full"
-          />
-        </div>
-        <div className="flex justify-between mt-1">
-          <span className="text-xs text-muted-foreground">Professional</span>
-          <span className="text-xs text-muted-foreground">Friendly</span>
-        </div>
-      </motion.div>
-    </div>
-  </div>
-);
-
-const LaunchVisual = () => (
-  <div className="absolute inset-0 flex items-center justify-center p-6">
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      whileInView={{ scale: 1, opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ delay: 0.3 }}
-      className="relative"
-    >
-      {/* Live indicator */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.5 }}
-        className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-success/10 text-success px-3 py-1 rounded-full"
-      >
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-        </span>
-        <span className="text-xs font-medium">LIVE</span>
-      </motion.div>
-      
-      {/* Dashboard preview */}
-      <div className="w-56 bg-background rounded-2xl border border-border shadow-xl p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-foreground">Today</span>
-          <span className="text-xs text-muted-foreground">12 calls</span>
-        </div>
-        
-        {/* Mini chart */}
-        <div className="flex items-end gap-1 h-16">
-          {[40, 60, 30, 80, 50, 90, 70].map((h, i) => (
-            <motion.div
-              key={i}
-              initial={{ height: 0 }}
-              whileInView={{ height: `${h}%` }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.6 + i * 0.05 }}
-              className="flex-1 bg-gradient-to-t from-primary to-teal rounded-sm"
-            />
-          ))}
-        </div>
-        
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>8am</span>
-          <span>2pm</span>
-        </div>
-      </div>
-    </motion.div>
-  </div>
-);
 
 export default HowItWorks;
