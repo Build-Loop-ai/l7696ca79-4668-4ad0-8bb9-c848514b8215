@@ -189,6 +189,24 @@ serve(async (req) => {
         // Enable interruptions for natural conversation
         interruptionsEnabled: true,
 
+        // Turn detection - when to start speaking after user stops
+        startSpeakingPlan: {
+          waitSeconds: 0.4,
+          smartEndpointingEnabled: true,
+          transcriptionEndpointingPlan: {
+            onPunctuationSeconds: 0.1,
+            onNoPunctuationSeconds: 1.5,
+            onNumberSeconds: 0.5,
+          },
+        },
+
+        // Turn detection - when to stop speaking if user interrupts
+        stopSpeakingPlan: {
+          numWords: 2,
+          voiceSeconds: 0.2,
+          backoffSeconds: 1,
+        },
+
         // Server URL for webhooks
         serverUrl: `${Deno.env.get("SUPABASE_URL")}/functions/v1/vapi-webhook`,
 
