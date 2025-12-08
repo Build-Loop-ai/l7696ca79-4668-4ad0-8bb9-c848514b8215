@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,7 +14,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import CallCard from "@/components/dashboard/CallCard";
-import CallDetailSheet from "@/components/dashboard/CallDetailSheet";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { toast } from "sonner";
 
@@ -32,9 +32,9 @@ interface CallLog {
 
 const DashboardCalls = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [calls, setCalls] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [outcomeFilter, setOutcomeFilter] = useState("all");
 
@@ -194,28 +194,11 @@ const DashboardCalls = () => {
               outcome={call.outcome}
               hasRecording={!!call.recording_url}
               hasTranscript={!!call.transcript}
-              onClick={() => setSelectedCall(call)}
+              onClick={() => navigate(`/dashboard/calls/${call.id}`)}
             />
           ))}
         </div>
       )}
-
-      {/* Call Detail Sheet */}
-      <CallDetailSheet
-        isOpen={!!selectedCall}
-        onClose={() => setSelectedCall(null)}
-        call={selectedCall ? {
-          id: selectedCall.id,
-          caller_number: selectedCall.caller_number,
-          started_at: selectedCall.started_at || selectedCall.created_at,
-          ended_at: selectedCall.ended_at || null,
-          duration_seconds: selectedCall.duration_seconds,
-          outcome: selectedCall.outcome,
-          recording_url: selectedCall.recording_url,
-          transcript: selectedCall.transcript,
-          summary: selectedCall.summary,
-        } : null}
-      />
     </div>
   );
 };

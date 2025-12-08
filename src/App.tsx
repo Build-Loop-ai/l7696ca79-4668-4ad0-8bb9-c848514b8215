@@ -11,6 +11,7 @@ import Signup from "./pages/Signup";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import DashboardCalls from "./pages/DashboardCalls";
+import DashboardCallDetail from "./pages/DashboardCallDetail";
 import DashboardAnalytics from "./pages/DashboardAnalytics";
 import DashboardSettings from "./pages/DashboardSettings";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -45,6 +46,7 @@ const App = () => (
             }>
               <Route index element={<Dashboard />} />
               <Route path="calls" element={<DashboardCalls />} />
+              <Route path="calls/:callId" element={<DashboardCallDetail />} />
               <Route path="analytics" element={<DashboardAnalytics />} />
               <Route path="settings" element={<DashboardSettings />} />
             </Route>
