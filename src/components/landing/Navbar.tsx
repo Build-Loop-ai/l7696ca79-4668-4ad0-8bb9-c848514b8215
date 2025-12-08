@@ -33,16 +33,18 @@ const Navbar = () => {
         <div
           className={`relative rounded-2xl transition-all duration-500 ${
             isScrolled
-              ? "bg-white/10 dark:bg-black/20"
-              : "bg-white/5 dark:bg-white/5"
+              ? "bg-[hsl(222,47%,8%)]/95"
+              : "bg-[hsl(222,47%,8%)]/70"
           }`}
           style={{
             backdropFilter: "blur(40px) saturate(180%)",
             WebkitBackdropFilter: "blur(40px) saturate(180%)",
-            border: "1px solid rgba(255,255,255,0.15)",
+            border: isScrolled 
+              ? "1px solid rgba(255,255,255,0.1)" 
+              : "1px solid rgba(255,255,255,0.15)",
             boxShadow: isScrolled 
-              ? "0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.1)" 
-              : "0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.08)",
+              ? "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)" 
+              : "0 4px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
           }}
         >
           <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-3">
