@@ -1,14 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, RotateCcw, Save } from "lucide-react";
+import { Loader2, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { VoicePreview } from "@/components/VoicePreview";
 import { TestCallButton } from "@/components/TestCallButton";
 import { getDefaultGreeting, getDefaultVoiceId, migrateOldVoiceId } from "@/lib/voice-config";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { SaveStatusIndicator } from "@/components/ui/save-status";
 
 interface AIAssistantSettingsProps {
   organizationId?: string;
@@ -17,7 +19,6 @@ interface AIAssistantSettingsProps {
 export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSettingsProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [organizationId, setOrganizationId] = useState<string | null>(propOrgId || null);
   const [organizationName, setOrganizationName] = useState<string>("your business");
   
@@ -31,6 +32,91 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
   
   const [assistantId, setAssistantId] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Memoized settings data for auto-save
+  const settingsData = useMemo(() => ({
+    language,
+    voiceId,
+    customGreeting,
+    specialInstructions,
+    assistantId,
+  }), [language, voiceId, customGreeting, specialInstructions, assistantId]);
+
+  // Save function for database
+  const saveToDatabase = useCallback(async (data: typeof settingsData) => {
+    if (!organizationId) return;
+
+    // Save special instructions to organizations table
+    const { error: orgError } = await supabase
+      .from("organizations")
+      .update({ special_instructions: data.specialInstructions })
+      .eq("id", organizationId);
+
+    if (orgError) throw orgError;
+
+    // Check if settings exist
+    const { data: existingSettings } = await supabase
+      .from("organization_settings")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .single();
+
+    const settingsPayload = {
+      language: data.language,
+      voice_id: data.voiceId,
+      voice_provider: "elevenlabs",
+      custom_greeting: data.customGreeting,
+    };
+
+    if (existingSettings) {
+      const { error } = await supabase
+        .from("organization_settings")
+        .update(settingsPayload)
+        .eq("organization_id", organizationId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("organization_settings")
+        .insert({ ...settingsPayload, organization_id: organizationId });
+      if (error) throw error;
+    }
+  }, [organizationId]);
+
+  // Sync function for Vapi
+  const syncToVapi = useCallback(async (data: typeof settingsData) => {
+    if (!organizationId) return;
+
+    // Sync to Vapi assistant
+    if (data.assistantId) {
+      const transcriberLang = data.language.split("-")[0];
+      await supabase.functions.invoke("update-vapi-assistant", {
+        body: {
+          organizationId,
+          updates: {
+            voice: { voiceId: data.voiceId, provider: "11labs", model: "eleven_multilingual_v2" },
+            transcriber: { language: transcriberLang },
+            firstMessage: data.customGreeting,
+          },
+        },
+      });
+    }
+
+    // Also sync business context to assistant
+    await supabase.functions.invoke("create-vapi-assistant", {
+      body: { organizationId },
+    });
+  }, [organizationId]);
+
+  // Auto-save hook
+  const { status, syncStatus } = useAutoSave({
+    data: settingsData,
+    onSave: saveToDatabase,
+    onSync: syncToVapi,
+    debounceMs: 1500,
+    syncDebounceMs: 4000,
+    enabled: dataLoaded && !!organizationId,
+  });
 
   // Load organization ID if not provided
   useEffect(() => {
@@ -107,6 +193,9 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
         } else {
           setCustomGreeting(getDefaultGreeting(language, orgData?.name || "your business"));
         }
+
+        // Enable auto-save after initial load
+        setTimeout(() => setDataLoaded(true), 100);
       } catch (error) {
         console.error("Error loading settings:", error);
         toast({
@@ -138,82 +227,6 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
     setCustomGreeting(getDefaultGreeting(language, organizationName));
   };
 
-  const handleSave = async () => {
-    if (!organizationId) return;
-
-    setSaving(true);
-    try {
-      // Save special instructions to organizations table
-      const { error: orgError } = await supabase
-        .from("organizations")
-        .update({ special_instructions: specialInstructions })
-        .eq("id", organizationId);
-
-      if (orgError) throw orgError;
-
-      // Check if settings exist
-      const { data: existingSettings } = await supabase
-        .from("organization_settings")
-        .select("id")
-        .eq("organization_id", organizationId)
-        .single();
-
-      const settingsPayload = {
-        language,
-        voice_id: voiceId,
-        voice_provider: "elevenlabs",
-        custom_greeting: customGreeting,
-      };
-
-      if (existingSettings) {
-        const { error } = await supabase
-          .from("organization_settings")
-          .update(settingsPayload)
-          .eq("organization_id", organizationId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("organization_settings")
-          .insert({ ...settingsPayload, organization_id: organizationId });
-        if (error) throw error;
-      }
-
-      // Sync to Vapi assistant
-      if (assistantId) {
-        const transcriberLang = language.split("-")[0];
-        await supabase.functions.invoke("update-vapi-assistant", {
-          body: {
-            organizationId,
-            updates: {
-              voice: { voiceId, provider: "11labs", model: "eleven_multilingual_v2" },
-              transcriber: { language: transcriberLang },
-              firstMessage: customGreeting,
-            },
-          },
-        });
-      }
-
-      // Also sync business context to assistant
-      await supabase.functions.invoke("create-vapi-assistant", {
-        body: { organizationId },
-      });
-
-      toast({
-        title: "Settings saved",
-        description: "Your AI assistant has been updated.",
-      });
-    } catch (error) {
-      console.error("Error saving settings:", error);
-      toast({
-        title: "Error saving settings",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -224,6 +237,11 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
 
   return (
     <div className="space-y-6">
+      {/* Save Status Indicator */}
+      <div className="flex justify-end">
+        <SaveStatusIndicator status={status} syncStatus={syncStatus} />
+      </div>
+
       {/* Voice & Language */}
       <Card>
         <CardHeader>
@@ -304,7 +322,7 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
         </CardContent>
       </Card>
 
-      {/* Test & Save - Eye-catching Hero Section */}
+      {/* Test Your AI - Eye-catching Hero Section */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 text-primary-foreground">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -334,32 +352,13 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
-            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+          <div className="mt-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
               <TestCallButton 
                 assistantId={assistantId || undefined}
                 phoneNumber={phoneNumber || undefined}
               />
             </div>
-            
-            <Button 
-              onClick={handleSave} 
-              disabled={saving} 
-              size="lg"
-              className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg h-auto py-4 px-6"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-5 w-5" />
-                  Save AI Settings
-                </>
-              )}
-            </Button>
           </div>
 
           <p className="mt-4 text-xs text-primary-foreground/60 text-center sm:text-left">
