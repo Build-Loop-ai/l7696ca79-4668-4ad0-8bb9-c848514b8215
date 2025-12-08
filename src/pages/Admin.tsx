@@ -11,6 +11,7 @@ import { AdminOutcomesChart } from '@/components/admin/AdminOutcomesChart';
 import { AdminAIInsights } from '@/components/admin/AdminAIInsights';
 import { AdminRecentActivity } from '@/components/admin/AdminRecentActivity';
 import { AdminEmailsTable } from '@/components/admin/AdminEmailsTable';
+import { AdminEmailSettings } from '@/components/admin/AdminEmailSettings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ import {
   Users, 
   BarChart3,
   Mail,
+  Settings,
   ArrowLeft
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
@@ -40,6 +42,7 @@ const navItems = [
   { icon: Building2, label: 'Organizations', value: 'organizations' },
   { icon: Users, label: 'Users', value: 'users' },
   { icon: Mail, label: 'Emails', value: 'emails' },
+  { icon: Settings, label: 'Settings', value: 'settings' },
   { icon: BarChart3, label: 'Analytics', value: 'analytics' },
 ];
 
@@ -351,6 +354,10 @@ const Admin = () => {
 
               {activeTab === 'emails' && (
                 <AdminEmailsTable emails={emailLogs} loading={loading} />
+              )}
+
+              {activeTab === 'settings' && (
+                <AdminEmailSettings />
               )}
 
               {activeTab === 'analytics' && (

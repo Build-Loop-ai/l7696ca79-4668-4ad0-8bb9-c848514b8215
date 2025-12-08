@@ -167,19 +167,32 @@ async function logEmail(
   }
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
+async function sendEmail(
+  to: string, 
+  subject: string, 
+  html: string,
+  fromEmail: string,
+  fromName: string,
+  replyTo?: string
+) {
+  const emailPayload: any = {
+    from: `${fromName} <${fromEmail}>`,
+    to: [to],
+    subject,
+    html,
+  };
+
+  if (replyTo) {
+    emailPayload.reply_to = replyTo;
+  }
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      from: "AI Receptionist <notifications@resend.dev>",
-      to: [to],
-      subject,
-      html,
-    }),
+    body: JSON.stringify(emailPayload),
   });
 
   if (!response.ok) {
@@ -190,12 +203,43 @@ async function sendEmail(to: string, subject: string, html: string) {
   return response.json();
 }
 
+async function getEmailConfig(supabase: any) {
+  try {
+    const { data, error } = await supabase
+      .from('email_config')
+      .select('from_email, from_name, reply_to_email')
+      .limit(1)
+      .single();
+
+    if (error || !data) {
+      return {
+        from_email: 'notifications@resend.dev',
+        from_name: 'AI Receptionist',
+        reply_to_email: null,
+      };
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Error fetching email config:', err);
+    return {
+      from_email: 'notifications@resend.dev',
+      from_name: 'AI Receptionist',
+      reply_to_email: null,
+    };
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+  
+  // Get email configuration
+  const emailConfig = await getEmailConfig(supabase);
+  console.log(`Using email config: ${emailConfig.from_name} <${emailConfig.from_email}>`);
 
   try {
     const { type, to, data, organization_id, sent_by }: EmailRequest = await req.json();
@@ -226,7 +270,14 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     try {
-      const emailResponse = await sendEmail(to, subject, html);
+      const emailResponse = await sendEmail(
+        to, 
+        subject, 
+        html, 
+        emailConfig.from_email, 
+        emailConfig.from_name,
+        emailConfig.reply_to_email || undefined
+      );
       console.log("Email sent successfully:", emailResponse);
 
       // Log successful email
