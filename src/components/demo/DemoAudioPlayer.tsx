@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Volume2 } from "lucide-react";
+import { Play, Pause, RotateCcw, Volume2, ArrowRight, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 interface DemoAudioPlayerProps {
   audioContent: string;
@@ -22,17 +23,13 @@ const DemoAudioPlayer = ({
   const [duration, setDuration] = useState(0);
 
   useEffect(() => {
-    // Auto-play when component mounts
     if (audioRef.current) {
-      audioRef.current.play().catch(() => {
-        // Autoplay blocked, user will need to click play
-      });
+      audioRef.current.play().catch(() => {});
     }
   }, []);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
-    
     if (isPlaying) {
       audioRef.current.pause();
     } else {
@@ -85,111 +82,141 @@ const DemoAudioPlayer = ({
         onPause={() => setIsPlaying(false)}
       />
 
-      {/* Player Card */}
-      <div className="bg-card rounded-2xl p-6 border border-border shadow-lg">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Volume2 className="w-6 h-6 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-serif text-lg font-medium">Your AI Receptionist</h3>
-            <p className="text-sm text-muted-foreground">{businessName}</p>
-          </div>
+      {/* Player Header */}
+      <div className="flex items-center gap-4">
+        <motion.div 
+          className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal to-teal-dark flex items-center justify-center"
+          animate={isPlaying ? { scale: [1, 1.05, 1] } : {}}
+          transition={{ duration: 1, repeat: isPlaying ? Infinity : 0 }}
+        >
+          <Volume2 className="w-7 h-7 text-white" />
+        </motion.div>
+        <div>
+          <h3 className="text-lg font-medium text-white">{businessName}</h3>
+          <p className="text-sm text-white/50">AI Receptionist Preview</p>
         </div>
+      </div>
 
-        {/* Waveform / Progress Bar */}
-        <div className="mb-4">
-          <div className="relative h-16 bg-muted/50 rounded-xl overflow-hidden">
-            {/* Animated bars */}
-            <div className="absolute inset-0 flex items-center justify-center gap-1 px-4">
-              {[...Array(40)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-1 rounded-full transition-all duration-150 ${
-                    isPlaying ? "bg-primary" : "bg-primary/40"
-                  }`}
-                  style={{
-                    height: `${20 + Math.sin(i * 0.5 + progress * 0.1) * 30}%`,
-                    opacity: (i / 40) * 100 < progress ? 1 : 0.3,
-                  }}
-                />
-              ))}
-            </div>
-            {/* Progress overlay */}
-            <div
-              className="absolute inset-y-0 left-0 bg-primary/10"
-              style={{ width: `${progress}%` }}
+      {/* Waveform Visualization */}
+      <div className="relative h-20 rounded-2xl overflow-hidden bg-white/5">
+        {/* Animated waveform bars */}
+        <div className="absolute inset-0 flex items-center justify-center gap-[3px] px-4">
+          {[...Array(50)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="w-1 rounded-full bg-gradient-to-t from-teal/60 to-teal"
+              animate={isPlaying ? {
+                height: ["30%", `${40 + Math.sin(i * 0.3) * 30}%`, "30%"],
+              } : {
+                height: `${25 + Math.sin(i * 0.5) * 20}%`,
+              }}
+              transition={isPlaying ? {
+                duration: 0.4 + Math.random() * 0.3,
+                repeat: Infinity,
+                delay: i * 0.02,
+              } : {}}
+              style={{
+                opacity: (i / 50) * 100 < progress ? 1 : 0.3,
+              }}
             />
-          </div>
-          {/* Time */}
-          <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-            <span>{formatTime((progress / 100) * duration)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
+          ))}
         </div>
+        
+        {/* Progress overlay */}
+        <motion.div
+          className="absolute inset-y-0 left-0 bg-teal/10"
+          style={{ width: `${progress}%` }}
+        />
+        
+        {/* Playhead */}
+        <motion.div 
+          className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg shadow-white/50"
+          style={{ left: `${progress}%` }}
+        />
+      </div>
 
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full"
-            onClick={restart}
-          >
-            <RotateCcw className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="hero"
-            size="icon"
-            className="h-16 w-16 rounded-full"
-            onClick={togglePlay}
-          >
-            {isPlaying ? (
-              <Pause className="w-7 h-7" />
-            ) : (
-              <Play className="w-7 h-7 ml-1" />
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full"
-            onClick={onReset}
-          >
-            <RotateCcw className="w-5 h-5 scale-x-[-1]" />
-          </Button>
-        </div>
+      {/* Time Display */}
+      <div className="flex justify-between text-sm text-white/50">
+        <span>{formatTime((progress / 100) * duration)}</span>
+        <span>{formatTime(duration)}</span>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-center gap-4">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={restart}
+          className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors"
+        >
+          <RotateCcw className="w-5 h-5 text-white" />
+        </motion.button>
+        
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={togglePlay}
+          className="w-16 h-16 rounded-full flex items-center justify-center"
+          style={{
+            background: "linear-gradient(135deg, hsl(166 76% 36%) 0%, hsl(166 76% 28%) 100%)",
+            boxShadow: "0 8px 32px hsla(166, 76%, 36%, 0.4)",
+          }}
+        >
+          {isPlaying ? (
+            <Pause className="w-7 h-7 text-white" />
+          ) : (
+            <Play className="w-7 h-7 text-white ml-1" />
+          )}
+        </motion.button>
+        
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={onReset}
+          className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition-colors"
+        >
+          <RefreshCw className="w-5 h-5 text-white" />
+        </motion.button>
       </div>
 
       {/* Transcript */}
-      <div className="bg-muted/30 rounded-xl p-4 border border-border">
-        <h4 className="text-sm font-medium text-muted-foreground mb-2">
-          What your AI said:
+      <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+        <h4 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+          What your AI said
         </h4>
-        <p className="text-sm leading-relaxed whitespace-pre-line">{transcript}</p>
+        <p className="text-sm text-white/70 leading-relaxed whitespace-pre-line">
+          {transcript}
+        </p>
       </div>
 
       {/* CTA Buttons */}
-      <div className="space-y-3">
+      <div className="space-y-3 pt-2">
         <Link to="/signup" className="block">
-          <Button variant="hero" size="lg" className="w-full h-14 text-base">
-            Start Your Free Trial
-          </Button>
+          <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+            <Button
+              className="w-full h-14 text-base font-medium rounded-xl relative overflow-hidden group"
+              style={{
+                background: "linear-gradient(135deg, hsl(166 76% 36%) 0%, hsl(166 76% 28%) 100%)",
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              Start Your Free Trial
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </motion.div>
         </Link>
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full h-12"
+        
+        <button
           onClick={onReset}
+          className="w-full py-3 text-sm font-medium text-white/60 hover:text-white transition-colors"
         >
-          Try Another Voice
-        </Button>
+          Try a different voice
+        </button>
       </div>
 
       {/* Social Proof */}
-      <p className="text-center text-sm text-muted-foreground">
-        Join 500+ businesses already using AI receptionists
+      <p className="text-center text-sm text-white/40">
+        Join 500+ businesses using AI receptionists
       </p>
     </div>
   );

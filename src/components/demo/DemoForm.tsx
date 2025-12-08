@@ -10,8 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ELEVENLABS_VOICES, Voice } from "@/lib/voice-config";
-import { Play, Loader2, Sparkles } from "lucide-react";
+import { ELEVENLABS_VOICES } from "@/lib/voice-config";
+import { Loader2, Sparkles, Check } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface DemoFormData {
   businessName: string;
@@ -38,9 +39,9 @@ const businessTypes = [
 ];
 
 const toneOptions = [
-  { value: "professional", label: "Professional", description: "Formal and business-like" },
-  { value: "friendly", label: "Friendly", description: "Warm and welcoming" },
-  { value: "casual", label: "Casual", description: "Relaxed and conversational" },
+  { value: "professional", label: "Professional", emoji: "👔" },
+  { value: "friendly", label: "Friendly", emoji: "😊" },
+  { value: "casual", label: "Casual", emoji: "✌️" },
 ];
 
 const DemoForm = ({ onSubmit, isLoading }: DemoFormProps) => {
@@ -49,7 +50,7 @@ const DemoForm = ({ onSubmit, isLoading }: DemoFormProps) => {
     businessType: "dental_clinic",
     services: "",
     tone: "friendly",
-    voiceId: "EXAVITQu4vr4xnSDxMaL", // Sarah - recommended
+    voiceId: "EXAVITQu4vr4xnSDxMaL",
     email: "",
   });
 
@@ -66,40 +67,39 @@ const DemoForm = ({ onSubmit, isLoading }: DemoFormProps) => {
   const displayedVoices = selectedGender === "female" ? femaleVoices : maleVoices;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* Business Name */}
       <div className="space-y-2">
-        <Label htmlFor="businessName" className="text-base font-medium">
-          Your Business Name <span className="text-destructive">*</span>
+        <Label htmlFor="businessName" className="text-sm font-medium text-white/80">
+          Business Name <span className="text-teal">*</span>
         </Label>
         <Input
           id="businessName"
           placeholder="e.g., Bright Smile Dental"
           value={formData.businessName}
           onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-          className="h-12 text-base"
+          className="h-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-teal/50 focus:ring-teal/20"
           required
         />
-        <p className="text-sm text-muted-foreground">
-          Your AI will greet callers with this name
-        </p>
       </div>
 
       {/* Business Type */}
       <div className="space-y-2">
-        <Label htmlFor="businessType" className="text-base font-medium">
-          Business Type
-        </Label>
+        <Label className="text-sm font-medium text-white/80">Business Type</Label>
         <Select
           value={formData.businessType}
           onValueChange={(value) => setFormData({ ...formData, businessType: value })}
         >
-          <SelectTrigger className="h-12 text-base">
+          <SelectTrigger className="h-12 bg-white/5 border-white/10 text-white focus:border-teal/50">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-[hsl(222,47%,11%)] border-white/10">
             {businessTypes.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
+              <SelectItem 
+                key={type.value} 
+                value={type.value}
+                className="text-white/80 focus:bg-white/10 focus:text-white"
+              >
                 {type.label}
               </SelectItem>
             ))}
@@ -109,49 +109,56 @@ const DemoForm = ({ onSubmit, isLoading }: DemoFormProps) => {
 
       {/* Services */}
       <div className="space-y-2">
-        <Label htmlFor="services" className="text-base font-medium">
-          Services You Offer
+        <Label className="text-sm font-medium text-white/80">
+          Services <span className="text-white/40">(optional)</span>
         </Label>
         <Textarea
-          id="services"
-          placeholder="e.g., cleanings, whitening, orthodontics, emergency care"
+          placeholder="e.g., cleanings, whitening, orthodontics"
           value={formData.services}
           onChange={(e) => setFormData({ ...formData, services: e.target.value })}
-          className="min-h-[80px] text-base resize-none"
+          className="min-h-[70px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-teal/50 resize-none"
         />
-        <p className="text-sm text-muted-foreground">
-          Brief list of your main services (optional)
-        </p>
       </div>
 
       {/* Tone */}
       <div className="space-y-3">
-        <Label className="text-base font-medium">Tone & Personality</Label>
-        <div className="grid grid-cols-3 gap-3">
+        <Label className="text-sm font-medium text-white/80">Tone</Label>
+        <div className="grid grid-cols-3 gap-2">
           {toneOptions.map((option) => (
-            <button
+            <motion.button
               key={option.value}
               type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setFormData({ ...formData, tone: option.value })}
-              className={`p-3 rounded-xl border-2 text-left transition-all ${
+              className={`relative p-3 rounded-xl border text-center transition-all ${
                 formData.tone === option.value
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50"
+                  ? "border-teal bg-teal/10"
+                  : "border-white/10 bg-white/5 hover:border-white/20"
               }`}
             >
-              <div className="font-medium text-sm">{option.label}</div>
-              <div className="text-xs text-muted-foreground">{option.description}</div>
-            </button>
+              <div className="text-xl mb-1">{option.emoji}</div>
+              <div className="text-xs font-medium text-white/80">{option.label}</div>
+              {formData.tone === option.value && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-teal rounded-full flex items-center justify-center"
+                >
+                  <Check className="w-2.5 h-2.5 text-white" />
+                </motion.div>
+              )}
+            </motion.button>
           ))}
         </div>
       </div>
 
       {/* Voice Selection */}
       <div className="space-y-3">
-        <Label className="text-base font-medium">Choose a Voice</Label>
+        <Label className="text-sm font-medium text-white/80">Voice</Label>
         
         {/* Gender Toggle */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 p-1 bg-white/5 rounded-xl w-fit">
           <button
             type="button"
             onClick={() => {
@@ -160,11 +167,11 @@ const DemoForm = ({ onSubmit, isLoading }: DemoFormProps) => {
             }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               selectedGender === "female"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                ? "bg-teal text-white"
+                : "text-white/50 hover:text-white/80"
             }`}
           >
-            Female Voices
+            Female
           </button>
           <button
             type="button"
@@ -174,81 +181,89 @@ const DemoForm = ({ onSubmit, isLoading }: DemoFormProps) => {
             }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               selectedGender === "male"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                ? "bg-teal text-white"
+                : "text-white/50 hover:text-white/80"
             }`}
           >
-            Male Voices
+            Male
           </button>
         </div>
 
         {/* Voice Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[140px] overflow-y-auto pr-1 custom-scrollbar">
           {displayedVoices.map((voice) => (
-            <button
+            <motion.button
               key={voice.id}
               type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setFormData({ ...formData, voiceId: voice.id })}
-              className={`p-3 rounded-xl border-2 text-left transition-all ${
+              className={`relative p-2.5 rounded-xl border text-left transition-all ${
                 formData.voiceId === voice.id
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50"
+                  ? "border-teal bg-teal/10"
+                  : "border-white/10 bg-white/5 hover:border-white/20"
               }`}
             >
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-sm">{voice.name}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-medium text-white/90">{voice.name}</span>
                 {voice.recommended && (
-                  <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                    ★
-                  </span>
+                  <span className="text-[10px] bg-teal/20 text-teal px-1 py-0.5 rounded">★</span>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground line-clamp-1">
-                {voice.description}
-              </div>
-            </button>
+              {formData.voiceId === voice.id && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-teal rounded-full flex items-center justify-center"
+                >
+                  <Check className="w-2.5 h-2.5 text-white" />
+                </motion.div>
+              )}
+            </motion.button>
           ))}
         </div>
       </div>
 
       {/* Email (Optional) */}
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-base font-medium">
-          Email <span className="text-muted-foreground">(optional)</span>
+        <Label className="text-sm font-medium text-white/80">
+          Email <span className="text-white/40">(optional)</span>
         </Label>
         <Input
-          id="email"
           type="email"
           placeholder="your@email.com"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="h-12 text-base"
+          className="h-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-teal/50"
         />
-        <p className="text-sm text-muted-foreground">
-          We'll send you a link to replay your demo
-        </p>
       </div>
 
       {/* Submit Button */}
-      <Button
-        type="submit"
-        variant="hero"
-        size="lg"
-        className="w-full h-14 text-base gap-2"
-        disabled={isLoading || !formData.businessName.trim()}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Generating Your Demo...
-          </>
-        ) : (
-          <>
-            <Sparkles className="w-5 h-5" />
-            Hear Your AI Receptionist
-          </>
-        )}
-      </Button>
+      <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+        <Button
+          type="submit"
+          className="w-full h-14 text-base font-medium rounded-xl relative overflow-hidden group"
+          style={{
+            background: "linear-gradient(135deg, hsl(166 76% 36%) 0%, hsl(166 76% 28%) 100%)",
+          }}
+          disabled={isLoading || !formData.businessName.trim()}
+        >
+          {/* Shimmer effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              Generating Your Demo...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-5 h-5 mr-2" />
+              Hear Your AI Receptionist
+            </>
+          )}
+        </Button>
+      </motion.div>
     </form>
   );
 };
