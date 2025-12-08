@@ -23,6 +23,13 @@ interface ActivityEvent {
   icon?: React.ReactNode;
 }
 
+interface TranscriptEntry {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  timestamp: Date;
+}
+
 export function TestCallButton({
   assistantId,
   disabled = false,
@@ -32,6 +39,7 @@ export function TestCallButton({
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const [activityLog, setActivityLog] = useState<ActivityEvent[]>([]);
+  const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   
   const publicKey = "3d8f4267-671a-4a72-924e-79ac9179df8f";
 
@@ -60,6 +68,7 @@ export function TestCallButton({
     setCallStatus("connecting");
     setStatusMessage("Requesting microphone access...");
     setActivityLog([]);
+    setTranscript([]);
     addActivity("info", "Requesting microphone access...");
 
     try {
@@ -113,18 +122,24 @@ export function TestCallButton({
         addActivity("info", "Listening for your response...", <Mic className="w-3 h-3" />);
       });
 
-      // Listen for messages to track tool calls
+      // Listen for messages to track tool calls and transcripts
       vapi.on("message", (message: any) => {
-        console.log("[TestCallButton] Message:", message);
+        console.log("[TestCallButton] Message:", JSON.stringify(message, null, 2));
+        
+        // Log all message types for debugging
+        addActivity("info", `Event: ${message.type}`, <ArrowRight className="w-3 h-3" />);
         
         if (message.type === "tool-calls") {
+          console.log("[TestCallButton] 🔧 TOOL CALLS RECEIVED:", JSON.stringify(message, null, 2));
           const toolCalls = message.toolCallList || message.toolCalls || [];
           toolCalls.forEach((tool: any) => {
             const funcName = tool.function?.name || tool.name;
+            const args = tool.function?.arguments || tool.arguments;
+            console.log(`[TestCallButton] Tool: ${funcName}, Args:`, args);
             if (funcName === "checkAvailability") {
-              addActivity("tool", "Checking calendar availability...", <Calendar className="w-3 h-3" />);
+              addActivity("tool", `📅 Checking availability for: ${args?.date || 'unknown date'}`, <Calendar className="w-3 h-3" />);
             } else if (funcName === "bookAppointment") {
-              addActivity("tool", "Booking appointment...", <Calendar className="w-3 h-3" />);
+              addActivity("tool", `📝 Booking: ${args?.patientName || 'patient'} at ${args?.time || 'time'}`, <Calendar className="w-3 h-3" />);
             } else if (funcName) {
               addActivity("tool", `Calling ${funcName}...`, <ArrowRight className="w-3 h-3" />);
             }
@@ -132,11 +147,12 @@ export function TestCallButton({
         }
         
         if (message.type === "tool-calls-result") {
-          // Parse and show debug info from checkAvailability
+          console.log("[TestCallButton] 🔧 TOOL RESULT:", JSON.stringify(message, null, 2));
           const results = message.toolCallResult || message.results || [];
           results.forEach((result: any) => {
             try {
               const parsed = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
+              console.log("[TestCallButton] Parsed result:", parsed);
               if (parsed?._debug) {
                 const debug = parsed._debug;
                 addActivity("info", `📅 Checked: ${debug.requestedDate} (${debug.parsedDayOfWeek})`);
@@ -146,20 +162,39 @@ export function TestCallButton({
                   addActivity("info", `ℹ️ ${debug.reason}`);
                 }
               }
+              // Show the actual result message
+              if (parsed?.message) {
+                addActivity("success", `Result: ${parsed.message}`, <CheckCircle2 className="w-3 h-3" />);
+              }
             } catch (e) {
-              // Ignore parse errors
+              console.error("[TestCallButton] Error parsing tool result:", e);
             }
           });
           addActivity("success", "Tool call completed", <CheckCircle2 className="w-3 h-3" />);
         }
 
-        if (message.type === "transcript" && message.role === "user" && message.transcriptType === "final") {
-          addActivity("info", `You: "${message.transcript}"`, <MessageSquare className="w-3 h-3" />);
+        // Detect conversation resets
+        if (message.type === "conversation-update") {
+          console.log("[TestCallButton] ⚠️ CONVERSATION UPDATE:", JSON.stringify(message, null, 2));
+          addActivity("info", "Conversation state updated", <ArrowRight className="w-3 h-3" />);
         }
 
-        if (message.type === "transcript" && message.role === "assistant" && message.transcriptType === "final") {
-          const text = message.transcript?.slice(0, 50) + (message.transcript?.length > 50 ? "..." : "");
-          addActivity("speech", `AI: "${text}"`, <Volume2 className="w-3 h-3" />);
+        // Full transcript tracking - both user and assistant
+        if (message.type === "transcript" && message.transcriptType === "final") {
+          const entry: TranscriptEntry = {
+            id: `${Date.now()}-${Math.random()}`,
+            role: message.role,
+            text: message.transcript,
+            timestamp: new Date(),
+          };
+          setTranscript(prev => [...prev, entry]);
+          
+          // Also add to activity log with full text
+          if (message.role === "user") {
+            addActivity("info", `You: "${message.transcript}"`, <MessageSquare className="w-3 h-3" />);
+          } else {
+            addActivity("speech", `AI: "${message.transcript}"`, <Volume2 className="w-3 h-3" />);
+          }
         }
       });
 
@@ -286,12 +321,54 @@ export function TestCallButton({
         </div>
       )}
 
+      {/* Full Conversation Transcript */}
+      {transcript.length > 0 && (
+        <div className="w-full mt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <MessageSquare className="w-3 h-3 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Conversation Transcript</span>
+          </div>
+          <ScrollArea className="h-48 w-full rounded-lg border border-primary/20 bg-background">
+            <div className="p-3 space-y-3">
+              {transcript.map((entry) => (
+                <div
+                  key={entry.id}
+                  className={cn(
+                    "p-2 rounded-lg text-sm animate-in fade-in slide-in-from-bottom-1 duration-200",
+                    entry.role === "user" 
+                      ? "bg-muted ml-4" 
+                      : "bg-primary/10 mr-4"
+                  )}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {entry.role === "user" ? (
+                      <Mic className="w-3 h-3 text-muted-foreground" />
+                    ) : (
+                      <Volume2 className="w-3 h-3 text-primary" />
+                    )}
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {entry.role === "user" ? "You" : "AI"}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60">
+                      {entry.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <p className="text-foreground break-words whitespace-pre-wrap">
+                    {entry.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      )}
+
       {/* Activity Log */}
       {activityLog.length > 0 && (
         <div className="w-full mt-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Live Activity</span>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Debug Activity</span>
           </div>
           <ScrollArea className="h-32 w-full rounded-lg border border-border/50 bg-background/50 backdrop-blur-sm">
             <div className="p-3 space-y-2">
