@@ -123,7 +123,7 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
   const dayOfWeek = parsedDate.toLocaleDateString('en-US', { weekday: 'long' });
   const dayOfWeekLower = dayOfWeek.toLowerCase();
   const businessHours = settings?.business_hours || {};
-  const dayHours = businessHours[dayOfWeekLower];
+  const dayHours = businessHours[dayOfWeek] || businessHours[dayOfWeekLower];
 
   console.log("Parsed date:", parsedDate.toISOString());
   console.log("Day of week:", dayOfWeek);
@@ -274,9 +274,9 @@ async function getCalendarAvailability(date: string, settings: any, supabase: an
   const freeBusyData = await freeBusyResponse.json();
   const busySlots = freeBusyData.calendars?.[calendarId]?.busy || [];
 
-  // Get business hours for the day
-  const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-  const businessHours = settings.business_hours?.[dayOfWeek];
+  // Get business hours for the day (check both capitalized and lowercase keys)
+  const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
+  const businessHours = settings.business_hours?.[dayOfWeek] || settings.business_hours?.[dayOfWeek.toLowerCase()];
   
   if (!businessHours?.isOpen) {
     return [];
