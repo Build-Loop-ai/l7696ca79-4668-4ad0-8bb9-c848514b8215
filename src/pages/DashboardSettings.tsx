@@ -75,9 +75,11 @@ interface TeamMember {
   id: string;
   user_id: string;
   role: string;
+  created_at?: string;
   profile: {
     full_name: string | null;
     email: string | null;
+    created_at?: string;
   } | null;
 }
 
@@ -121,14 +123,14 @@ const DashboardSettings = () => {
       // Fetch team members
       const { data: rolesRes } = await supabase
         .from("user_roles")
-        .select("id, user_id, role")
+        .select("id, user_id, role, created_at")
         .eq("organization_id", orgId);
 
       if (rolesRes && rolesRes.length > 0) {
         const userIds = rolesRes.map((r) => r.user_id);
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id, full_name, email")
+          .select("id, full_name, email, created_at")
           .in("id", userIds);
 
         const membersWithProfiles = rolesRes.map((role) => ({

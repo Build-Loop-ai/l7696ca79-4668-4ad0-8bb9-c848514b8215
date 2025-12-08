@@ -11,18 +11,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2, Loader2, Clock, X, RefreshCw, Users } from "lucide-react";
+import { Loader2, Clock, X, RefreshCw, Users, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { TeamMemberSheet } from "./TeamMemberSheet";
 
 interface TeamMember {
   id: string;
   user_id: string;
   role: string;
+  created_at?: string;
   profile: {
     full_name: string | null;
     email: string | null;
+    created_at?: string;
   } | null;
 }
 
@@ -53,46 +56,9 @@ export const TeamMembersList = ({
   onInvitationCancelled,
 }: TeamMembersListProps) => {
   const { toast } = useToast();
-  const [deletingMember, setDeletingMember] = useState<TeamMember | null>(null);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [cancellingInvite, setCancellingInvite] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const handleRemoveMember = async () => {
-    if (!deletingMember) return;
-    setLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("id", deletingMember.id);
-
-      if (error) throw error;
-
-      // Also remove the user's organization association
-      await supabase
-        .from("profiles")
-        .update({ organization_id: null })
-        .eq("id", deletingMember.user_id);
-
-      toast({
-        title: "Member removed",
-        description: `${deletingMember.profile?.full_name || deletingMember.profile?.email} has been removed from the team.`,
-      });
-
-      onMemberRemoved();
-    } catch (err: any) {
-      console.error("Error removing member:", err);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to remove team member",
-      });
-    } finally {
-      setLoading(false);
-      setDeletingMember(null);
-    }
-  };
 
   const handleCancelInvitation = async () => {
     if (!cancellingInvite) return;
@@ -207,9 +173,10 @@ export const TeamMembersList = ({
     <div className="space-y-4">
       {/* Active Members */}
       {members.map((member) => (
-        <div
+        <button
           key={member.id}
-          className="flex items-center justify-between p-4 rounded-xl border border-border"
+          onClick={() => setSelectedMember(member)}
+          className="w-full flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors text-left group"
         >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-medium text-primary">
@@ -233,17 +200,9 @@ export const TeamMembersList = ({
             <Badge variant="secondary" className="capitalize">
               {member.role}
             </Badge>
-            {member.role !== "owner" && member.user_id !== currentUserId && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setDeletingMember(member)}
-              >
-                <Trash2 className="w-4 h-4 text-muted-foreground" />
-              </Button>
-            )}
+            <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-        </div>
+        </button>
       ))}
 
       {/* Pending Invitations */}
@@ -302,34 +261,14 @@ export const TeamMembersList = ({
         </>
       )}
 
-      {/* Delete Member Confirmation */}
-      <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove team member?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deletingMember?.profile?.full_name || deletingMember?.profile?.email} will lose access to this organization. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRemoveMember}
-              disabled={loading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Removing...
-                </>
-              ) : (
-                "Remove"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Team Member Detail Sheet */}
+      <TeamMemberSheet
+        member={selectedMember}
+        open={!!selectedMember}
+        onOpenChange={(open) => !open && setSelectedMember(null)}
+        currentUserId={currentUserId}
+        onMemberUpdated={onMemberRemoved}
+      />
 
       {/* Cancel Invitation Confirmation */}
       <AlertDialog open={!!cancellingInvite} onOpenChange={() => setCancellingInvite(null)}>
