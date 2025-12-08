@@ -23,7 +23,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Building, Clock, Briefcase, MessageSquare, RefreshCw } from "lucide-react";
+import { Loader2, Building, Clock, Briefcase, MessageSquare } from "lucide-react";
 import { BusinessHoursEditor } from "./BusinessHoursEditor";
 import { ServicesEditor } from "./ServicesEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,7 +54,6 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [recreatingAssistant, setRecreatingAssistant] = useState(false);
 
   // Organization data
   const [formData, setFormData] = useState({
@@ -156,9 +155,24 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
 
       if (settingsError) throw settingsError;
 
+      // Sync to AI assistant automatically
+      const { error: syncError } = await supabase.functions.invoke("create-vapi-assistant", {
+        body: { organizationId },
+      });
+
+      if (syncError) {
+        console.error("Error syncing to AI:", syncError);
+        toast({
+          title: "Settings saved",
+          description: "Business settings saved, but AI sync failed. Try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Settings saved",
-        description: "Your business configuration has been updated.",
+        description: "Your business settings have been saved and synced to the AI.",
       });
     } catch (error: any) {
       toast({
@@ -168,34 +182,6 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleRecreateAssistant = async () => {
-    setRecreatingAssistant(true);
-    try {
-      // Save current settings first
-      await handleSave();
-
-      // Call create-vapi-assistant to recreate with latest settings
-      const { data, error } = await supabase.functions.invoke("create-vapi-assistant", {
-        body: { organizationId },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "AI Assistant recreated",
-        description: "Your AI assistant has been updated with the latest business settings.",
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error recreating assistant",
-        description: error.message,
-      });
-    } finally {
-      setRecreatingAssistant(false);
     }
   };
 
@@ -419,19 +405,7 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
       <div className="flex items-center gap-4">
         <Button onClick={handleSave} disabled={saving}>
           {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Save Business Settings
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleRecreateAssistant}
-          disabled={recreatingAssistant}
-        >
-          {recreatingAssistant ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4 mr-2" />
-          )}
-          Sync to AI Assistant
+          {saving ? "Saving & Syncing..." : "Save Settings"}
         </Button>
       </div>
     </div>
