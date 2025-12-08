@@ -44,3 +44,18 @@ verify_jwt = true
 
 [functions.send-email]
 verify_jwt = false
+
+[functions.stripe-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.stripe-portal]
+verify_jwt = true
+
+[functions.stripe-sync-products]
+verify_jwt = true
+
+[functions.get-plans]
+verify_jwt = false

@@ -39,6 +39,7 @@ import { GoogleCalendarIntegration } from "@/components/settings/GoogleCalendarI
 import { PhoneNumberDialog } from "@/components/dashboard/PhoneNumberDialog";
 import { InviteMemberDialog } from "@/components/settings/InviteMemberDialog";
 import { TeamMembersList } from "@/components/settings/TeamMembersList";
+import { BillingCard } from "@/components/settings/BillingCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -524,54 +525,9 @@ const DashboardSettings = () => {
 
         {/* Billing Tab */}
         <TabsContent value="billing" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Plan</CardTitle>
-              <CardDescription>
-                Manage your subscription and billing.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20">
-                <div>
-                  <div className="text-lg font-serif font-medium text-primary">
-                    {planLabels[subscription?.plan || "starter"] || "Starter Plan"}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {planPrices[subscription?.plan || "starter"] || "€97/month"}
-                    {subscription?.current_period_end && (
-                      <>
-                        {" · Renews on "}
-                        {format(
-                          parseISO(subscription.current_period_end),
-                          "MMMM d, yyyy"
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-                <Button variant="outline">Upgrade Plan</Button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">Minutes Usage</div>
-                    <div className="text-sm text-muted-foreground">
-                      {minutesUsed} of {minutesIncluded} minutes used
-                    </div>
-                  </div>
-                  <span className="text-sm font-medium">{usagePercentage}%</span>
-                </div>
-                <Progress value={usagePercentage} />
-              </div>
-
-              <div className="flex gap-4">
-                <Button variant="outline">Manage Payment</Button>
-                <Button variant="outline">View Invoices</Button>
-              </div>
-            </CardContent>
-          </Card>
+          {organizationId && (
+            <BillingCard subscription={subscription} organizationId={organizationId} />
+          )}
         </TabsContent>
       </Tabs>
 

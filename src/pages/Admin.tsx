@@ -23,8 +23,10 @@ import {
   BarChart3,
   Mail,
   Settings,
-  ArrowLeft
+  ArrowLeft,
+  CreditCard
 } from 'lucide-react';
+import { AdminPlansTable } from '@/components/admin/AdminPlansTable';
 import { format, subDays } from 'date-fns';
 
 interface Metrics {
@@ -42,6 +44,7 @@ const navItems = [
   { icon: Building2, label: 'Organizations', value: 'organizations' },
   { icon: Users, label: 'Users', value: 'users' },
   { icon: Mail, label: 'Emails', value: 'emails' },
+  { icon: CreditCard, label: 'Plans', value: 'plans' },
   { icon: Settings, label: 'Settings', value: 'settings' },
   { icon: BarChart3, label: 'Analytics', value: 'analytics' },
 ];
@@ -354,6 +357,10 @@ const Admin = () => {
 
               {activeTab === 'emails' && (
                 <AdminEmailsTable emails={emailLogs} loading={loading} />
+              )}
+
+              {activeTab === 'plans' && (
+                <AdminPlansTable />
               )}
 
               {activeTab === 'settings' && (
