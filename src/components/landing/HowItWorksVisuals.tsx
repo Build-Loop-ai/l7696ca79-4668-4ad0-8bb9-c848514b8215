@@ -16,7 +16,7 @@ export const ConnectVisual = () => (
       />
     </div>
     
-    <div className="relative flex items-center gap-6 md:gap-10">
+    <div className="relative flex items-center gap-4 md:gap-6">
       {/* Your Phone */}
       <motion.div
         initial={{ x: -40, opacity: 0 }}
@@ -25,8 +25,8 @@ export const ConnectVisual = () => (
         transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
         className="relative"
       >
-        <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-primary via-primary to-teal flex items-center justify-center shadow-2xl shadow-primary/30">
-          <svg className="w-12 h-12 md:w-16 md:h-16 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-primary via-primary to-teal flex items-center justify-center shadow-xl shadow-primary/30">
+          <svg className="w-8 h-8 md:w-10 md:h-10 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
           </svg>
         </div>
@@ -35,11 +35,11 @@ export const ConnectVisual = () => (
           whileInView={{ scale: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.5 }}
-          className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-background border-2 border-primary flex items-center justify-center"
+          className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-background border-2 border-primary flex items-center justify-center"
         >
-          <span className="text-xs font-medium text-primary">📱</span>
+          <span className="text-[10px]">📱</span>
         </motion.div>
-        <p className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap font-medium">Your Phone</p>
+        <p className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap font-medium">Your Phone</p>
       </motion.div>
       
       {/* Connection animation */}
@@ -49,12 +49,12 @@ export const ConnectVisual = () => (
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="w-16 md:w-24 h-1 bg-gradient-to-r from-primary to-teal rounded-full origin-left"
+          className="w-10 md:w-16 h-0.5 bg-gradient-to-r from-primary to-teal rounded-full origin-left"
         />
         <motion.div
-          animate={{ x: [0, 40, 0] }}
+          animate={{ x: [0, 24, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-teal shadow-lg shadow-teal/50"
+          className="absolute left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-teal shadow-lg shadow-teal/50"
         />
       </div>
       
@@ -66,8 +66,8 @@ export const ConnectVisual = () => (
         transition={{ delay: 0.6, type: "spring", stiffness: 100 }}
         className="relative"
       >
-        <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-teal via-teal to-primary flex items-center justify-center shadow-2xl shadow-teal/30">
-          <svg className="w-12 h-12 md:w-16 md:h-16 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-teal via-teal to-primary flex items-center justify-center shadow-xl shadow-teal/30">
+          <svg className="w-8 h-8 md:w-10 md:h-10 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
           </svg>
         </div>
@@ -76,11 +76,11 @@ export const ConnectVisual = () => (
           whileInView={{ scale: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.8 }}
-          className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-background border-2 border-teal flex items-center justify-center"
+          className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-background border-2 border-teal flex items-center justify-center"
         >
-          <span className="text-xs font-medium text-teal">🤖</span>
+          <span className="text-[10px]">🤖</span>
         </motion.div>
-        <p className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap font-medium">AI Receptionist</p>
+        <p className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap font-medium">AI Receptionist</p>
       </motion.div>
     </div>
   </div>
