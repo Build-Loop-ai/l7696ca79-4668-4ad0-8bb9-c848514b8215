@@ -1,42 +1,23 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Phone,
-  Calendar,
-  Clock,
-  TrendingUp,
-  Play,
-  FileText,
-  PhoneCall,
-  CheckCircle2,
-  Info,
-  PhoneForwarded,
-  PhoneMissed,
-  Voicemail,
-  Copy,
-  Loader2,
-  AlertCircle,
-  Link2,
-} from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { format, isToday, parseISO } from "date-fns";
+import { isToday, parseISO, getHours } from "date-fns";
 import { SetupChecklist } from "@/components/dashboard/SetupChecklist";
 import { PhoneNumberDialog } from "@/components/dashboard/PhoneNumberDialog";
 import { TestCallDialog } from "@/components/dashboard/TestCallDialog";
 import { toast } from "sonner";
+import StatusHero from "@/components/dashboard/StatusHero";
+import ActivityStream from "@/components/dashboard/ActivityStream";
+import InsightsPanel from "@/components/dashboard/InsightsPanel";
+
+const formatDuration = (seconds: number): string => {
+  if (!seconds || seconds === 0) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+};
 
 interface CallLog {
   id: string;
@@ -48,71 +29,14 @@ interface CallLog {
   transcript: string | null;
 }
 
-interface Subscription {
-  minutes_used: number | null;
-  minutes_included: number | null;
-}
-
-const outcomeConfig: Record<
-  string,
-  { label: string; color: string; icon: React.ElementType }
-> = {
-  appointment_booked: {
-    label: "Appointment Booked",
-    color: "bg-green-100 text-green-700",
-    icon: CheckCircle2,
-  },
-  info_provided: {
-    label: "Info Provided",
-    color: "bg-blue-100 text-blue-700",
-    icon: Info,
-  },
-  transferred: {
-    label: "Transferred",
-    color: "bg-yellow-100 text-yellow-700",
-    icon: PhoneForwarded,
-  },
-  missed: {
-    label: "Missed",
-    color: "bg-red-100 text-red-700",
-    icon: PhoneMissed,
-  },
-  voicemail: {
-    label: "Voicemail",
-    color: "bg-purple-100 text-purple-700",
-    icon: Voicemail,
-  },
-  completed: {
-    label: "Completed",
-    color: "bg-gray-100 text-gray-700",
-    icon: Phone,
-  },
-};
-
-const formatDuration = (seconds: number | null): string => {
-  if (!seconds || seconds === 0) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
-
-const formatTime = (dateStr: string | null): string => {
-  if (!dateStr) return "-";
-  try {
-    return format(parseISO(dateStr), "HH:mm");
-  } catch {
-    return "-";
-  }
-};
-
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [calls, setCalls] = useState<CallLog[]>([]);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(true); // Default to true to hide checklist initially
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
+  const [userName, setUserName] = useState<string>("");
 
   // Setup state
   const [hasAssistant, setHasAssistant] = useState(false);
@@ -136,7 +60,7 @@ const Dashboard = () => {
         // Get user's organization
         const { data: profile } = await supabase
           .from("profiles")
-          .select("organization_id, onboarding_completed")
+          .select("organization_id, onboarding_completed, full_name")
           .eq("id", user.id)
           .single();
 
@@ -147,20 +71,16 @@ const Dashboard = () => {
 
         setOrganizationId(profile.organization_id);
         setOnboardingCompleted(profile.onboarding_completed ?? false);
+        setUserName(profile.full_name || user.email?.split("@")[0] || "");
 
         // Fetch all data in parallel
-        const [callsRes, subRes, settingsRes, phonesRes] = await Promise.all([
+        const [callsRes, settingsRes, phonesRes] = await Promise.all([
           supabase
             .from("call_logs")
             .select("id, started_at, caller_number, duration_seconds, outcome, recording_url, transcript")
             .eq("organization_id", profile.organization_id)
             .order("created_at", { ascending: false })
-            .limit(10),
-          supabase
-            .from("subscriptions")
-            .select("minutes_used, minutes_included")
-            .eq("organization_id", profile.organization_id)
-            .single(),
+            .limit(20),
           supabase
             .from("organization_settings")
             .select("vapi_assistant_id")
@@ -175,12 +95,7 @@ const Dashboard = () => {
 
         if (callsRes.data) {
           setCalls(callsRes.data);
-          // Has test call if there's at least one call
           setHasTestCall(callsRes.data.length > 0);
-        }
-
-        if (subRes.data) {
-          setSubscription(subRes.data);
         }
 
         if (settingsRes.data?.vapi_assistant_id) {
@@ -190,7 +105,6 @@ const Dashboard = () => {
 
         if (phonesRes.data && phonesRes.data.length > 0) {
           const activePhone = phonesRes.data[0];
-          // Only set as valid phone number if it looks like a real phone number (starts with +)
           if (activePhone.phone_number?.startsWith('+')) {
             setHasPhoneNumber(true);
             setAiPhoneNumber(activePhone.phone_number);
@@ -231,53 +145,30 @@ const Dashboard = () => {
     (call) => call.outcome && call.outcome !== "missed"
   ).length;
 
-  const missedCalls = todaysCalls.filter(
-    (call) => call.outcome === "missed"
-  ).length;
-
   const resolutionRate =
     todaysCalls.length > 0
       ? Math.round((answeredCalls / todaysCalls.length) * 100)
-      : 0;
+      : 100;
 
-  const conversionRate =
-    todaysTotalCalls > 0
-      ? Math.round((todaysAppointments / todaysTotalCalls) * 100)
-      : 0;
+  // Calculate peak hour
+  const peakHour = todaysCalls.length > 0
+    ? (() => {
+        const hourCounts: Record<number, number> = {};
+        todaysCalls.forEach((call) => {
+          if (call.started_at) {
+            const hour = getHours(parseISO(call.started_at));
+            hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+          }
+        });
+        const maxHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+        return maxHour ? parseInt(maxHour[0]) : undefined;
+      })()
+    : undefined;
 
-  const lastCallTime = calls.length > 0 ? formatTime(calls[0].started_at) : "-";
-
-  const stats = [
-    {
-      title: "Today's Calls",
-      value: todaysTotalCalls.toString(),
-      change: "",
-      changeType: "neutral" as const,
-      icon: Phone,
-    },
-    {
-      title: "Appointments Booked",
-      value: todaysAppointments.toString(),
-      change: conversionRate > 0 ? `${conversionRate}%` : "",
-      changeType: "positive" as const,
-      icon: Calendar,
-      subtitle: "conversion",
-    },
-    {
-      title: "Avg Call Duration",
-      value: formatDuration(avgDurationSeconds),
-      change: "",
-      changeType: "neutral" as const,
-      icon: Clock,
-    },
-    {
-      title: "AI Resolution Rate",
-      value: `${resolutionRate}%`,
-      change: "",
-      changeType: resolutionRate >= 80 ? "positive" as const : "neutral" as const,
-      icon: TrendingUp,
-    },
-  ];
+  // Get last call time
+  const lastCallTime = calls.length > 0 && calls[0].started_at
+    ? parseISO(calls[0].started_at)
+    : undefined;
 
   const handlePhoneSuccess = () => {
     setHasPhoneNumber(true);
@@ -312,44 +203,24 @@ const Dashboard = () => {
     }
   };
 
-  // Check if setup is complete - either onboarding is done OR all steps are done
+  // Check if setup is complete
   const setupComplete = onboardingCompleted || (hasAssistant && hasPhoneNumber && hasTestCall);
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <Skeleton className="h-40 w-full" />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-4 w-24 mb-2" />
-                <Skeleton className="h-8 w-16" />
-              </CardContent>
-            </Card>
-          ))}
+      <div className="space-y-6 animate-fade-in">
+        <Skeleton className="h-8 w-64 mb-2" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <div className="grid md:grid-cols-2 gap-6">
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-serif text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">
-            {setupComplete
-              ? "Welcome back! Here's what's happening today."
-              : "Let's get your AI receptionist ready for production."}
-          </p>
-        </div>
-      </div>
-
+    <div className="space-y-6 animate-fade-in">
       {/* Setup Checklist - shown until complete */}
       {!setupComplete && organizationId && (
         <SetupChecklist
@@ -363,279 +234,36 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Stats Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, idx) => (
-          <Card key={idx} className="hover-lift">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  <p className="text-3xl font-serif text-foreground mt-1">
-                    {stat.value}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    {stat.change && (
-                      <span
-                        className={`text-sm font-medium ${
-                          stat.changeType === "positive"
-                            ? "text-green-600"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {stat.change}
-                      </span>
-                    )}
-                    {stat.subtitle && (
-                      <span className="text-sm text-muted-foreground">
-                        {stat.subtitle}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <stat.icon className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Hero Status Card */}
+      <StatusHero
+        isLive={hasAssistant && hasPhoneNumber}
+        lastCallTime={lastCallTime ? lastCallTime.toISOString() : null}
+        todayCalls={todaysTotalCalls}
+        todayBooked={todaysAppointments}
+        avgDuration={formatDuration(avgDurationSeconds)}
+        resolutionRate={resolutionRate}
+        userName={userName}
+      />
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Calls */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-serif">Recent Calls</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/dashboard/calls")}
-            >
-              View all
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {calls.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Phone className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">No calls yet</p>
-                <p className="text-sm mt-1 mb-4">
-                  {hasPhoneNumber
-                    ? "Calls will appear here once customers start calling"
-                    : "Get a phone number to start receiving calls"}
-                </p>
-                {!hasPhoneNumber && organizationId && (
-                  <Button onClick={() => setShowPhoneDialog(true)}>
-                    Get Phone Number
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Caller</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Outcome</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {calls.slice(0, 5).map((call) => {
-                    const outcome = call.outcome
-                      ? outcomeConfig[call.outcome] || outcomeConfig.completed
-                      : outcomeConfig.completed;
-                    return (
-                      <TableRow key={call.id}>
-                        <TableCell className="font-medium">
-                          {formatTime(call.started_at)}
-                        </TableCell>
-                        <TableCell>{call.caller_number || "-"}</TableCell>
-                        <TableCell>
-                          {formatDuration(call.duration_seconds)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={`gap-1 ${outcome.color}`}
-                          >
-                            <outcome.icon className="w-3 h-3" />
-                            {outcome.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {call.recording_url && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() =>
-                                  window.open(call.recording_url!, "_blank")
-                                }
-                              >
-                                <Play className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {call.transcript && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                              >
-                                <FileText className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {call.caller_number && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() =>
-                                  window.open(`tel:${call.caller_number}`)
-                                }
-                              >
-                                <PhoneCall className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Live Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif">Live Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-6">
-              {/* Status indicator */}
-              <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                hasPhoneNumber && isPhoneConnected 
-                  ? "bg-green-100 dark:bg-green-900/30" 
-                  : hasPhoneNumber 
-                    ? "bg-yellow-100 dark:bg-yellow-900/30"
-                    : "bg-muted"
-              }`}>
-                {hasPhoneNumber && isPhoneConnected ? (
-                  <div className="w-4 h-4 rounded-full bg-green-500 animate-pulse" />
-                ) : hasPhoneNumber ? (
-                  <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-                ) : (
-                  <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
-                )}
-              </div>
-              
-              <h3 className="text-lg font-medium text-foreground mb-1">
-                {hasPhoneNumber && isPhoneConnected 
-                  ? "Ready to receive calls" 
-                  : hasPhoneNumber 
-                    ? "Phone number not connected to AI"
-                    : "Setup in progress"}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {hasPhoneNumber && isPhoneConnected
-                  ? `Last call: ${lastCallTime}`
-                  : hasPhoneNumber
-                    ? "Re-provision to connect to your AI assistant"
-                    : "Complete the setup to start receiving calls"}
-              </p>
-
-              {/* AI Phone Number Display with connection status */}
-              {aiPhoneNumber && (
-                <div className={`mt-4 p-4 rounded-xl border ${
-                  isPhoneConnected 
-                    ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-                    : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
-                }`}>
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    {isPhoneConnected ? (
-                      <Link2 className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                    )}
-                    <p className={`text-xs font-medium uppercase tracking-wide ${
-                      isPhoneConnected 
-                        ? "text-green-700 dark:text-green-300"
-                        : "text-yellow-700 dark:text-yellow-300"
-                    }`}>
-                      {isPhoneConnected ? "Connected to AI" : "Not Connected"}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <a 
-                      href={`tel:${aiPhoneNumber}`}
-                      className="text-xl font-mono font-bold text-foreground hover:text-primary transition-colors"
-                    >
-                      {aiPhoneNumber}
-                    </a>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        navigator.clipboard.writeText(aiPhoneNumber);
-                        toast.success("Copied to clipboard");
-                      }}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="border-t border-border pt-6 mt-6">
-              <h4 className="text-sm font-medium text-foreground mb-4">
-                Today's Summary
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Calls answered</span>
-                  <span className="font-medium text-foreground">
-                    {answeredCalls}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Calls missed</span>
-                  <span className="font-medium text-foreground">
-                    {missedCalls}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Minutes used</span>
-                  <span className="font-medium text-foreground">
-                    {subscription?.minutes_used ?? 0} /{" "}
-                    {subscription?.minutes_included ?? 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick actions */}
-            {hasAssistant && (
-              <div className="border-t border-border pt-6 mt-6">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowTestDialog(true)}
-                >
-                  <Phone className="w-4 h-4 mr-2" />
-                  Test Your AI
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Activity Stream + Insights */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <ActivityStream 
+          calls={todaysCalls.slice(0, 5).map(call => ({
+            id: call.id,
+            caller_number: call.caller_number,
+            started_at: call.started_at || "",
+            outcome: call.outcome,
+            duration_seconds: call.duration_seconds,
+          }))}
+          isLoading={loading}
+        />
+        
+        <InsightsPanel
+          totalCalls={todaysTotalCalls}
+          appointmentsBooked={todaysAppointments}
+          peakHour={peakHour}
+          avgDurationSeconds={avgDurationSeconds}
+        />
       </div>
 
       {/* Dialogs */}
@@ -647,6 +275,7 @@ const Dashboard = () => {
             organizationId={organizationId}
             onSuccess={handlePhoneSuccess}
           />
+
           <TestCallDialog
             open={showTestDialog}
             onOpenChange={setShowTestDialog}
