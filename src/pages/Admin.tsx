@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminMetricsHero } from '@/components/admin/AdminMetricsHero';
 import { AdminOrgsTable } from '@/components/admin/AdminOrgsTable';
@@ -10,7 +11,18 @@ import { AdminOutcomesChart } from '@/components/admin/AdminOutcomesChart';
 import { AdminAIInsights } from '@/components/admin/AdminAIInsights';
 import { AdminRecentActivity } from '@/components/admin/AdminRecentActivity';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, LayoutDashboard, Building2, Users, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { 
+  Shield, 
+  LayoutDashboard, 
+  Building2, 
+  Users, 
+  BarChart3, 
+  Phone,
+  ChevronLeft,
+  ArrowLeft
+} from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
 interface Metrics {
@@ -22,6 +34,13 @@ interface Metrics {
   monthlyRevenue: number;
 }
 
+const navItems = [
+  { icon: LayoutDashboard, label: 'Overview', value: 'overview' },
+  { icon: Building2, label: 'Organizations', value: 'organizations' },
+  { icon: Users, label: 'Users', value: 'users' },
+  { icon: BarChart3, label: 'Analytics', value: 'analytics' },
+];
+
 const Admin = () => {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -31,6 +50,8 @@ const Admin = () => {
   const [outcomesData, setOutcomesData] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     fetchAllData();
@@ -39,7 +60,6 @@ const Admin = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      // Fetch all data in parallel
       const [
         orgsResult,
         usersResult,
@@ -73,23 +93,18 @@ const Admin = () => {
           .select('id, plan, status'),
       ]);
 
-      // Process organizations
       const orgs = orgsResult.data || [];
       setOrganizations(orgs);
 
-      // Process users
       const usersData = usersResult.data || [];
       setUsers(usersData);
 
-      // Process calls for metrics
       const calls = callsResult.data || [];
       const totalMinutes = calls.reduce((sum, c) => sum + (c.duration_seconds || 0), 0);
 
-      // Process phone numbers
       const phoneNumbers = phoneNumbersResult.data || [];
       const activePhones = phoneNumbers.filter(p => p.is_active).length;
 
-      // Process subscriptions for revenue estimate
       const subs = subscriptionsResult.data || [];
       const planPrices: Record<string, number> = { starter: 97, growth: 197, enterprise: 497 };
       const monthlyRevenue = subs.reduce((sum, s) => {
@@ -99,7 +114,6 @@ const Admin = () => {
         return sum;
       }, 0);
 
-      // Set metrics
       setMetrics({
         totalOrganizations: orgs.length,
         totalUsers: usersData.length,
@@ -109,7 +123,6 @@ const Admin = () => {
         monthlyRevenue,
       });
 
-      // Process calls chart data (last 30 days)
       const last30Days = Array.from({ length: 30 }, (_, i) => {
         const date = subDays(new Date(), 29 - i);
         return { date: format(date, 'MMM d'), calls: 0 };
@@ -123,7 +136,6 @@ const Admin = () => {
 
       setCallsChartData(last30Days);
 
-      // Process subscription distribution
       const subCounts: Record<string, number> = {};
       subs.forEach(s => {
         subCounts[s.plan] = (subCounts[s.plan] || 0) + 1;
@@ -132,7 +144,6 @@ const Admin = () => {
         Object.entries(subCounts).map(([name, value]) => ({ name, value }))
       );
 
-      // Process outcomes
       const outcomeCounts: Record<string, number> = {};
       calls.forEach(call => {
         const outcome = call.outcome || 'unknown';
@@ -144,10 +155,8 @@ const Admin = () => {
           .sort((a, b) => b.count - a.count)
       );
 
-      // Build recent activities
       const activities: any[] = [];
       
-      // Recent user signups (last 7 days)
       usersData
         .filter(u => new Date(u.created_at) > subDays(new Date(), 7))
         .slice(0, 5)
@@ -161,7 +170,6 @@ const Admin = () => {
           });
         });
 
-      // Recent organizations
       orgs
         .filter(o => new Date(o.created_at) > subDays(new Date(), 7))
         .slice(0, 3)
@@ -175,7 +183,6 @@ const Admin = () => {
           });
         });
 
-      // Recent calls
       calls
         .slice(0, 5)
         .forEach(call => {
@@ -188,7 +195,6 @@ const Admin = () => {
           });
         });
 
-      // Sort by timestamp
       activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       setRecentActivities(activities.slice(0, 10));
 
@@ -202,85 +208,185 @@ const Admin = () => {
   return (
     <>
       <Helmet>
-        <title>Admin Dashboard | Receptionist AI</title>
+        <title>Admin Dashboard | Callisto</title>
       </Helmet>
       
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-        {/* Header */}
-        <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
+      <div className="min-h-screen flex w-full bg-background gradient-mesh">
+        {/* Sidebar */}
+        <aside
+          className={cn(
+            "bg-sidebar border-r border-sidebar-border h-screen sticky top-0 transition-all duration-300 flex flex-col hidden md:flex",
+            isCollapsed ? "w-20" : "w-64"
+          )}
+        >
+          {/* Logo */}
+          <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
+            {!isCollapsed && (
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-serif text-xl font-medium text-sidebar-foreground">
+                  Admin
+                </span>
               </div>
-              <div>
-                <h1 className="text-xl font-bold">Admin Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Platform monitoring & insights</p>
+            )}
+            {isCollapsed && (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center mx-auto">
+                <Shield className="w-5 h-5 text-white" />
               </div>
-            </div>
+            )}
           </div>
-        </header>
+
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-2">
+            {navItems.map((item) => {
+              const isActive = activeTab === item.value;
+              return (
+                <button
+                  key={item.value}
+                  onClick={() => setActiveTab(item.value)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 w-full",
+                    isActive
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <span className="font-medium">{item.label}</span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Collapse button */}
+          <div className="p-4 border-t border-sidebar-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className={cn(
+                "w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                isCollapsed && "justify-center"
+              )}
+            >
+              <ChevronLeft
+                className={cn(
+                  "w-5 h-5 transition-transform",
+                  isCollapsed && "rotate-180"
+                )}
+              />
+              {!isCollapsed && <span className="ml-2">Collapse</span>}
+            </Button>
+          </div>
+
+          {/* Back to Dashboard */}
+          <div className="p-4 border-t border-sidebar-border">
+            <Link
+              to="/dashboard"
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all w-full",
+                isCollapsed && "justify-center"
+              )}
+            >
+              <ArrowLeft className="w-5 h-5 flex-shrink-0" />
+              {!isCollapsed && <span className="font-medium">Back to App</span>}
+            </Link>
+          </div>
+        </aside>
 
         {/* Main content */}
-        <main className="container mx-auto px-4 py-6 space-y-6">
-          {/* Metrics Hero */}
-          <AdminMetricsHero metrics={metrics} loading={loading} />
+        <div className="flex-1 flex flex-col min-h-screen">
+          {/* Mobile header */}
+          <header className="md:hidden border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-serif text-lg font-medium">Admin</span>
+              </div>
+              <Link to="/dashboard">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+              </Link>
+            </div>
+          </header>
 
-          {/* Tabs for different views */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="bg-muted/50">
-              <TabsTrigger value="overview" className="gap-2">
-                <LayoutDashboard className="h-4 w-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="organizations" className="gap-2">
-                <Building2 className="h-4 w-4" />
-                Organizations
-              </TabsTrigger>
-              <TabsTrigger value="users" className="gap-2">
-                <Users className="h-4 w-4" />
-                Users
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Analytics
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="space-y-6">
-              {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <AdminCallsChart data={callsChartData} loading={loading} />
-                <AdminSubscriptionsChart data={subscriptionsData} loading={loading} />
+          <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8 max-w-7xl mx-auto w-full">
+            <div className="space-y-6 animate-fade-in">
+              {/* Page header */}
+              <div className="mb-8">
+                <h1 className="text-2xl md:text-3xl font-serif font-medium text-foreground">
+                  Platform Overview
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Monitor your SaaS platform performance and insights
+                </p>
               </div>
 
-              {/* AI Insights & Activity Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <AdminAIInsights metrics={metrics} />
-                <AdminRecentActivity activities={recentActivities} loading={loading} />
+              {/* Metrics Hero */}
+              <AdminMetricsHero metrics={metrics} loading={loading} />
+
+              {/* Mobile tabs */}
+              <div className="md:hidden">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="w-full grid grid-cols-4 bg-muted/50">
+                    {navItems.map((item) => (
+                      <TabsTrigger 
+                        key={item.value} 
+                        value={item.value}
+                        className="text-xs px-2"
+                      >
+                        <item.icon className="h-4 w-4" />
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
               </div>
 
-              {/* Outcomes Chart */}
-              <AdminOutcomesChart data={outcomesData} loading={loading} />
-            </TabsContent>
+              {/* Content based on active tab */}
+              {activeTab === 'overview' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <AdminCallsChart data={callsChartData} loading={loading} />
+                    <AdminSubscriptionsChart data={subscriptionsData} loading={loading} />
+                  </div>
 
-            <TabsContent value="organizations">
-              <AdminOrgsTable organizations={organizations} loading={loading} />
-            </TabsContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <AdminAIInsights metrics={metrics} />
+                    <AdminRecentActivity activities={recentActivities} loading={loading} />
+                  </div>
 
-            <TabsContent value="users">
-              <AdminUsersTable users={users} loading={loading} />
-            </TabsContent>
+                  <AdminOutcomesChart data={outcomesData} loading={loading} />
+                </div>
+              )}
 
-            <TabsContent value="analytics" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <AdminCallsChart data={callsChartData} loading={loading} />
-                <AdminOutcomesChart data={outcomesData} loading={loading} />
-              </div>
-              <AdminSubscriptionsChart data={subscriptionsData} loading={loading} />
-            </TabsContent>
-          </Tabs>
-        </main>
+              {activeTab === 'organizations' && (
+                <AdminOrgsTable organizations={organizations} loading={loading} />
+              )}
+
+              {activeTab === 'users' && (
+                <AdminUsersTable users={users} loading={loading} />
+              )}
+
+              {activeTab === 'analytics' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <AdminCallsChart data={callsChartData} loading={loading} />
+                    <AdminOutcomesChart data={outcomesData} loading={loading} />
+                  </div>
+                  <AdminSubscriptionsChart data={subscriptionsData} loading={loading} />
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </>
   );

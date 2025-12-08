@@ -39,34 +39,36 @@ export const AdminUsersTable = ({ users, loading }: AdminUsersTableProps) => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+    <Card className="border border-border">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardTitle className="flex items-center gap-2 text-base font-medium">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-primary" />
+            </div>
             All Users
           </CardTitle>
-          <div className="relative w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search users..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-9"
             />
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        <div className="rounded-xl border border-border overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Organization</TableHead>
-                <TableHead className="text-center">Onboarding</TableHead>
-                <TableHead>Joined</TableHead>
+              <TableRow className="bg-muted/50">
+                <TableHead className="font-medium">User</TableHead>
+                <TableHead className="font-medium">Email</TableHead>
+                <TableHead className="font-medium">Organization</TableHead>
+                <TableHead className="font-medium text-center">Onboarded</TableHead>
+                <TableHead className="font-medium">Joined</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -75,29 +77,29 @@ export const AdminUsersTable = ({ users, loading }: AdminUsersTableProps) => {
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-10 w-40" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-5 mx-auto rounded-full" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
                     No users found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow key={user.id} className="cursor-pointer hover:bg-muted/30 transition-colors">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
+                        <Avatar className="h-9 w-9">
                           <AvatarImage src={user.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">
+                          <AvatarFallback className="text-xs bg-primary/10 text-primary">
                             {getInitials(user.full_name, user.email)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{user.full_name || 'No name'}</span>
+                        <span className="font-medium text-foreground">{user.full_name || 'No name'}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -105,16 +107,18 @@ export const AdminUsersTable = ({ users, loading }: AdminUsersTableProps) => {
                     </TableCell>
                     <TableCell>
                       {user.organization ? (
-                        <Badge variant="outline">{user.organization.name}</Badge>
+                        <Badge variant="outline" className="font-normal">
+                          {user.organization.name}
+                        </Badge>
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
                       )}
                     </TableCell>
                     <TableCell className="text-center">
                       {user.onboarding_completed ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500 mx-auto" />
+                        <CheckCircle2 className="h-5 w-5 text-success mx-auto" />
                       ) : (
-                        <XCircle className="h-5 w-5 text-muted-foreground mx-auto" />
+                        <XCircle className="h-5 w-5 text-muted-foreground/50 mx-auto" />
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">

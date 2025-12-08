@@ -16,12 +16,12 @@ interface AdminOutcomesChartProps {
 export const AdminOutcomesChart = ({ data, loading }: AdminOutcomesChartProps) => {
   const getOutcomeColor = (outcome: string) => {
     switch (outcome) {
-      case 'appointment_booked': return '#10b981';
-      case 'info_provided': return '#3b82f6';
-      case 'transferred': return '#f59e0b';
-      case 'voicemail': return '#8b5cf6';
-      case 'missed': return '#ef4444';
-      default: return '#6b7280';
+      case 'appointment_booked': return 'hsl(var(--success))';
+      case 'info_provided': return 'hsl(var(--info))';
+      case 'transferred': return 'hsl(var(--warning))';
+      case 'voicemail': return 'hsl(var(--primary))';
+      case 'missed': return 'hsl(var(--destructive))';
+      default: return 'hsl(var(--muted-foreground))';
     }
   };
 
@@ -36,30 +36,39 @@ export const AdminOutcomesChart = ({ data, loading }: AdminOutcomesChartProps) =
   }));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="h-5 w-5" />
+    <Card className="border border-border">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base font-medium">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Target className="h-4 w-4 text-primary" />
+          </div>
           Call Outcomes
         </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[250px] w-full" />
         ) : data.length === 0 ? (
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
             No call data yet
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <BarChart data={formattedData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
-              <XAxis type="number" className="text-xs fill-muted-foreground" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+              <XAxis 
+                type="number" 
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+                tickLine={false}
+              />
               <YAxis 
                 type="category" 
                 dataKey="label" 
-                className="text-xs fill-muted-foreground"
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                 width={120}
+                axisLine={false}
+                tickLine={false}
               />
               <Tooltip
                 contentStyle={{
