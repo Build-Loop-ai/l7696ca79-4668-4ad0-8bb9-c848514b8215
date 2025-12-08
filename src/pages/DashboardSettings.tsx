@@ -456,40 +456,6 @@ const DashboardSettings = () => {
             <GoogleCalendarIntegration organizationId={organizationId} />
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>API Access</CardTitle>
-              <CardDescription>
-                Use the API for custom integrations.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Organization ID</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={organizationId || ""}
-                    readOnly
-                    className="font-mono"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      navigator.clipboard.writeText(organizationId || "");
-                      toast({ title: "Copied to clipboard" });
-                    }}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              <Button variant="outline" className="gap-2">
-                <ExternalLink className="w-4 h-4" />
-                View Documentation
-              </Button>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Team Tab */}
