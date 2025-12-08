@@ -439,6 +439,27 @@ export type Database = {
           },
         ]
       }
+      system_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["system_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["system_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["system_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -497,6 +518,7 @@ export type Database = {
         Args: { _organization_id: string; _user_id: string }
         Returns: boolean
       }
+      is_system_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "owner" | "admin" | "manager" | "viewer"
@@ -516,6 +538,7 @@ export type Database = {
         | "completed"
       subscription_plan: "starter" | "growth" | "enterprise"
       subscription_status: "active" | "canceled" | "past_due" | "trialing"
+      system_role: "super_admin" | "support"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -662,6 +685,7 @@ export const Constants = {
       ],
       subscription_plan: ["starter", "growth", "enterprise"],
       subscription_status: ["active", "canceled", "past_due", "trialing"],
+      system_role: ["super_admin", "support"],
     },
   },
 } as const

@@ -1,0 +1,27 @@
+import { Navigate } from 'react-router-dom';
+import { useSystemAdmin } from '@/hooks/useSystemAdmin';
+import { Loader2 } from 'lucide-react';
+
+interface AdminRouteProps {
+  children: React.ReactNode;
+}
+
+const AdminRoute = ({ children }: AdminRouteProps) => {
+  const { isSystemAdmin, loading } = useSystemAdmin();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isSystemAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+export default AdminRoute;
