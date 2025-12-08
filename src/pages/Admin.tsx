@@ -10,6 +10,7 @@ import { AdminSubscriptionsChart } from '@/components/admin/AdminSubscriptionsCh
 import { AdminOutcomesChart } from '@/components/admin/AdminOutcomesChart';
 import { AdminAIInsights } from '@/components/admin/AdminAIInsights';
 import { AdminRecentActivity } from '@/components/admin/AdminRecentActivity';
+import { AdminEmailsTable } from '@/components/admin/AdminEmailsTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -18,8 +19,8 @@ import {
   LayoutDashboard, 
   Building2, 
   Users, 
-  BarChart3, 
-  Phone,
+  BarChart3,
+  Mail,
   ArrowLeft
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
@@ -31,12 +32,14 @@ interface Metrics {
   totalMinutes: number;
   activePhoneNumbers: number;
   monthlyRevenue: number;
+  totalEmails: number;
 }
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Overview', value: 'overview' },
   { icon: Building2, label: 'Organizations', value: 'organizations' },
   { icon: Users, label: 'Users', value: 'users' },
+  { icon: Mail, label: 'Emails', value: 'emails' },
   { icon: BarChart3, label: 'Analytics', value: 'analytics' },
 ];
 
@@ -48,6 +51,7 @@ const Admin = () => {
   const [subscriptionsData, setSubscriptionsData] = useState<any[]>([]);
   const [outcomesData, setOutcomesData] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -64,6 +68,7 @@ const Admin = () => {
         callsResult,
         phoneNumbersResult,
         subscriptionsResult,
+        emailLogsResult,
       ] = await Promise.all([
         supabase
           .from('organizations')
@@ -89,6 +94,13 @@ const Admin = () => {
         supabase
           .from('subscriptions')
           .select('id, plan, status'),
+        supabase
+          .from('email_logs')
+          .select(`
+            id, email_type, recipient_email, subject, organization_id, status, resend_id, created_at, error_message,
+            organization:organizations(name)
+          `)
+          .order('created_at', { ascending: false }),
       ]);
 
       const orgs = orgsResult.data || [];
@@ -112,6 +124,9 @@ const Admin = () => {
         return sum;
       }, 0);
 
+      const emailLogsData = emailLogsResult.data || [];
+      setEmailLogs(emailLogsData);
+
       setMetrics({
         totalOrganizations: orgs.length,
         totalUsers: usersData.length,
@@ -119,6 +134,7 @@ const Admin = () => {
         totalMinutes,
         activePhoneNumbers: activePhones,
         monthlyRevenue,
+        totalEmails: emailLogsData.length,
       });
 
       const last30Days = Array.from({ length: 30 }, (_, i) => {
@@ -331,6 +347,10 @@ const Admin = () => {
 
               {activeTab === 'users' && (
                 <AdminUsersTable users={users} loading={loading} />
+              )}
+
+              {activeTab === 'emails' && (
+                <AdminEmailsTable emails={emailLogs} loading={loading} />
               )}
 
               {activeTab === 'analytics' && (

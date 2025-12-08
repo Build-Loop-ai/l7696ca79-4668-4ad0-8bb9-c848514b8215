@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +16,8 @@ interface EmailRequest {
   type: EmailType;
   to: string;
   data: Record<string, any>;
+  organization_id?: string;
+  sent_by?: string;
 }
 
 // HTML Email Templates
@@ -132,6 +137,36 @@ function getMissedCallAlertHtml(data: any): string {
   `;
 }
 
+async function logEmail(
+  supabase: any,
+  emailType: EmailType,
+  recipientEmail: string,
+  subject: string,
+  organizationId: string | null,
+  sentBy: string | null,
+  resendId: string | null,
+  status: 'sent' | 'failed',
+  metadata: Record<string, any>,
+  errorMessage: string | null
+) {
+  try {
+    await supabase.from('email_logs').insert({
+      email_type: emailType,
+      recipient_email: recipientEmail,
+      subject,
+      organization_id: organizationId,
+      sent_by: sentBy,
+      resend_id: resendId,
+      status,
+      metadata,
+      error_message: errorMessage,
+    });
+    console.log(`Email log saved: ${emailType} to ${recipientEmail} - ${status}`);
+  } catch (err) {
+    console.error('Failed to log email:', err);
+  }
+}
+
 async function sendEmail(to: string, subject: string, html: string) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -160,8 +195,10 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
   try {
-    const { type, to, data }: EmailRequest = await req.json();
+    const { type, to, data, organization_id, sent_by }: EmailRequest = await req.json();
 
     console.log(`Sending ${type} email to ${to}`, data);
 
@@ -188,16 +225,49 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error(`Unknown email type: ${type}`);
     }
 
-    const emailResponse = await sendEmail(to, subject, html);
+    try {
+      const emailResponse = await sendEmail(to, subject, html);
+      console.log("Email sent successfully:", emailResponse);
 
-    console.log("Email sent successfully:", emailResponse);
+      // Log successful email
+      await logEmail(
+        supabase,
+        type,
+        to,
+        subject,
+        organization_id || null,
+        sent_by || null,
+        emailResponse.id || null,
+        'sent',
+        data,
+        null
+      );
 
-    return new Response(JSON.stringify({ success: true, data: emailResponse }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+      return new Response(JSON.stringify({ success: true, data: emailResponse }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    } catch (emailError: any) {
+      console.error("Error sending email:", emailError);
+
+      // Log failed email
+      await logEmail(
+        supabase,
+        type,
+        to,
+        subject,
+        organization_id || null,
+        sent_by || null,
+        null,
+        'failed',
+        data,
+        emailError.message
+      );
+
+      throw emailError;
+    }
   } catch (error: any) {
-    console.error("Error sending email:", error);
+    console.error("Error in send-email function:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       {

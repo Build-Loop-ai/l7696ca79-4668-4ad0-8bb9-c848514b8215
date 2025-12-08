@@ -127,6 +127,8 @@ export const InviteMemberDialog = ({
           body: {
             type: "team-invitation",
             to: email.trim().toLowerCase(),
+            organization_id: organizationId,
+            sent_by: user.id,
             data: {
               inviterName,
               organizationName,
