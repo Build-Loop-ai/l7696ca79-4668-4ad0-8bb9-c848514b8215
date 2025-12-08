@@ -150,30 +150,23 @@ export const TeamMembersList = ({
 
       if (updateError) throw updateError;
 
-      // Actually send the email
-      const inviteUrl = `${window.location.origin}/signup?invite=${newToken}`;
+      // Actually send the email using the correct data format expected by the edge function
       const orgName = (profile?.organization as any)?.name || "the team";
+      const inviterName = profile?.full_name || "A team member";
+      const inviteUrl = `${window.location.origin}/signup?invite=${newToken}&email=${encodeURIComponent(invitation.email)}`;
       
       const { error: emailError } = await supabase.functions.invoke("send-email", {
         body: {
-          to: invitation.email,
-          subject: `You're invited to join ${orgName}`,
-          html: `
-            <h1>You've been invited!</h1>
-            <p>${profile?.full_name || "A team member"} has invited you to join <strong>${orgName}</strong>.</p>
-            <p>Click the link below to accept your invitation:</p>
-            <p><a href="${inviteUrl}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">Accept Invitation</a></p>
-            <p>This invitation expires in 7 days.</p>
-          `,
           type: "team-invitation",
+          to: invitation.email,
+          data: {
+            inviterName,
+            organizationName: orgName,
+            role: invitation.role,
+            signupUrl: inviteUrl
+          },
           organization_id: organizationId,
-          sent_by: user.id,
-          metadata: {
-            invitee_email: invitation.email,
-            inviter_name: profile?.full_name,
-            organization_name: orgName,
-            role: invitation.role
-          }
+          sent_by: user.id
         }
       });
 
