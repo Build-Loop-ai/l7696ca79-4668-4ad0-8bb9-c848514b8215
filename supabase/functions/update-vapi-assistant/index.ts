@@ -54,7 +54,7 @@ serve(async (req) => {
     const updatePayload: Record<string, unknown> = {
       // Always ensure good voice settings
       backgroundSound: "off",
-      silenceTimeoutSeconds: 30,
+      silenceTimeoutSeconds: 15,
       responseDelaySeconds: 0.2,
       interruptionsEnabled: true,
 

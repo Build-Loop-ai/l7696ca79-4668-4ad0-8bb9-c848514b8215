@@ -91,6 +91,28 @@ serve(async (req) => {
           tools: [
             {
               type: "function",
+              // Filler messages while waiting for webhook response
+              messages: [
+                { 
+                  type: "request-start", 
+                  content: settings?.language?.startsWith("nl") 
+                    ? "Een moment, ik controleer de agenda..." 
+                    : "Let me check the calendar for you..." 
+                },
+                { 
+                  type: "request-failed", 
+                  content: settings?.language?.startsWith("nl") 
+                    ? "Sorry, ik kon de agenda niet controleren. Kunt u het later proberen?" 
+                    : "I'm sorry, I couldn't check the calendar right now. Please try again." 
+                },
+                { 
+                  type: "request-response-delayed", 
+                  content: settings?.language?.startsWith("nl") 
+                    ? "Nog even geduld..." 
+                    : "Still checking...", 
+                  timingMilliseconds: 5000 
+                }
+              ],
               function: {
                 name: "checkAvailability",
                 description: "Check available appointment slots for a given date",
@@ -112,6 +134,28 @@ serve(async (req) => {
             },
             {
               type: "function",
+              // Filler messages while booking
+              messages: [
+                { 
+                  type: "request-start", 
+                  content: settings?.language?.startsWith("nl") 
+                    ? "Ik boek uw afspraak..." 
+                    : "I'm booking your appointment now..." 
+                },
+                { 
+                  type: "request-failed", 
+                  content: settings?.language?.startsWith("nl") 
+                    ? "Er ging iets mis bij het boeken. Kunt u het opnieuw proberen?" 
+                    : "Something went wrong with the booking. Please try again." 
+                },
+                { 
+                  type: "request-response-delayed", 
+                  content: settings?.language?.startsWith("nl") 
+                    ? "Nog even..." 
+                    : "Almost done...", 
+                  timingMilliseconds: 5000 
+                }
+              ],
               function: {
                 name: "bookAppointment",
                 description: "Book an appointment for the caller",
@@ -183,7 +227,7 @@ serve(async (req) => {
         backgroundSound: "off",
 
         // Voice Activity Detection for better speech recognition
-        silenceTimeoutSeconds: 30,
+        silenceTimeoutSeconds: 15,
         responseDelaySeconds: 0.2,
         
         // Enable interruptions for natural conversation
