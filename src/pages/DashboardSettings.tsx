@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -25,12 +25,10 @@ import {
   Users,
   CreditCard,
   Copy,
-  ExternalLink,
   Trash2,
   Plus,
   Loader2,
   PhoneForwarded,
-  CheckCircle2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -39,12 +37,12 @@ import { BusinessSettings } from "@/components/settings/BusinessSettings";
 import { AIAssistantSettings } from "@/components/settings/AIAssistantSettings";
 import { GoogleCalendarIntegration } from "@/components/settings/GoogleCalendarIntegration";
 import { PhoneNumberDialog } from "@/components/dashboard/PhoneNumberDialog";
+import { InviteMemberDialog } from "@/components/settings/InviteMemberDialog";
+import { TeamMembersList } from "@/components/settings/TeamMembersList";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
-import { formatPhoneNumber, isRealPhoneNumber } from "@/lib/phone-utils";
-import { getCarriersForCountry, getForwardingInstructions, getCarrierById } from "@/lib/phone-carriers";
 
 interface Organization {
   id: string;
@@ -83,6 +81,15 @@ interface TeamMember {
   } | null;
 }
 
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+}
+
 const DashboardSettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -94,6 +101,11 @@ const DashboardSettings = () => {
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+
+  // Dialogs
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   // Form state for editing
   const [formData, setFormData] = useState({
@@ -104,8 +116,42 @@ const DashboardSettings = () => {
     address: "",
   });
 
-  // Phone number dialog
-  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const fetchTeamData = useCallback(async (orgId: string) => {
+    try {
+      // Fetch team members
+      const { data: rolesRes } = await supabase
+        .from("user_roles")
+        .select("id, user_id, role")
+        .eq("organization_id", orgId);
+
+      if (rolesRes && rolesRes.length > 0) {
+        const userIds = rolesRes.map((r) => r.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", userIds);
+
+        const membersWithProfiles = rolesRes.map((role) => ({
+          ...role,
+          profile: profiles?.find((p) => p.id === role.user_id) || null,
+        }));
+        setTeamMembers(membersWithProfiles);
+      } else {
+        setTeamMembers([]);
+      }
+
+      // Fetch invitations
+      const { data: invitesRes } = await supabase
+        .from("invitations")
+        .select("id, email, role, status, created_at, expires_at")
+        .eq("organization_id", orgId)
+        .in("status", ["pending"]);
+
+      setInvitations(invitesRes || []);
+    } catch (error) {
+      console.error("Error fetching team data:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -171,20 +217,8 @@ const DashboardSettings = () => {
           setSubscription(subRes.data);
         }
 
-        // Fetch team member profiles
-        if (rolesRes.data && rolesRes.data.length > 0) {
-          const userIds = rolesRes.data.map((r) => r.user_id);
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, full_name, email")
-            .in("id", userIds);
-
-          const membersWithProfiles = rolesRes.data.map((role) => ({
-            ...role,
-            profile: profiles?.find((p) => p.id === role.user_id) || null,
-          }));
-          setTeamMembers(membersWithProfiles);
-        }
+        // Fetch team data including invitations
+        await fetchTeamData(profile.organization_id);
       } catch (error) {
         console.error("Error fetching settings:", error);
       } finally {
@@ -193,7 +227,7 @@ const DashboardSettings = () => {
     };
 
     fetchData();
-  }, [user?.id]);
+  }, [user?.id, fetchTeamData]);
 
   const handleSaveGeneral = async () => {
     if (!organizationId) return;
@@ -466,52 +500,21 @@ const DashboardSettings = () => {
                 <CardTitle>Team Members</CardTitle>
                 <CardDescription>Invite and manage team members.</CardDescription>
               </div>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={() => setShowInviteDialog(true)}>
                 <Plus className="w-4 h-4" />
                 Invite Member
               </Button>
             </CardHeader>
             <CardContent>
-              {teamMembers.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No team members yet</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {teamMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between p-4 rounded-xl border border-border"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-medium text-primary">
-                          {(member.profile?.full_name || member.profile?.email || "?")
-                            .charAt(0)
-                            .toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-medium">
-                            {member.profile?.full_name || "Unknown"}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {member.profile?.email || "-"}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary" className="capitalize">
-                          {member.role}
-                        </Badge>
-                        {member.role !== "owner" && (
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="w-4 h-4 text-muted-foreground" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              {organizationId && user && (
+                <TeamMembersList
+                  members={teamMembers}
+                  invitations={invitations}
+                  currentUserId={user.id}
+                  organizationId={organizationId}
+                  onMemberRemoved={() => fetchTeamData(organizationId)}
+                  onInvitationCancelled={() => fetchTeamData(organizationId)}
+                />
               )}
             </CardContent>
           </Card>
@@ -590,6 +593,16 @@ const DashboardSettings = () => {
             ]);
             setShowPhoneDialog(false);
           }}
+        />
+      )}
+
+      {/* Invite Member Dialog */}
+      {organizationId && (
+        <InviteMemberDialog
+          open={showInviteDialog}
+          onOpenChange={setShowInviteDialog}
+          organizationId={organizationId}
+          onSuccess={() => fetchTeamData(organizationId)}
         />
       )}
     </div>
