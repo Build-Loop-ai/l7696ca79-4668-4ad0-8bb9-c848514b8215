@@ -20,7 +20,6 @@ import {
   Users, 
   BarChart3, 
   Phone,
-  ChevronLeft,
   ArrowLeft
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
@@ -51,7 +50,6 @@ const Admin = () => {
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     fetchAllData();
@@ -213,29 +211,15 @@ const Admin = () => {
       
       <div className="admin-theme min-h-screen flex w-full bg-background gradient-mesh">
         {/* Sidebar */}
-        <aside
-          className={cn(
-            "bg-sidebar border-r border-sidebar-border h-screen sticky top-0 transition-all duration-300 flex flex-col hidden md:flex",
-            isCollapsed ? "w-20" : "w-64"
-          )}
-        >
+        <aside className="bg-sidebar border-r border-sidebar-border h-screen sticky top-0 transition-all duration-300 flex flex-col hidden md:flex w-64">
           {/* Logo */}
-          <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
-            {!isCollapsed && (
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-800 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-serif text-xl font-medium text-sidebar-foreground">
-                  Admin
-                </span>
-              </div>
-            )}
-            {isCollapsed && (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-800 flex items-center justify-center mx-auto">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-            )}
+          <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-800 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-serif text-xl font-medium text-sidebar-foreground">
+              Admin
+            </span>
           </div>
 
           {/* Navigation */}
@@ -254,46 +238,20 @@ const Admin = () => {
                   )}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {!isCollapsed && (
-                    <span className="font-medium">{item.label}</span>
-                  )}
+                  <span className="font-medium">{item.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          {/* Collapse button */}
-          <div className="p-4 border-t border-sidebar-border">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className={cn(
-                "w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                isCollapsed && "justify-center"
-              )}
-            >
-              <ChevronLeft
-                className={cn(
-                  "w-5 h-5 transition-transform",
-                  isCollapsed && "rotate-180"
-                )}
-              />
-              {!isCollapsed && <span className="ml-2">Collapse</span>}
-            </Button>
-          </div>
-
           {/* Back to Dashboard */}
           <div className="p-4 border-t border-sidebar-border">
             <Link
               to="/dashboard"
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all w-full",
-                isCollapsed && "justify-center"
-              )}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all w-full"
             >
               <ArrowLeft className="w-5 h-5 flex-shrink-0" />
-              {!isCollapsed && <span className="font-medium">Back to App</span>}
+              <span className="font-medium">Back to App</span>
             </Link>
           </div>
         </aside>
