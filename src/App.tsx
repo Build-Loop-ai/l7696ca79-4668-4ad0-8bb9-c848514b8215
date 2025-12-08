@@ -15,6 +15,7 @@ import DashboardAnalytics from "./pages/DashboardAnalytics";
 import DashboardSettings from "./pages/DashboardSettings";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Demo from "./pages/Demo";
+import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/demo" element={<Demo />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />

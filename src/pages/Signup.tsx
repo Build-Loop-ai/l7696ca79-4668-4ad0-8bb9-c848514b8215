@@ -26,10 +26,10 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Redirect if already logged in
+  // Redirect if already logged in - use callback to check onboarding status
   useEffect(() => {
     if (user && !authLoading) {
-      navigate("/onboarding");
+      navigate("/auth/callback");
     }
   }, [user, authLoading, navigate]);
 
