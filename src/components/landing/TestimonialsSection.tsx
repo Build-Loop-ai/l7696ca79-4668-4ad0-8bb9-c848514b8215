@@ -1,129 +1,204 @@
-import { Star, Quote } from "lucide-react";
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 
 const TestimonialsSection = () => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
 
   const testimonials = [
     {
-      quote:
-        "Callisto has been a game-changer for our practice. We never miss a call anymore, and patients love the instant response.",
+      quote: "Callisto has completely transformed how we handle patient calls. We went from missing 30% of calls to zero. The ROI was positive within two weeks.",
       author: "Dr. Sarah van den Berg",
-      role: "Dentist",
+      role: "Owner & Lead Dentist",
       clinic: "Amsterdam Dental Care",
-      rating: 5,
-      image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=100&h=100&fit=crop&crop=face",
+      metric: "30%",
+      metricLabel: "fewer missed calls",
+      image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop&crop=face",
     },
     {
-      quote:
-        "The AI handles appointment bookings perfectly. My receptionist can now focus on patients in the clinic rather than the phone.",
+      quote: "My staff used to spend 4 hours a day on the phone. Now they focus on patients in the clinic. The AI handles scheduling better than we ever did.",
       author: "Michael de Vries",
       role: "Practice Manager",
       clinic: "Rotterdam Family Dentistry",
-      rating: 5,
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+      metric: "4hrs",
+      metricLabel: "saved daily",
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
     },
     {
-      quote:
-        "Setup was incredibly easy, and the support team was fantastic. ROI was positive within the first month.",
+      quote: "I was skeptical about AI, but the natural conversations surprised me. Patients often don't realize they're talking to an AI. That's exactly what we wanted.",
       author: "Dr. Emma Jansen",
-      role: "Owner",
+      role: "Founder",
       clinic: "SmileBright Utrecht",
-      rating: 5,
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+      metric: "92%",
+      metricLabel: "patient satisfaction",
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face",
     },
   ];
 
+  const nextTestimonial = () => {
+    setActiveIndex((prev) => (prev + 1) % testimonials.length);
+  };
+
+  const prevTestimonial = () => {
+    setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+  };
+
   return (
-    <section id="testimonials" ref={ref} className="py-24 md:py-32 bg-muted/30 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-teal/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-      </div>
+    <section ref={containerRef} className="relative py-32 md:py-48 bg-background overflow-hidden">
+      {/* Large quote decoration */}
+      <motion.div 
+        style={{ opacity }}
+        className="absolute top-20 left-10 text-[20rem] font-serif text-muted/20 leading-none pointer-events-none select-none hidden lg:block"
+      >
+        "
+      </motion.div>
 
       <div className="container mx-auto px-4 md:px-6 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8 }}
-          className="text-center max-w-3xl mx-auto mb-16"
-        >
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+        {/* Section header */}
+        <div className="max-w-4xl mx-auto text-center mb-16 md:mb-24">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-sm uppercase tracking-[0.3em] text-primary mb-6"
+          >
             Testimonials
-          </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-foreground mb-6">
+          </motion.p>
+          <motion.h2
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl md:text-6xl font-serif leading-[1.1] text-foreground"
+          >
             Loved by{" "}
-            <span className="italic text-gradient">healthcare providers</span>
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            See what dental professionals say about their experience with
-            Callisto.
-          </p>
-        </motion.div>
+            <span className="italic text-gradient">500+ clinics</span>
+          </motion.h2>
+        </div>
 
-        <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-          {testimonials.map((testimonial, idx) => (
+        {/* Main testimonial display */}
+        <div className="max-w-5xl mx-auto">
+          <div className="relative">
+            {/* Navigation buttons */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-16 z-10">
+              <button
+                onClick={prevTestimonial}
+                className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-16 z-10">
+              <button
+                onClick={nextTestimonial}
+                className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Testimonial card */}
             <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 40 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.2 + idx * 0.1 }}
-              className="group relative"
+              key={activeIndex}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              <div className="relative h-full bg-card rounded-3xl p-8 border border-border/50 hover-lift">
-                {/* Quote icon */}
-                <div className="absolute -top-3 -left-3 w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <Quote className="w-5 h-5 text-white" />
-                </div>
-
-                {/* Stars */}
-                <div className="flex gap-1 mb-6">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-5 h-5 fill-warning text-warning"
-                    />
-                  ))}
-                </div>
-
-                {/* Quote */}
-                <blockquote className="text-foreground text-lg leading-relaxed mb-8">
-                  "{testimonial.quote}"
-                </blockquote>
-
-                {/* Author */}
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <img
-                      src={testimonial.image}
-                      alt={testimonial.author}
-                      className="w-12 h-12 rounded-full object-cover ring-2 ring-background"
-                    />
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-success flex items-center justify-center ring-2 ring-background">
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
+              <div className="grid md:grid-cols-5 gap-8 md:gap-12 items-center">
+                {/* Metric highlight */}
+                <div className="md:col-span-2">
+                  <div className="relative p-8 md:p-12 rounded-3xl bg-gradient-to-br from-navy via-navy to-navy-light text-center">
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <div className="text-6xl md:text-7xl font-serif text-teal mb-2">
+                        {testimonials[activeIndex].metric}
+                      </div>
+                      <div className="text-white/60 text-sm uppercase tracking-wider">
+                        {testimonials[activeIndex].metricLabel}
+                      </div>
+                    </motion.div>
                   </div>
-                  <div>
-                    <div className="font-medium text-foreground">
-                      {testimonial.author}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {testimonial.role} at {testimonial.clinic}
+                </div>
+
+                {/* Quote and author */}
+                <div className="md:col-span-3 space-y-8">
+                  <div className="relative">
+                    <Quote className="absolute -top-4 -left-4 w-8 h-8 text-primary/20" />
+                    <blockquote className="text-xl md:text-2xl lg:text-3xl text-foreground leading-relaxed font-serif">
+                      {testimonials[activeIndex].quote}
+                    </blockquote>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={testimonials[activeIndex].image}
+                      alt={testimonials[activeIndex].author}
+                      className="w-14 h-14 rounded-full object-cover ring-4 ring-background shadow-lg"
+                    />
+                    <div>
+                      <div className="font-medium text-foreground text-lg">
+                        {testimonials[activeIndex].author}
+                      </div>
+                      <div className="text-muted-foreground">
+                        {testimonials[activeIndex].role}
+                      </div>
+                      <div className="text-primary text-sm">
+                        {testimonials[activeIndex].clinic}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </motion.div>
-          ))}
+
+            {/* Pagination dots */}
+            <div className="flex justify-center gap-2 mt-12">
+              {testimonials.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    idx === activeIndex 
+                      ? "w-8 bg-primary" 
+                      : "bg-border hover:bg-muted-foreground"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Trust logos */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-24 md:mt-32"
+        >
+          <p className="text-center text-xs uppercase tracking-[0.3em] text-muted-foreground mb-8">
+            Trusted by leading dental practices
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-40">
+            {["Dental Care Plus", "SmileBright Clinics", "HealthFirst", "MediCare Pro", "VitalHealth"].map((name, idx) => (
+              <span key={idx} className="text-lg md:text-xl font-serif text-muted-foreground whitespace-nowrap">
+                {name}
+              </span>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </section>
   );
