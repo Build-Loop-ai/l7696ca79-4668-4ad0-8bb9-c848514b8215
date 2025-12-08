@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VoiceLanguageSettings } from "@/components/settings/VoiceLanguageSettings";
+import { BusinessSettings } from "@/components/settings/BusinessSettings";
 import { PhoneNumberDialog } from "@/components/dashboard/PhoneNumberDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -267,11 +268,11 @@ const DashboardSettings = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="general" className="gap-2">
+      <Tabs defaultValue="business" className="space-y-6">
+        <TabsList className="bg-muted/50 flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="business" className="gap-2">
             <Building className="w-4 h-4" />
-            General
+            My Business
           </TabsTrigger>
           <TabsTrigger value="ai" className="gap-2">
             <Mic className="w-4 h-4" />
@@ -295,103 +296,9 @@ const DashboardSettings = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* General Tab */}
-        <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Business Information</CardTitle>
-              <CardDescription>
-                Update your business details that will be used by the AI.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Business Name</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Business Type</Label>
-                  <Select
-                    value={formData.business_type}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, business_type: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dental_clinic">Dental Clinic</SelectItem>
-                      <SelectItem value="medical_practice">
-                        Medical Practice
-                      </SelectItem>
-                      <SelectItem value="salon">Salon</SelectItem>
-                      <SelectItem value="restaurant">Restaurant</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Address</Label>
-                <Input
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  placeholder="Street, Postal Code City"
-                />
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Contact Phone</Label>
-                  <Input
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Timezone</Label>
-                  <Select
-                    value={formData.timezone}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, timezone: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Europe/Amsterdam">
-                        Europe/Amsterdam (CET)
-                      </SelectItem>
-                      <SelectItem value="Europe/London">
-                        Europe/London (GMT)
-                      </SelectItem>
-                      <SelectItem value="Europe/Paris">
-                        Europe/Paris (CET)
-                      </SelectItem>
-                      <SelectItem value="America/New_York">
-                        America/New_York (EST)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button onClick={handleSaveGeneral} disabled={saving}>
-                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Save Changes
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Business Tab */}
+        <TabsContent value="business" className="space-y-6">
+          {organizationId && <BusinessSettings organizationId={organizationId} />}
         </TabsContent>
 
         {/* AI Configuration Tab */}
