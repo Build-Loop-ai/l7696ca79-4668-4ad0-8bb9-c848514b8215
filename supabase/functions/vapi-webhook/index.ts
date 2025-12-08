@@ -102,15 +102,163 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
 
   console.log("Checking availability for org:", orgId, "date:", date);
 
-  // Return mock availability for now
-  // In production, this would check a calendar integration
-  const mockSlots = ["9:00 AM", "10:30 AM", "2:00 PM", "3:30 PM"];
+  // Check if organization has Google Calendar connected
+  const { data: settings } = await supabase
+    .from("organization_settings")
+    .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id, business_hours")
+    .eq("organization_id", orgId)
+    .single();
+
+  // If Google Calendar is connected, check real availability
+  if (settings?.google_calendar_connected && settings?.google_calendar_refresh_token) {
+    try {
+      const slots = await getCalendarAvailability(date, settings, supabase);
+      return {
+        available: slots.length > 0,
+        slots,
+        message: slots.length > 0 
+          ? `I have the following times available on ${date}: ${slots.join(", ")}`
+          : `I'm sorry, there are no available times on ${date}. Would you like to try another day?`,
+      };
+    } catch (error) {
+      console.error("Calendar availability error:", error);
+      // Fall back to business hours if calendar check fails
+    }
+  }
+
+  // Fall back to business hours-based availability
+  const businessHours = settings?.business_hours || {};
+  const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  const dayHours = businessHours[dayOfWeek];
+  
+  if (!dayHours?.isOpen) {
+    return {
+      available: false,
+      slots: [],
+      message: `I'm sorry, we're closed on ${new Date(date).toLocaleDateString('en-US', { weekday: 'long' })}. Would you like to try another day?`,
+    };
+  }
+
+  // Generate 30-minute slots based on business hours
+  const slots = generateTimeSlots(dayHours.open, dayHours.close);
   
   return {
-    available: true,
-    slots: mockSlots,
-    message: `I have the following times available on ${date}: ${mockSlots.join(", ")}`,
+    available: slots.length > 0,
+    slots,
+    message: `I have the following times available on ${date}: ${slots.join(", ")}`,
   };
+}
+
+function generateTimeSlots(openTime: string, closeTime: string): string[] {
+  const slots: string[] = [];
+  const [openHour, openMin] = openTime.split(':').map(Number);
+  const [closeHour, closeMin] = closeTime.split(':').map(Number);
+  
+  let currentHour = openHour;
+  let currentMin = openMin;
+  
+  while (currentHour < closeHour || (currentHour === closeHour && currentMin < closeMin)) {
+    const hour12 = currentHour > 12 ? currentHour - 12 : currentHour;
+    const ampm = currentHour >= 12 ? 'PM' : 'AM';
+    const minStr = currentMin === 0 ? ':00' : `:${currentMin}`;
+    slots.push(`${hour12}${minStr} ${ampm}`);
+    
+    currentMin += 30;
+    if (currentMin >= 60) {
+      currentMin = 0;
+      currentHour++;
+    }
+  }
+  
+  return slots;
+}
+
+async function getCalendarAvailability(date: string, settings: any, supabase: any): Promise<string[]> {
+  const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID');
+  const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET');
+  
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    throw new Error('Google OAuth not configured');
+  }
+
+  // Refresh access token
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      refresh_token: settings.google_calendar_refresh_token,
+      grant_type: 'refresh_token',
+    }),
+  });
+
+  const tokenData = await tokenResponse.json();
+  if (tokenData.error) {
+    throw new Error(`Token refresh failed: ${tokenData.error}`);
+  }
+
+  const accessToken = tokenData.access_token;
+  const calendarId = settings.google_calendar_id || 'primary';
+  
+  // Get events for the requested date
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const freeBusyResponse = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      timeMin: startOfDay.toISOString(),
+      timeMax: endOfDay.toISOString(),
+      items: [{ id: calendarId }],
+    }),
+  });
+
+  const freeBusyData = await freeBusyResponse.json();
+  const busySlots = freeBusyData.calendars?.[calendarId]?.busy || [];
+
+  // Get business hours for the day
+  const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  const businessHours = settings.business_hours?.[dayOfWeek];
+  
+  if (!businessHours?.isOpen) {
+    return [];
+  }
+
+  // Generate available slots excluding busy times
+  const allSlots = generateTimeSlots(businessHours.open, businessHours.close);
+  
+  // Filter out busy slots
+  return allSlots.filter(slot => {
+    const slotTime = parseSlotTime(date, slot);
+    return !busySlots.some((busy: any) => {
+      const busyStart = new Date(busy.start);
+      const busyEnd = new Date(busy.end);
+      return slotTime >= busyStart && slotTime < busyEnd;
+    });
+  });
+}
+
+function parseSlotTime(date: string, slot: string): Date {
+  const match = slot.match(/(\d+):?(\d+)?\s*(AM|PM)/i);
+  if (!match) return new Date(date);
+  
+  let hour = parseInt(match[1]);
+  const min = parseInt(match[2] || '0');
+  const ampm = match[3].toUpperCase();
+  
+  if (ampm === 'PM' && hour !== 12) hour += 12;
+  if (ampm === 'AM' && hour === 12) hour = 0;
+  
+  const result = new Date(date);
+  result.setHours(hour, min, 0, 0);
+  return result;
 }
 
 async function bookAppointment(args: any, payload: any, supabase: any) {
@@ -118,11 +266,30 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
   const orgId =
     payload.message?.call?.assistantOverrides?.metadata?.organizationId ||
     payload.message?.assistant?.metadata?.organizationId;
-  const callId = payload.message?.call?.id;
 
   console.log("Booking appointment for org:", orgId, args);
 
   try {
+    // Check if Google Calendar is connected
+    const { data: settings } = await supabase
+      .from("organization_settings")
+      .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id")
+      .eq("organization_id", orgId)
+      .single();
+
+    let googleEventId = null;
+
+    // Create Google Calendar event if connected
+    if (settings?.google_calendar_connected && settings?.google_calendar_refresh_token) {
+      try {
+        googleEventId = await createCalendarEvent(datetime, patientName, service, notes, settings);
+        console.log("Created Google Calendar event:", googleEventId);
+      } catch (calError) {
+        console.error("Failed to create calendar event:", calError);
+        // Continue without calendar event
+      }
+    }
+
     // Save appointment to database
     const { data: appointment, error } = await supabase
       .from("appointments")
@@ -134,6 +301,7 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
         service_type: service,
         notes: notes,
         status: "confirmed",
+        google_calendar_event_id: googleEventId,
       })
       .select()
       .single();
@@ -160,6 +328,76 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
       message: "I'm sorry, I couldn't complete the booking. Let me transfer you to our staff.",
     };
   }
+}
+
+async function createCalendarEvent(
+  datetime: string, 
+  patientName: string, 
+  service: string, 
+  notes: string,
+  settings: any
+): Promise<string | null> {
+  const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID');
+  const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET');
+  
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    throw new Error('Google OAuth not configured');
+  }
+
+  // Refresh access token
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      refresh_token: settings.google_calendar_refresh_token,
+      grant_type: 'refresh_token',
+    }),
+  });
+
+  const tokenData = await tokenResponse.json();
+  if (tokenData.error) {
+    throw new Error(`Token refresh failed: ${tokenData.error}`);
+  }
+
+  const accessToken = tokenData.access_token;
+  const calendarId = settings.google_calendar_id || 'primary';
+
+  // Calculate end time (assume 30 min appointment)
+  const startTime = new Date(datetime);
+  const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
+
+  const createResponse = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        summary: `${service} - ${patientName}`,
+        description: notes || `Appointment booked via AI receptionist for ${patientName}`,
+        start: {
+          dateTime: startTime.toISOString(),
+          timeZone: 'Europe/Amsterdam',
+        },
+        end: {
+          dateTime: endTime.toISOString(),
+          timeZone: 'Europe/Amsterdam',
+        },
+      }),
+    }
+  );
+
+  const createdEvent = await createResponse.json();
+  
+  if (createdEvent.error) {
+    throw new Error(createdEvent.error.message);
+  }
+
+  return createdEvent.id;
 }
 
 async function handleEndOfCallReport(payload: any, supabase: any) {

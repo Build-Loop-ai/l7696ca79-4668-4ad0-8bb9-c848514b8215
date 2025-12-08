@@ -29,3 +29,12 @@ verify_jwt = true
 
 [functions.generate-demo-audio]
 verify_jwt = false
+
+[functions.google-calendar-auth]
+verify_jwt = true
+
+[functions.google-calendar-disconnect]
+verify_jwt = true
+
+[functions.google-calendar-events]
+verify_jwt = true

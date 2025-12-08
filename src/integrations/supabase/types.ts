@@ -152,6 +152,10 @@ export type Database = {
           business_hours: Json | null
           created_at: string
           custom_greeting: string | null
+          google_calendar_connected: boolean | null
+          google_calendar_email: string | null
+          google_calendar_id: string | null
+          google_calendar_refresh_token: string | null
           id: string
           language: string | null
           organization_id: string
@@ -169,6 +173,10 @@ export type Database = {
           business_hours?: Json | null
           created_at?: string
           custom_greeting?: string | null
+          google_calendar_connected?: boolean | null
+          google_calendar_email?: string | null
+          google_calendar_id?: string | null
+          google_calendar_refresh_token?: string | null
           id?: string
           language?: string | null
           organization_id: string
@@ -186,6 +194,10 @@ export type Database = {
           business_hours?: Json | null
           created_at?: string
           custom_greeting?: string | null
+          google_calendar_connected?: boolean | null
+          google_calendar_email?: string | null
+          google_calendar_id?: string | null
+          google_calendar_refresh_token?: string | null
           id?: string
           language?: string | null
           organization_id?: string
