@@ -20,10 +20,10 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Redirect if already logged in
+  // Redirect if already logged in - use callback to check onboarding status
   useEffect(() => {
     if (user && !authLoading) {
-      navigate("/dashboard");
+      navigate("/auth/callback");
     }
   }, [user, authLoading, navigate]);
 
@@ -58,7 +58,7 @@ const Login = () => {
         title: "Welcome back!",
         description: "You've been signed in successfully.",
       });
-      navigate("/dashboard");
+      navigate("/auth/callback");
     } catch (err) {
       if (err instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
