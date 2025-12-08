@@ -132,6 +132,24 @@ export function TestCallButton({
         }
         
         if (message.type === "tool-calls-result") {
+          // Parse and show debug info from checkAvailability
+          const results = message.toolCallResult || message.results || [];
+          results.forEach((result: any) => {
+            try {
+              const parsed = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
+              if (parsed?._debug) {
+                const debug = parsed._debug;
+                addActivity("info", `📅 Checked: ${debug.requestedDate} (${debug.parsedDayOfWeek})`);
+                addActivity("info", `📆 Calendar: ${debug.calendarConnected ? 'Connected' : 'Using business hours'}`);
+                addActivity("info", `⏰ Slots: ${debug.slotsAfterFiltering} available of ${debug.totalSlotsGenerated} generated`);
+                if (debug.reason) {
+                  addActivity("info", `ℹ️ ${debug.reason}`);
+                }
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          });
           addActivity("success", "Tool call completed", <CheckCircle2 className="w-3 h-3" />);
         }
 

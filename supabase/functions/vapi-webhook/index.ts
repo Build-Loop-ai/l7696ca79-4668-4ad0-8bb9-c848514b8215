@@ -103,7 +103,10 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
     payload.message?.call?.assistantOverrides?.metadata?.organizationId ||
     payload.message?.assistant?.metadata?.organizationId;
 
-  console.log("Checking availability for org:", orgId, "date:", date);
+  console.log("=== AVAILABILITY CHECK START ===");
+  console.log("Input date from AI:", date);
+  console.log("Organization ID:", orgId);
+  console.log("Current server date:", new Date().toISOString());
 
   // Check if organization has Google Calendar connected
   const { data: settings } = await supabase
@@ -112,16 +115,42 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
     .eq("organization_id", orgId)
     .single();
 
+  console.log("Google Calendar connected:", settings?.google_calendar_connected);
+  console.log("Business hours config:", JSON.stringify(settings?.business_hours));
+
+  // Parse the date and get day info
+  const parsedDate = new Date(date);
+  const dayOfWeek = parsedDate.toLocaleDateString('en-US', { weekday: 'long' });
+  const dayOfWeekLower = dayOfWeek.toLowerCase();
+  const businessHours = settings?.business_hours || {};
+  const dayHours = businessHours[dayOfWeekLower];
+
+  console.log("Parsed date:", parsedDate.toISOString());
+  console.log("Day of week:", dayOfWeek);
+  console.log("Hours for this day:", JSON.stringify(dayHours));
+
   // If Google Calendar is connected, check real availability
   if (settings?.google_calendar_connected && settings?.google_calendar_refresh_token) {
     try {
+      console.log("Using Google Calendar for availability...");
       const slots = await getCalendarAvailability(date, settings, supabase);
+      console.log("Calendar slots found:", slots.length);
+      console.log("=== AVAILABILITY CHECK END ===");
+      
       return {
         available: slots.length > 0,
         slots,
         message: slots.length > 0 
           ? `I have the following times available on ${date}: ${slots.join(", ")}`
           : `I'm sorry, there are no available times on ${date}. Would you like to try another day?`,
+        _debug: {
+          requestedDate: date,
+          parsedDayOfWeek: dayOfWeek,
+          calendarConnected: true,
+          businessHoursForDay: dayHours,
+          totalSlotsGenerated: slots.length,
+          slotsAfterFiltering: slots.length,
+        }
       };
     } catch (error) {
       console.error("Calendar availability error:", error);
@@ -130,25 +159,44 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
   }
 
   // Fall back to business hours-based availability
-  const businessHours = settings?.business_hours || {};
-  const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-  const dayHours = businessHours[dayOfWeek];
+  console.log("Using business hours for availability (no calendar)...");
   
   if (!dayHours?.isOpen) {
+    console.log("Business is CLOSED on", dayOfWeek);
+    console.log("=== AVAILABILITY CHECK END ===");
     return {
       available: false,
       slots: [],
-      message: `I'm sorry, we're closed on ${new Date(date).toLocaleDateString('en-US', { weekday: 'long' })}. Would you like to try another day?`,
+      message: `I'm sorry, we're closed on ${dayOfWeek}. Would you like to try another day?`,
+      _debug: {
+        requestedDate: date,
+        parsedDayOfWeek: dayOfWeek,
+        calendarConnected: false,
+        businessHoursForDay: dayHours,
+        totalSlotsGenerated: 0,
+        slotsAfterFiltering: 0,
+        reason: "Business closed on this day",
+      }
     };
   }
 
   // Generate 30-minute slots based on business hours
-  const slots = generateTimeSlots(dayHours.open, dayHours.close);
+  const allSlots = generateTimeSlots(dayHours.open, dayHours.close);
+  console.log("Generated slots:", allSlots.length, "from", dayHours.open, "to", dayHours.close);
+  console.log("=== AVAILABILITY CHECK END ===");
   
   return {
-    available: slots.length > 0,
-    slots,
-    message: `I have the following times available on ${date}: ${slots.join(", ")}`,
+    available: allSlots.length > 0,
+    slots: allSlots,
+    message: `I have the following times available on ${date}: ${allSlots.join(", ")}`,
+    _debug: {
+      requestedDate: date,
+      parsedDayOfWeek: dayOfWeek,
+      calendarConnected: false,
+      businessHoursForDay: dayHours,
+      totalSlotsGenerated: allSlots.length,
+      slotsAfterFiltering: allSlots.length,
+    }
   };
 }
 

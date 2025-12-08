@@ -273,6 +273,16 @@ function buildSystemPrompt(org: any, settings: any): string {
   const services =
     settings?.services?.map((s: any) => s.name).join(", ") || "general appointments";
 
+  // Add current date for relative date parsing
+  const today = new Date();
+  const currentDate = today.toISOString().split('T')[0];
+  const currentDateFormatted = today.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+
   const businessTypeMap: Record<string, string> = {
     dental_clinic: "dental clinic",
     medical_practice: "medical practice",
@@ -343,6 +353,12 @@ ${services}
 ${specialInstructionsSection}
 ## Tone
 ${personality === "professional" ? "Maintain a professional, business-like tone" : personality === "casual" ? "Be casual and friendly, like talking to a neighbor" : "Be warm and friendly while remaining professional"}
+
+## Current Date
+Today is ${currentDateFormatted} (${currentDate}).
+When users mention relative dates like "tomorrow", "next week", "this Friday", etc., calculate the correct date using this as reference.
+ALWAYS use the current year (${today.getFullYear()}) unless the user explicitly specifies a different year.
+For example: if today is ${currentDateFormatted}, "tomorrow" means ${new Date(today.getTime() + 86400000).toISOString().split('T')[0]}.
 
 ## Language
 Speak in ${languageNames[language] || "English"}.`;
