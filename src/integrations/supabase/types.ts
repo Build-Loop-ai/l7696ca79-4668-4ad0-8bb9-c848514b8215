@@ -146,6 +146,33 @@ export type Database = {
           },
         ]
       }
+      email_config: {
+        Row: {
+          from_email: string
+          from_name: string
+          id: string
+          reply_to_email: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          from_email?: string
+          from_name?: string
+          id?: string
+          reply_to_email?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          from_email?: string
+          from_name?: string
+          id?: string
+          reply_to_email?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           created_at: string | null
