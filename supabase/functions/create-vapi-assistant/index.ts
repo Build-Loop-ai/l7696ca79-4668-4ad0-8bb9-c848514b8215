@@ -67,11 +67,13 @@ serve(async (req) => {
       body: JSON.stringify({
         name: `${org.name} Receptionist`,
 
-        // Transcriber settings (Speech-to-Text)
+        // Transcriber settings (Speech-to-Text) with enhanced VAD
         transcriber: {
           provider: "deepgram",
           model: "nova-2",
           language: transcriberLanguage,
+          smartFormat: true,
+          endpointing: 300, // Faster turn detection (300ms silence)
         },
 
         // LLM settings
@@ -177,8 +179,15 @@ serve(async (req) => {
         // Behavior settings
         firstMessageMode: "assistant-speaks-first",
 
-        // Background sound
-        backgroundSound: "office",
+        // Background sound - disabled for clean audio
+        backgroundSound: "off",
+
+        // Voice Activity Detection for better speech recognition
+        silenceTimeoutSeconds: 30,
+        responseDelaySeconds: 0.2,
+        
+        // Enable interruptions for natural conversation
+        interruptionsEnabled: true,
 
         // Server URL for webhooks
         serverUrl: `${Deno.env.get("SUPABASE_URL")}/functions/v1/vapi-webhook`,

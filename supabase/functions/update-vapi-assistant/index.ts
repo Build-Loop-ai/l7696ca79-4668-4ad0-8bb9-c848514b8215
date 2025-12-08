@@ -50,8 +50,14 @@ serve(async (req) => {
       .eq("id", organizationId)
       .single();
 
-    // Build the update payload
-    const updatePayload: Record<string, unknown> = {};
+    // Build the update payload with improved voice settings
+    const updatePayload: Record<string, unknown> = {
+      // Always ensure good voice settings
+      backgroundSound: "off",
+      silenceTimeoutSeconds: 30,
+      responseDelaySeconds: 0.2,
+      interruptionsEnabled: true,
+    };
 
     // Handle voice updates - use the voice ID directly (it's the actual ElevenLabs ID)
     if (updates.voice) {
@@ -65,9 +71,13 @@ serve(async (req) => {
       console.log("Updating voice to:", updates.voice.voiceId);
     }
 
-    // Handle transcriber updates
+    // Handle transcriber updates with enhanced VAD settings
     if (updates.transcriber) {
-      updatePayload.transcriber = updates.transcriber;
+      updatePayload.transcriber = {
+        ...updates.transcriber,
+        smartFormat: true,
+        endpointing: 300, // Faster turn detection
+      };
       console.log("Updating transcriber to:", updates.transcriber.language);
     }
 
