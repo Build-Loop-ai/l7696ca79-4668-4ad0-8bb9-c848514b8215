@@ -35,7 +35,7 @@ const AcceptInvitation = () => {
 
   const token = searchParams.get("token");
 
-  // Fetch invitation details
+  // Fetch invitation details using secure RPC function
   useEffect(() => {
     const fetchInvitation = async () => {
       if (!token) {
@@ -45,26 +45,17 @@ const AcceptInvitation = () => {
       }
 
       try {
-        // Fetch invitation with organization details
-        const { data: invitationData, error: invitationError } = await supabase
-          .from("invitations")
-          .select(`
-            id,
-            email,
-            role,
-            expires_at,
-            status,
-            organization_id,
-            invited_by
-          `)
-          .eq("token", token)
-          .single();
+        // Use the secure RPC function that bypasses RLS for unauthenticated users
+        const { data, error: rpcError } = await supabase
+          .rpc('get_invitation_by_token', { invite_token: token });
 
-        if (invitationError || !invitationData) {
+        if (rpcError || !data || data.length === 0) {
           setError("Invitation not found. It may have been revoked or expired.");
           setIsLoadingInvitation(false);
           return;
         }
+
+        const invitationData = data[0];
 
         if (invitationData.status !== "pending") {
           setError("This invitation has already been used.");
@@ -78,26 +69,12 @@ const AcceptInvitation = () => {
           return;
         }
 
-        // Fetch organization name
-        const { data: orgData } = await supabase
-          .from("organizations")
-          .select("name")
-          .eq("id", invitationData.organization_id)
-          .single();
-
-        // Fetch inviter name
-        const { data: inviterData } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", invitationData.invited_by)
-          .single();
-
         setInvitation({
           id: invitationData.id,
           email: invitationData.email,
           role: invitationData.role,
-          organization_name: orgData?.name || "Unknown Organization",
-          inviter_name: inviterData?.full_name || "A team member",
+          organization_name: invitationData.organization_name || "Unknown Organization",
+          inviter_name: invitationData.inviter_name || "A team member",
           expires_at: invitationData.expires_at,
         });
       } catch (err) {
