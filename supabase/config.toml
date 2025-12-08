@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.google-calendar-events]
 verify_jwt = true
+
+[functions.admin-ai-insights]
+verify_jwt = true

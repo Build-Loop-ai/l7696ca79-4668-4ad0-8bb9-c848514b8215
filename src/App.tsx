@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -17,6 +18,7 @@ import DashboardSettings from "./pages/DashboardSettings";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Demo from "./pages/Demo";
 import AuthCallback from "./pages/AuthCallback";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +52,13 @@ const App = () => (
               <Route path="analytics" element={<DashboardAnalytics />} />
               <Route path="settings" element={<DashboardSettings />} />
             </Route>
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
