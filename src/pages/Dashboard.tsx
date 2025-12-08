@@ -112,6 +112,7 @@ const Dashboard = () => {
   const [calls, setCalls] = useState<CallLog[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true); // Default to true to hide checklist initially
 
   // Setup state
   const [hasAssistant, setHasAssistant] = useState(false);
@@ -135,7 +136,7 @@ const Dashboard = () => {
         // Get user's organization
         const { data: profile } = await supabase
           .from("profiles")
-          .select("organization_id")
+          .select("organization_id, onboarding_completed")
           .eq("id", user.id)
           .single();
 
@@ -145,6 +146,7 @@ const Dashboard = () => {
         }
 
         setOrganizationId(profile.organization_id);
+        setOnboardingCompleted(profile.onboarding_completed ?? false);
 
         // Fetch all data in parallel
         const [callsRes, subRes, settingsRes, phonesRes] = await Promise.all([
@@ -310,8 +312,8 @@ const Dashboard = () => {
     }
   };
 
-  // Check if setup is complete
-  const setupComplete = hasAssistant && hasPhoneNumber && hasTestCall;
+  // Check if setup is complete - either onboarding is done OR all steps are done
+  const setupComplete = onboardingCompleted || (hasAssistant && hasPhoneNumber && hasTestCall);
 
   if (loading) {
     return (
