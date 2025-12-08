@@ -29,7 +29,7 @@ interface Subscription {
   minutes_used: number | null;
   minutes_included: number | null;
   current_period_end: string | null;
-  stripe_customer_id: string | null;
+  stripe_customer_id?: string | null;
 }
 
 interface BillingCardProps {
