@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import {
   Building,
-  Mic,
+  Bot,
   Phone,
   Link,
   Users,
@@ -35,8 +35,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { VoiceLanguageSettings } from "@/components/settings/VoiceLanguageSettings";
 import { BusinessSettings } from "@/components/settings/BusinessSettings";
+import { AIAssistantSettings } from "@/components/settings/AIAssistantSettings";
 import { PhoneNumberDialog } from "@/components/dashboard/PhoneNumberDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -275,8 +275,8 @@ const DashboardSettings = () => {
             My Business
           </TabsTrigger>
           <TabsTrigger value="ai" className="gap-2">
-            <Mic className="w-4 h-4" />
-            Voice & Language
+            <Bot className="w-4 h-4" />
+            AI Assistant
           </TabsTrigger>
           <TabsTrigger value="phone" className="gap-2">
             <Phone className="w-4 h-4" />
@@ -301,12 +301,9 @@ const DashboardSettings = () => {
           {organizationId && <BusinessSettings organizationId={organizationId} />}
         </TabsContent>
 
-        {/* AI Configuration Tab */}
+        {/* AI Assistant Tab */}
         <TabsContent value="ai" className="space-y-6">
-          <VoiceLanguageSettings
-            organizationId={organizationId || undefined}
-            organizationName={organization?.name || "your business"}
-          />
+          <AIAssistantSettings organizationId={organizationId || undefined} />
         </TabsContent>
 
         {/* Phone Numbers Tab */}

@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +17,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Building, Clock, Briefcase, MessageSquare } from "lucide-react";
+import { Loader2, Building, Clock, Briefcase, Save } from "lucide-react";
 import { BusinessHoursEditor } from "./BusinessHoursEditor";
 import { ServicesEditor } from "./ServicesEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,14 +49,13 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Organization data
+  // Organization data (no AI-related fields)
   const [formData, setFormData] = useState({
     name: "",
     business_type: "",
     phone: "",
     timezone: "",
     description: "",
-    special_instructions: "",
     address: {
       street: "",
       city: "",
@@ -99,8 +92,7 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
             business_type: org.business_type || "",
             phone: org.phone || "",
             timezone: org.timezone || "Europe/Amsterdam",
-            description: (org as any).description || "",
-            special_instructions: (org as any).special_instructions || "",
+            description: org.description || "",
             address: {
               street: addr.street || "",
               city: addr.city || "",
@@ -128,7 +120,7 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Update organization
+      // Update organization (no special_instructions - moved to AI tab)
       const { error: orgError } = await supabase
         .from("organizations")
         .update({
@@ -137,7 +129,6 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
           phone: formData.phone,
           timezone: formData.timezone,
           description: formData.description,
-          special_instructions: formData.special_instructions,
           address: formData.address as unknown as Json,
         })
         .eq("id", organizationId);
@@ -156,23 +147,13 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
       if (settingsError) throw settingsError;
 
       // Sync to AI assistant automatically
-      const { error: syncError } = await supabase.functions.invoke("create-vapi-assistant", {
+      await supabase.functions.invoke("create-vapi-assistant", {
         body: { organizationId },
       });
 
-      if (syncError) {
-        console.error("Error syncing to AI:", syncError);
-        toast({
-          title: "Settings saved",
-          description: "Business settings saved, but AI sync failed. Try again later.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       toast({
         title: "Settings saved",
-        description: "Your business settings have been saved and synced to the AI.",
+        description: "Your business information has been updated.",
       });
     } catch (error: any) {
       toast({
@@ -199,7 +180,7 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
 
   return (
     <div className="space-y-6">
-      <Accordion type="multiple" defaultValue={["info", "hours", "services", "ai"]} className="space-y-4">
+      <Accordion type="multiple" defaultValue={["info", "hours", "services"]} className="space-y-4">
         {/* Basic Information */}
         <AccordionItem value="info" className="border rounded-lg px-4">
           <AccordionTrigger className="hover:no-underline">
@@ -252,7 +233,7 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
                   rows={3}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This will help the AI understand your business and answer questions.
+                  This helps the AI understand your business and answer questions accurately.
                 </p>
               </div>
 
@@ -366,46 +347,13 @@ export function BusinessSettings({ organizationId }: BusinessSettingsProps) {
             <ServicesEditor value={services} onChange={setServices} />
           </AccordionContent>
         </AccordionItem>
-
-        {/* AI Instructions */}
-        <AccordionItem value="ai" className="border rounded-lg px-4">
-          <AccordionTrigger className="hover:no-underline">
-            <div className="flex items-center gap-3">
-              <MessageSquare className="w-5 h-5 text-primary" />
-              <div className="text-left">
-                <div className="font-medium">AI Instructions</div>
-                <div className="text-sm text-muted-foreground font-normal">
-                  Special instructions for your AI receptionist
-                </div>
-              </div>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="pt-4 pb-6">
-            <div className="space-y-4">
-              <Textarea
-                value={formData.special_instructions}
-                onChange={(e) =>
-                  setFormData({ ...formData, special_instructions: e.target.value })
-                }
-                placeholder="Examples:
-- Always ask for the patient's date of birth for verification
-- Never discuss pricing over the phone, ask them to visit our website
-- For emergencies, immediately transfer to the main line
-- We don't accept new patients on Mondays"
-                rows={6}
-              />
-              <p className="text-xs text-muted-foreground">
-                These instructions will be included in the AI's prompt to customize its behavior.
-              </p>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
       </Accordion>
 
-      <div className="flex items-center gap-4">
+      <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving}>
           {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          {saving ? "Saving & Syncing..." : "Save Settings"}
+          <Save className="w-4 h-4 mr-2" />
+          {saving ? "Saving..." : "Save Business Info"}
         </Button>
       </div>
     </div>
