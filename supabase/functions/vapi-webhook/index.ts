@@ -108,12 +108,15 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
   console.log("Organization ID:", orgId);
   console.log("Current server date:", new Date().toISOString());
 
-  // Check if organization has Google Calendar connected
+  // Check if organization has Google Calendar connected and get language
   const { data: settings } = await supabase
     .from("organization_settings")
-    .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id, business_hours")
+    .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id, business_hours, language")
     .eq("organization_id", orgId)
     .single();
+  
+  const language = settings?.language || 'en-US';
+  const isNL = language.startsWith('nl');
 
   console.log("Google Calendar connected:", settings?.google_calendar_connected);
   console.log("Business hours config:", JSON.stringify(settings?.business_hours));
@@ -141,8 +144,12 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
         available: slots.length > 0,
         slots,
         message: slots.length > 0 
-          ? `I have the following times available on ${date}: ${slots.join(", ")}`
-          : `I'm sorry, there are no available times on ${date}. Would you like to try another day?`,
+          ? isNL 
+            ? `Ik heb de volgende tijden beschikbaar op ${date}: ${slots.join(", ")}`
+            : `I have the following times available on ${date}: ${slots.join(", ")}`
+          : isNL
+            ? `Het spijt me, er zijn geen beschikbare tijden op ${date}. Wilt u een andere dag proberen?`
+            : `I'm sorry, there are no available times on ${date}. Would you like to try another day?`,
         _debug: {
           requestedDate: date,
           parsedDayOfWeek: dayOfWeek,
@@ -167,7 +174,9 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
     return {
       available: false,
       slots: [],
-      message: `I'm sorry, we're closed on ${dayOfWeek}. Would you like to try another day?`,
+      message: isNL 
+        ? `Het spijt me, we zijn gesloten op ${dayOfWeek}. Wilt u een andere dag proberen?`
+        : `I'm sorry, we're closed on ${dayOfWeek}. Would you like to try another day?`,
       _debug: {
         requestedDate: date,
         parsedDayOfWeek: dayOfWeek,
@@ -188,7 +197,9 @@ async function checkAvailability(args: any, payload: any, supabase: any) {
   return {
     available: allSlots.length > 0,
     slots: allSlots,
-    message: `I have the following times available on ${date}: ${allSlots.join(", ")}`,
+    message: isNL 
+      ? `Ik heb de volgende tijden beschikbaar op ${date}: ${allSlots.join(", ")}`
+      : `I have the following times available on ${date}: ${allSlots.join(", ")}`,
     _debug: {
       requestedDate: date,
       parsedDayOfWeek: dayOfWeek,
@@ -320,14 +331,17 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
 
   console.log("Booking appointment for org:", orgId, args);
 
-  try {
-    // Check if Google Calendar is connected
-    const { data: settings } = await supabase
-      .from("organization_settings")
-      .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id")
-      .eq("organization_id", orgId)
-      .single();
+  // Fetch language setting outside try block so it's available in catch
+  const { data: settings } = await supabase
+    .from("organization_settings")
+    .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id, language")
+    .eq("organization_id", orgId)
+    .single();
+  
+  const language = settings?.language || 'en-US';
+  const isNL = language.startsWith('nl');
 
+  try {
     let googleEventId = null;
 
     // Create Google Calendar event if connected
@@ -359,7 +373,7 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
 
     if (error) throw error;
 
-    const formattedDate = new Date(datetime).toLocaleString("en-US", {
+    const formattedDate = new Date(datetime).toLocaleString(isNL ? "nl-NL" : "en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -370,13 +384,17 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
     return {
       success: true,
       appointmentId: appointment.id,
-      message: `Great! I've booked your ${service} appointment for ${patientName} on ${formattedDate}. You'll receive a confirmation shortly.`,
+      message: isNL
+        ? `Geweldig! Ik heb uw ${service} afspraak voor ${patientName} geboekt op ${formattedDate}. U ontvangt binnenkort een bevestiging.`
+        : `Great! I've booked your ${service} appointment for ${patientName} on ${formattedDate}. You'll receive a confirmation shortly.`,
     };
   } catch (error) {
     console.error("Booking error:", error);
     return {
       success: false,
-      message: "I'm sorry, I couldn't complete the booking. Let me transfer you to our staff.",
+      message: isNL
+        ? "Het spijt me, ik kon de boeking niet voltooien. Ik verbind u door met onze medewerkers."
+        : "I'm sorry, I couldn't complete the booking. Let me transfer you to our staff.",
     };
   }
 }
