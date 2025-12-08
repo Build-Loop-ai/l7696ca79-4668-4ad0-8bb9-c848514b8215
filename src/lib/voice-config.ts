@@ -178,6 +178,12 @@ export function getRecommendedVoice(gender?: 'male' | 'female'): Voice {
   return filtered[0] || ELEVENLABS_VOICES[0];
 }
 
+// Get default voice - always returns the first recommended voice
+export function getDefaultVoiceId(): string {
+  const recommended = ELEVENLABS_VOICES.find(v => v.recommended);
+  return recommended?.id || ELEVENLABS_VOICES[0].id;
+}
+
 export function getVoicesByGender(gender: 'male' | 'female'): Voice[] {
   return ELEVENLABS_VOICES.filter(v => v.gender === gender);
 }
