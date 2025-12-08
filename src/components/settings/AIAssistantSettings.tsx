@@ -323,15 +323,15 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
       </Card>
 
       {/* Test Your AI - Eye-catching Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 text-primary-foreground">
+      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-secondary via-secondary to-secondary/90">
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
         
-        <div className="relative z-10">
+        <div className="relative z-10 p-6 md:p-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center backdrop-blur-sm">
+              <svg className="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 18.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Z" />
                 <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
                 <path d="M12 2v2" />
@@ -345,15 +345,15 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
               </svg>
             </div>
             <div>
-              <h3 className="text-2xl font-bold tracking-tight">Ready to Test?</h3>
-              <p className="text-primary-foreground/80 text-sm">
+              <h3 className="text-2xl font-bold tracking-tight text-secondary-foreground">Ready to Test?</h3>
+              <p className="text-secondary-foreground/70 text-sm">
                 Experience your AI receptionist in action
               </p>
             </div>
           </div>
 
           <div className="mt-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <div className="bg-background/10 backdrop-blur-sm rounded-xl p-4 border border-border/20">
               <TestCallButton 
                 assistantId={assistantId || undefined}
                 phoneNumber={phoneNumber || undefined}
@@ -361,11 +361,11 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
             </div>
           </div>
 
-          <p className="mt-4 text-xs text-primary-foreground/60 text-center sm:text-left">
+          <p className="mt-4 text-xs text-secondary-foreground/50 text-center sm:text-left">
             Call your AI to hear your greeting, voice, and test how it handles questions
           </p>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
