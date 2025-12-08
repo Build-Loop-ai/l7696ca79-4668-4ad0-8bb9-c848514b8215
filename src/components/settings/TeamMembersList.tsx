@@ -153,7 +153,7 @@ export const TeamMembersList = ({
       // Actually send the email using the correct data format expected by the edge function
       const orgName = (profile?.organization as any)?.name || "the team";
       const inviterName = profile?.full_name || "A team member";
-      const inviteUrl = `${window.location.origin}/signup?invite=${newToken}&email=${encodeURIComponent(invitation.email)}`;
+      const inviteUrl = `${window.location.origin}/accept-invitation?token=${newToken}`;
       
       const { error: emailError } = await supabase.functions.invoke("send-email", {
         body: {

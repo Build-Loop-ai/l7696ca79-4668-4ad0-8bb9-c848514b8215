@@ -9,6 +9,7 @@ import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import AcceptInvitation from "./pages/AcceptInvitation";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import DashboardCalls from "./pages/DashboardCalls";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/demo" element={<Demo />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/accept-invitation" element={<AcceptInvitation />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/onboarding" element={
               <ProtectedRoute>
