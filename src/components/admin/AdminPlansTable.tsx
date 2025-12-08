@@ -193,7 +193,10 @@ export const AdminPlansTable = () => {
       }
 
       setShowDialog(false);
-      fetchPlans();
+      await fetchPlans();
+      
+      // Auto-sync to Stripe after save
+      await handleSyncStripe();
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -216,7 +219,10 @@ export const AdminPlansTable = () => {
 
       if (error) throw error;
       toast({ title: 'Plan deleted' });
-      fetchPlans();
+      await fetchPlans();
+      
+      // Note: Stripe products are not auto-deleted as they may have historical subscriptions
+      // Admin can manually archive them in Stripe dashboard if needed
     } catch (error: any) {
       toast({
         variant: 'destructive',
