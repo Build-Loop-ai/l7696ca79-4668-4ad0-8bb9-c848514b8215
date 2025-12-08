@@ -1,37 +1,45 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Phone } from "lucide-react";
 
 const CTASection = () => {
   return (
-    <section className="py-24 md:py-32 landing-theme relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(240_10%_4%)] to-[hsl(240_10%_8%)]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-[hsl(265_97%_64%/0.1)] blur-[150px] rounded-full" />
-      
+    <section className="py-20 md:py-32 bg-secondary relative overflow-hidden grain-overlay">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal/5 rounded-full blur-3xl" />
+      </div>
+
       <div className="container relative z-10 mx-auto px-4 md:px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-premium mb-8">
-            <Sparkles className="w-4 h-4 text-[hsl(265_97%_64%)]" />
-            <span className="text-sm text-white/80">Join 500+ clinics using Callisto</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-8">
+            <Phone className="w-4 h-4 text-primary" />
+            <span className="text-sm text-secondary-foreground/90">
+              Join 500+ clinics already using Callisto
+            </span>
           </div>
-          <h2 className="text-4xl md:text-5xl lg:text-7xl font-display font-bold text-white mb-6">
+
+          <h2 className="text-3xl md:text-4xl lg:text-6xl font-serif text-secondary-foreground mb-6">
             Ready to transform your{" "}
-            <span className="bg-gradient-to-r from-[hsl(265_97%_64%)] to-[hsl(220_95%_65%)] bg-clip-text text-transparent">front desk?</span>
+            <span className="italic text-primary">front desk?</span>
           </h2>
-          <p className="text-lg md:text-xl text-white/50 max-w-2xl mx-auto mb-10">
-            Start your 14-day free trial today. No credit card required.
+
+          <p className="text-lg md:text-xl text-secondary-foreground/70 max-w-2xl mx-auto mb-10">
+            Start your 14-day free trial today. No credit card required, no
+            commitment. See the difference AI can make.
           </p>
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/signup">
-              <Button size="lg" className="bg-gradient-to-r from-[hsl(265_97%_64%)] to-[hsl(220_95%_65%)] text-white px-8 py-6 text-lg font-semibold rounded-2xl shadow-glow-violet hover:shadow-[0_0_80px_-15px_hsl(265_97%_64%)] hover:-translate-y-1 transition-all group">
-                Start Free Trial <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Button variant="hero" size="xl" className="gap-2">
+                Start Free Trial
+                <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            <Link to="/demo">
-              <Button size="lg" variant="outline" className="glass-premium text-white border-white/20 px-8 py-6 text-lg rounded-2xl hover:bg-white/10 transition-all">
-                Schedule a Demo
-              </Button>
-            </Link>
+            <Button variant="glass" size="xl">
+              Schedule a Demo
+            </Button>
           </div>
         </div>
       </div>
