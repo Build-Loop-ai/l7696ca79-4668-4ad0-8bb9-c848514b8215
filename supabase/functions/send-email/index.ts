@@ -1,0 +1,211 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+type EmailType = "team-invitation" | "welcome" | "missed-call-alert";
+
+interface EmailRequest {
+  type: EmailType;
+  to: string;
+  data: Record<string, any>;
+}
+
+// HTML Email Templates
+function getTeamInvitationHtml(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 40px 20px;">
+      <div style="background-color: #ffffff; margin: 0 auto; padding: 40px 30px; border-radius: 12px; max-width: 480px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+        <h1 style="color: #1a1a1a; font-size: 28px; font-weight: 700; margin: 0 0 24px; text-align: center;">You're Invited! 🎉</h1>
+        <p style="color: #4a4a4a; font-size: 16px; line-height: 26px; margin: 16px 0;">
+          <strong>${data.inviterName}</strong> has invited you to join <strong>${data.organizationName}</strong> as a <strong>${data.role}</strong>.
+        </p>
+        <p style="color: #4a4a4a; font-size: 16px; line-height: 26px; margin: 16px 0;">
+          Join the team to help manage AI receptionist calls, view analytics, and collaborate with your colleagues.
+        </p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${data.signupUrl}" style="background-color: #0f172a; border-radius: 8px; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; display: inline-block; padding: 14px 32px;">Accept Invitation</a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 32px 0;">
+        <p style="color: #8898aa; font-size: 13px; text-align: center; margin: 8px 0;">
+          This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
+        </p>
+        <p style="color: #8898aa; font-size: 13px; text-align: center; margin: 8px 0;">
+          © ${new Date().getFullYear()} AI Receptionist. All rights reserved.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function getWelcomeHtml(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 40px 20px;">
+      <div style="background-color: #ffffff; margin: 0 auto; padding: 40px 30px; border-radius: 12px; max-width: 480px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+        <h1 style="color: #1a1a1a; font-size: 28px; font-weight: 700; margin: 0 0 24px; text-align: center;">Welcome aboard! 👋</h1>
+        <p style="color: #4a4a4a; font-size: 16px; line-height: 26px; margin: 16px 0;">Hi ${data.userName},</p>
+        <p style="color: #4a4a4a; font-size: 16px; line-height: 26px; margin: 16px 0;">
+          Congratulations! Your AI receptionist for <strong>${data.organizationName}</strong> is now ready to handle calls.
+        </p>
+        <p style="color: #4a4a4a; font-size: 16px; line-height: 26px; margin: 16px 0;">Here's what you can do next:</p>
+        <div style="margin: 24px 0; padding: 0 16px;">
+          <p style="color: #4a4a4a; font-size: 15px; margin: 12px 0;">📞 <strong>Make a test call</strong> - Try calling your AI number</p>
+          <p style="color: #4a4a4a; font-size: 15px; margin: 12px 0;">⚙️ <strong>Customize your greeting</strong> - Personalize what your AI says</p>
+          <p style="color: #4a4a4a; font-size: 15px; margin: 12px 0;">📅 <strong>Connect your calendar</strong> - Enable real-time booking</p>
+          <p style="color: #4a4a4a; font-size: 15px; margin: 12px 0;">👥 <strong>Invite your team</strong> - Collaborate with colleagues</p>
+        </div>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${data.dashboardUrl}" style="background-color: #0f172a; border-radius: 8px; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; display: inline-block; padding: 14px 32px;">Go to Dashboard</a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 32px 0;">
+        <p style="color: #8898aa; font-size: 13px; text-align: center; margin: 8px 0;">
+          Need help? Just reply to this email and we'll get back to you.
+        </p>
+        <p style="color: #8898aa; font-size: 13px; text-align: center; margin: 8px 0;">
+          © ${new Date().getFullYear()} AI Receptionist. All rights reserved.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function getMissedCallAlertHtml(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 40px 20px;">
+      <div style="background-color: #ffffff; margin: 0 auto; padding: 40px 30px; border-radius: 12px; max-width: 480px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <span style="background-color: #fef2f2; color: #dc2626; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 20px; display: inline-block;">📞 Missed Call</span>
+        </div>
+        <h1 style="color: #1a1a1a; font-size: 28px; font-weight: 700; margin: 0 0 24px; text-align: center;">You missed a call</h1>
+        <p style="color: #4a4a4a; font-size: 16px; line-height: 26px; margin: 16px 0;">
+          Your AI receptionist at <strong>${data.organizationName}</strong> received a call that wasn't completed.
+        </p>
+        <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
+          <p style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; margin: 0 0 4px; letter-spacing: 0.5px;">Caller</p>
+          <p style="color: #1a1a1a; font-size: 18px; font-weight: 600; margin: 0 0 16px;">${data.callerNumber}</p>
+          <p style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; margin: 0 0 4px; letter-spacing: 0.5px;">Time</p>
+          <p style="color: #1a1a1a; font-size: 18px; font-weight: 600; margin: 0;">${data.callTime}</p>
+        </div>
+        <p style="color: #4a4a4a; font-size: 16px; line-height: 26px; margin: 16px 0;">
+          Consider calling them back to ensure you don't miss any opportunities.
+        </p>
+        <div style="text-align: center; margin: 16px 0;">
+          <a href="${data.dashboardUrl}" style="background-color: #0f172a; border-radius: 8px; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; display: inline-block; padding: 14px 32px;">View Call Details</a>
+        </div>
+        <div style="text-align: center; margin: 16px 0;">
+          <a href="tel:${data.callerNumber}" style="background-color: #ffffff; border: 2px solid #0f172a; border-radius: 8px; color: #0f172a; font-size: 16px; font-weight: 600; text-decoration: none; display: inline-block; padding: 12px 32px;">Call Back Now</a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 32px 0;">
+        <p style="color: #8898aa; font-size: 13px; text-align: center; margin: 8px 0;">
+          You're receiving this because missed call alerts are enabled for ${data.organizationName}.
+        </p>
+        <p style="color: #8898aa; font-size: 13px; text-align: center; margin: 8px 0;">
+          © ${new Date().getFullYear()} AI Receptionist. All rights reserved.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+async function sendEmail(to: string, subject: string, html: string) {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "AI Receptionist <notifications@resend.dev>",
+      to: [to],
+      subject,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to send email");
+  }
+
+  return response.json();
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { type, to, data }: EmailRequest = await req.json();
+
+    console.log(`Sending ${type} email to ${to}`, data);
+
+    let html: string;
+    let subject: string;
+
+    switch (type) {
+      case "team-invitation":
+        subject = `You're invited to join ${data.organizationName}`;
+        html = getTeamInvitationHtml(data);
+        break;
+
+      case "welcome":
+        subject = `Welcome to AI Receptionist - You're all set!`;
+        html = getWelcomeHtml(data);
+        break;
+
+      case "missed-call-alert":
+        subject = `Missed call from ${data.callerNumber}`;
+        html = getMissedCallAlertHtml(data);
+        break;
+
+      default:
+        throw new Error(`Unknown email type: ${type}`);
+    }
+
+    const emailResponse = await sendEmail(to, subject, html);
+
+    console.log("Email sent successfully:", emailResponse);
+
+    return new Response(JSON.stringify({ success: true, data: emailResponse }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  } catch (error: any) {
+    console.error("Error sending email:", error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  }
+};
+
+serve(handler);

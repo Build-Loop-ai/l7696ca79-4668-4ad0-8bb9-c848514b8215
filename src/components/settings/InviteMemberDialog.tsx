@@ -87,13 +87,22 @@ export const InviteMemberDialog = ({
         return;
       }
 
-      // Get current user ID
+      // Get current user and organization info
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setError("You must be logged in to send invitations");
         setLoading(false);
         return;
       }
+
+      // Get user profile and organization name for the email
+      const [profileResult, orgResult] = await Promise.all([
+        supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+        supabase.from("organizations").select("name").eq("id", organizationId).single()
+      ]);
+
+      const inviterName = profileResult.data?.full_name || user.email || "A team member";
+      const organizationName = orgResult.data?.name || "Your organization";
 
       // Create invitation
       const { error: insertError } = await supabase
@@ -108,6 +117,34 @@ export const InviteMemberDialog = ({
       if (insertError) {
         console.error("Invitation error:", insertError);
         throw new Error("Failed to create invitation");
+      }
+
+      // Send invitation email
+      const signupUrl = `${window.location.origin}/signup?email=${encodeURIComponent(email.trim().toLowerCase())}`;
+      
+      try {
+        const emailResponse = await supabase.functions.invoke("send-email", {
+          body: {
+            type: "team-invitation",
+            to: email.trim().toLowerCase(),
+            data: {
+              inviterName,
+              organizationName,
+              role,
+              signupUrl,
+            },
+          },
+        });
+
+        if (emailResponse.error) {
+          console.warn("Failed to send invitation email:", emailResponse.error);
+          // Don't fail the invitation if email fails - the invitation is still created
+        } else {
+          console.log("Invitation email sent successfully");
+        }
+      } catch (emailErr) {
+        console.warn("Email service error:", emailErr);
+        // Continue even if email fails
       }
 
       toast({
@@ -134,7 +171,7 @@ export const InviteMemberDialog = ({
         <DialogHeader>
           <DialogTitle>Invite Team Member</DialogTitle>
           <DialogDescription>
-            Send an invitation to join your team. They'll receive access once they sign up.
+            Send an invitation to join your team. They'll receive an email with a signup link.
           </DialogDescription>
         </DialogHeader>
 
