@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Phone, PhoneOff, Loader2, Mic, Volume2, AlertTriangle } from "lucide-react";
+import { PhoneOff, Loader2, Mic, Volume2, AlertTriangle, Calendar, MessageSquare, Phone, ArrowRight, CheckCircle2 } from "lucide-react";
 import { getVapiClient, resetVapiClient } from "@/lib/vapi-client";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TestCallButtonProps {
   assistantId?: string;
@@ -14,18 +15,36 @@ interface TestCallButtonProps {
 
 type CallStatus = "idle" | "connecting" | "connected" | "speaking" | "listening" | "error";
 
+interface ActivityEvent {
+  id: string;
+  type: "info" | "tool" | "speech" | "success" | "error";
+  message: string;
+  timestamp: Date;
+  icon?: React.ReactNode;
+}
+
 export function TestCallButton({
   assistantId,
   disabled = false,
   onCallStart,
   onCallEnd,
-  phoneNumber,
 }: TestCallButtonProps) {
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
-  const [showBrowserCall, setShowBrowserCall] = useState(false);
+  const [activityLog, setActivityLog] = useState<ActivityEvent[]>([]);
   
   const publicKey = "3d8f4267-671a-4a72-924e-79ac9179df8f";
+
+  const addActivity = (type: ActivityEvent["type"], message: string, icon?: React.ReactNode) => {
+    const event: ActivityEvent = {
+      id: `${Date.now()}-${Math.random()}`,
+      type,
+      message,
+      timestamp: new Date(),
+      icon,
+    };
+    setActivityLog(prev => [...prev, event]);
+  };
 
   const startTestCall = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -40,10 +59,14 @@ export function TestCallButton({
 
     setCallStatus("connecting");
     setStatusMessage("Requesting microphone access...");
+    setActivityLog([]);
+    addActivity("info", "Requesting microphone access...");
 
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
+      addActivity("success", "Microphone access granted", <CheckCircle2 className="w-3 h-3" />);
       setStatusMessage("Connecting to AI...");
+      addActivity("info", "Connecting to AI assistant...");
 
       resetVapiClient();
       const vapi = getVapiClient(publicKey);
@@ -58,6 +81,7 @@ export function TestCallButton({
         callStartTime = Date.now();
         setCallStatus("connected");
         setStatusMessage("Connected - speak now");
+        addActivity("success", "Call connected successfully", <Phone className="w-3 h-3" />);
         onCallStart?.();
       });
 
@@ -65,13 +89,14 @@ export function TestCallButton({
         const duration = callStartTime ? (Date.now() - callStartTime) / 1000 : 0;
         console.log(`[TestCallButton] Call ended - duration: ${duration}s, AI spoke: ${aiSpoke}`);
         
+        addActivity("info", `Call ended (${duration.toFixed(1)}s)`);
         setCallStatus("idle");
         setStatusMessage("");
         
         if (callStarted && (aiSpoke || duration > 5)) {
           onCallEnd?.();
         } else if (callStarted) {
-          setStatusMessage("Call ended quickly. If you didn't hear anything, try calling the phone number.");
+          setStatusMessage("Call ended quickly. Try speaking to the AI.");
         }
       });
 
@@ -79,22 +104,52 @@ export function TestCallButton({
         aiSpoke = true;
         setCallStatus("speaking");
         setStatusMessage("AI is speaking...");
+        addActivity("speech", "AI is speaking...", <Volume2 className="w-3 h-3" />);
       });
 
       vapi.on("speech-end", () => {
         setCallStatus("listening");
         setStatusMessage("Listening...");
+        addActivity("info", "Listening for your response...", <Mic className="w-3 h-3" />);
+      });
+
+      // Listen for messages to track tool calls
+      vapi.on("message", (message: any) => {
+        console.log("[TestCallButton] Message:", message);
+        
+        if (message.type === "tool-calls") {
+          const toolCalls = message.toolCallList || message.toolCalls || [];
+          toolCalls.forEach((tool: any) => {
+            const funcName = tool.function?.name || tool.name;
+            if (funcName === "checkAvailability") {
+              addActivity("tool", "Checking calendar availability...", <Calendar className="w-3 h-3" />);
+            } else if (funcName === "bookAppointment") {
+              addActivity("tool", "Booking appointment...", <Calendar className="w-3 h-3" />);
+            } else if (funcName) {
+              addActivity("tool", `Calling ${funcName}...`, <ArrowRight className="w-3 h-3" />);
+            }
+          });
+        }
+        
+        if (message.type === "tool-calls-result") {
+          addActivity("success", "Tool call completed", <CheckCircle2 className="w-3 h-3" />);
+        }
+
+        if (message.type === "transcript" && message.role === "user" && message.transcriptType === "final") {
+          addActivity("info", `You: "${message.transcript}"`, <MessageSquare className="w-3 h-3" />);
+        }
+
+        if (message.type === "transcript" && message.role === "assistant" && message.transcriptType === "final") {
+          const text = message.transcript?.slice(0, 50) + (message.transcript?.length > 50 ? "..." : "");
+          addActivity("speech", `AI: "${text}"`, <Volume2 className="w-3 h-3" />);
+        }
       });
 
       vapi.on("error", (error) => {
         console.error("Vapi error:", error);
         setCallStatus("error");
-        if (phoneNumber) {
-          setStatusMessage(`Browser calls are limited in preview. Call ${phoneNumber} instead.`);
-        } else {
-          setStatusMessage("Browser calls may not work in preview mode. Deploy to test or use a phone number.");
-        }
-        setShowBrowserCall(false);
+        addActivity("error", "Connection error occurred");
+        setStatusMessage("Browser calls may not work in preview mode. Try again or deploy the app.");
       });
 
       await vapi.start(assistantId);
@@ -104,8 +159,10 @@ export function TestCallButton({
       
       if (error.name === "NotAllowedError") {
         setStatusMessage("Microphone access denied. Please allow access and try again.");
+        addActivity("error", "Microphone access denied");
       } else {
-        setStatusMessage("Failed to start call. Try calling the phone number.");
+        setStatusMessage("Failed to start call. Please try again.");
+        addActivity("error", "Failed to start call");
       }
     }
   };
@@ -124,58 +181,29 @@ export function TestCallButton({
 
   const isActive = callStatus !== "idle" && callStatus !== "error";
 
-  // Primary UI: Phone number call (always works)
-  if (phoneNumber && !showBrowserCall) {
-    return (
-      <div className="flex flex-col items-center gap-4 w-full">
-        <a href={`tel:${phoneNumber}`} className="w-full">
-          <Button variant="hero" size="lg" className="gap-2 w-full">
-            <Phone className="w-5 h-5" />
-            Call {phoneNumber}
-          </Button>
-        </a>
-        
-        <p className="text-xs text-muted-foreground text-center">
-          Call your AI receptionist to test it
-        </p>
+  const getActivityIcon = (event: ActivityEvent) => {
+    if (event.icon) return event.icon;
+    switch (event.type) {
+      case "tool": return <ArrowRight className="w-3 h-3" />;
+      case "speech": return <Volume2 className="w-3 h-3" />;
+      case "success": return <CheckCircle2 className="w-3 h-3" />;
+      case "error": return <AlertTriangle className="w-3 h-3" />;
+      default: return null;
+    }
+  };
 
-        <button
-          onClick={() => setShowBrowserCall(true)}
-          className="text-xs text-muted-foreground hover:text-foreground underline"
-          disabled={!assistantId}
-        >
-          Or try browser-based call
-        </button>
-      </div>
-    );
-  }
+  const getActivityColor = (type: ActivityEvent["type"]) => {
+    switch (type) {
+      case "tool": return "text-blue-500 bg-blue-500/10";
+      case "speech": return "text-primary bg-primary/10";
+      case "success": return "text-green-500 bg-green-500/10";
+      case "error": return "text-red-500 bg-red-500/10";
+      default: return "text-muted-foreground bg-muted";
+    }
+  };
 
-  // No phone number yet
-  if (!phoneNumber && !showBrowserCall) {
-    return (
-      <div className="flex flex-col items-center gap-4">
-        <Button 
-          onClick={() => setShowBrowserCall(true)}
-          disabled={disabled || !assistantId}
-          variant="hero"
-          size="lg"
-          className="gap-2"
-        >
-          <Phone className="w-5 h-5" />
-          Test Your AI
-        </Button>
-        {!assistantId && (
-          <p className="text-xs text-muted-foreground text-center max-w-xs">
-            Complete the setup to test your AI assistant
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  // Browser-based call UI
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 w-full">
       {!isActive ? (
         <>
           <Button
@@ -189,17 +217,14 @@ export function TestCallButton({
             {callStatus === "error" ? "Try Again" : "Start Browser Call"}
           </Button>
           
-          {phoneNumber && (
-            <button
-              onClick={() => setShowBrowserCall(false)}
-              className="text-xs text-muted-foreground hover:text-foreground underline"
-            >
-              Back to phone call
-            </button>
+          {!assistantId && (
+            <p className="text-xs text-muted-foreground text-center max-w-xs">
+              Complete the setup to test your AI assistant
+            </p>
           )}
         </>
       ) : (
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 w-full">
           <div className="relative">
             <div
               className={cn(
@@ -240,6 +265,44 @@ export function TestCallButton({
             <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
           )}
           {statusMessage}
+        </div>
+      )}
+
+      {/* Activity Log */}
+      {activityLog.length > 0 && (
+        <div className="w-full mt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Live Activity</span>
+          </div>
+          <ScrollArea className="h-32 w-full rounded-lg border border-border/50 bg-background/50 backdrop-blur-sm">
+            <div className="p-3 space-y-2">
+              {activityLog.map((event) => (
+                <div
+                  key={event.id}
+                  className="flex items-start gap-2 text-xs animate-in fade-in slide-in-from-bottom-1 duration-200"
+                >
+                  <div className={cn(
+                    "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                    getActivityColor(event.type)
+                  )}>
+                    {getActivityIcon(event)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={cn(
+                      "break-words",
+                      event.type === "error" ? "text-red-500" : "text-foreground"
+                    )}>
+                      {event.message}
+                    </p>
+                    <p className="text-muted-foreground/60 text-[10px]">
+                      {event.timestamp.toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       )}
     </div>
