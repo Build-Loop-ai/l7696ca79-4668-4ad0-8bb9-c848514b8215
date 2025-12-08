@@ -92,7 +92,9 @@ serve(async (req) => {
     // Handle transcriber updates with enhanced VAD settings
     if (updates.transcriber) {
       updatePayload.transcriber = {
-        ...updates.transcriber,
+        provider: "deepgram",
+        model: "nova-2",
+        language: updates.transcriber.language,
         smartFormat: true,
         endpointing: 300, // Faster turn detection
       };
