@@ -74,10 +74,11 @@ const CallDetailSheet = ({ isOpen, onClose, call }: CallDetailSheetProps) => {
       {/* Sheet - slides in from right edge of viewport */}
       <div 
         className={cn(
-          "fixed top-0 right-0 h-screen w-full max-w-md bg-card border-l border-border shadow-2xl",
+          "fixed inset-y-0 right-0 w-[420px] bg-card border-l border-border shadow-2xl",
           "transition-transform duration-300 ease-out",
           isOpen ? "translate-x-0 z-[101]" : "translate-x-full z-[101]"
         )}
+        style={{ right: 0, marginRight: 0 }}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
