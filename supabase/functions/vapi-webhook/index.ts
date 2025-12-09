@@ -445,7 +445,40 @@ async function handleEndOfCallReport(payload: any, supabase: any) {
     call?.assistantOverrides?.metadata?.organizationId ||
     payload.message?.assistant?.metadata?.organizationId;
 
-  console.log("End of call report for org:", orgId);
+  console.log("=== END OF CALL REPORT ===");
+  console.log("Organization ID:", orgId);
+  console.log("Call object keys:", call ? Object.keys(call) : "null");
+  console.log("Call duration field:", call?.duration);
+  console.log("Call durationMs field:", call?.durationMs);
+  console.log("Call durationSeconds field:", call?.durationSeconds);
+  console.log("Call startedAt:", call?.startedAt);
+  console.log("Call endedAt:", call?.endedAt);
+
+  // Calculate duration with multiple fallbacks
+  let durationSeconds: number | null = null;
+  
+  if (typeof call?.duration === 'number' && call.duration > 0) {
+    // Duration in seconds (most common)
+    durationSeconds = Math.round(call.duration);
+    console.log("Using call.duration:", durationSeconds);
+  } else if (typeof call?.durationSeconds === 'number' && call.durationSeconds > 0) {
+    durationSeconds = Math.round(call.durationSeconds);
+    console.log("Using call.durationSeconds:", durationSeconds);
+  } else if (typeof call?.durationMs === 'number' && call.durationMs > 0) {
+    // Duration in milliseconds
+    durationSeconds = Math.round(call.durationMs / 1000);
+    console.log("Using call.durationMs converted:", durationSeconds);
+  } else if (call?.startedAt && call?.endedAt) {
+    // Calculate from start/end times
+    const startTime = new Date(call.startedAt).getTime();
+    const endTime = new Date(call.endedAt).getTime();
+    if (!isNaN(startTime) && !isNaN(endTime) && endTime > startTime) {
+      durationSeconds = Math.round((endTime - startTime) / 1000);
+      console.log("Calculated from start/end times:", durationSeconds);
+    }
+  }
+  
+  console.log("Final duration_seconds:", durationSeconds);
 
   // Determine call outcome
   let outcome = "info_provided";
@@ -468,7 +501,7 @@ async function handleEndOfCallReport(payload: any, supabase: any) {
     direction: normalizeCallDirection(call?.type),
     started_at: call?.startedAt,
     ended_at: call?.endedAt,
-    duration_seconds: call?.duration ? Math.round(call.duration) : null,
+    duration_seconds: durationSeconds,
     transcript: payload.message?.artifact?.transcript,
     recording_url: payload.message?.artifact?.recordingUrl,
     outcome: outcome,
@@ -481,16 +514,28 @@ async function handleEndOfCallReport(payload: any, supabase: any) {
 
   if (error) {
     console.error("Error saving call log:", error);
+  } else {
+    console.log("Call log saved successfully with duration:", durationSeconds);
   }
 
   // Update minutes used for billing
-  if (call?.duration && orgId) {
-    const minutes = Math.ceil(call.duration / 60);
-    await supabase.rpc("increment_minutes_used", {
+  if (durationSeconds && durationSeconds > 0 && orgId) {
+    const minutes = Math.ceil(durationSeconds / 60);
+    console.log("Incrementing minutes used:", minutes, "for org:", orgId);
+    const { error: rpcError } = await supabase.rpc("increment_minutes_used", {
       org_id: orgId,
       minutes_to_add: minutes,
     });
+    if (rpcError) {
+      console.error("Error incrementing minutes:", rpcError);
+    } else {
+      console.log("Minutes incremented successfully");
+    }
+  } else {
+    console.log("Skipping minutes increment - no valid duration or orgId");
   }
+
+  console.log("=== END OF CALL REPORT COMPLETE ===");
 
   return new Response(JSON.stringify({ success: true }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
