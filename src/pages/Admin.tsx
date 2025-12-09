@@ -14,6 +14,7 @@ import { AdminEmailsTable } from '@/components/admin/AdminEmailsTable';
 import { AdminEmailSettings } from '@/components/admin/AdminEmailSettings';
 import { AdminPlansTable } from '@/components/admin/AdminPlansTable';
 import { AdminContactRequests } from '@/components/admin/AdminContactRequests';
+import AdminSiteConfig from '@/components/admin/AdminSiteConfig';
 import { cn } from '@/lib/utils';
 import { siteConfig } from '@/lib/site-config';
 import { 
@@ -27,7 +28,8 @@ import {
   ArrowLeft,
   CreditCard,
   Sparkles,
-  MessageSquare
+  MessageSquare,
+  Globe
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
@@ -48,7 +50,8 @@ const navItems = [
   { icon: MessageSquare, label: 'Contacts', value: 'contacts' },
   { icon: Mail, label: 'Emails', value: 'emails' },
   { icon: CreditCard, label: 'Plans', value: 'plans' },
-  { icon: Settings, label: 'Settings', value: 'settings' },
+  { icon: Globe, label: 'Site Config', value: 'site-config' },
+  { icon: Settings, label: 'Email Settings', value: 'settings' },
   { icon: BarChart3, label: 'Analytics', value: 'analytics' },
 ];
 
@@ -381,7 +384,8 @@ const Admin = () => {
                   {activeTab === 'contacts' && 'View and respond to contact form submissions'}
                   {activeTab === 'emails' && 'Track email delivery and logs'}
                   {activeTab === 'plans' && 'Configure pricing plans and features'}
-                  {activeTab === 'settings' && 'Platform configuration and email settings'}
+                  {activeTab === 'site-config' && 'Manage branding, social links, and site-wide settings'}
+                  {activeTab === 'settings' && 'Email sender configuration'}
                   {activeTab === 'analytics' && 'Deep dive into platform analytics'}
                 </p>
               </div>
@@ -424,6 +428,10 @@ const Admin = () => {
 
               {activeTab === 'plans' && (
                 <AdminPlansTable />
+              )}
+
+              {activeTab === 'site-config' && (
+                <AdminSiteConfig />
               )}
 
               {activeTab === 'settings' && (
