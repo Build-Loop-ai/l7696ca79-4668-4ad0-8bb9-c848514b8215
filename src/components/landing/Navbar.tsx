@@ -67,27 +67,21 @@ const Navbar = () => {
             </Link>
 
             {/* Desktop Navigation - centered */}
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden md:flex items-center gap-1 flex-shrink-0">
               {navLinks.map((link) => (
                 <a
                   key={link.name}
                   href={link.href}
-                  className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white rounded-xl hover:bg-white/10 transition-all duration-200"
+                  className="px-3 py-2 text-sm font-medium text-white/70 hover:text-white rounded-xl hover:bg-white/10 transition-all duration-200 whitespace-nowrap"
                 >
                   {link.name}
                 </a>
               ))}
               <Link
                 to="/demo"
-                className="px-4 py-2 text-sm font-medium text-teal hover:text-teal-light rounded-xl hover:bg-teal/10 transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-teal hover:text-teal-light rounded-xl hover:bg-teal/10 transition-all duration-200 whitespace-nowrap"
               >
                 Try Demo
-              </Link>
-              <Link
-                to="/assessment"
-                className="px-4 py-2 text-sm font-medium text-purple-400 hover:text-purple-300 rounded-xl hover:bg-purple-500/10 transition-all duration-200"
-              >
-                Free Assessment
               </Link>
             </div>
 
@@ -159,13 +153,6 @@ const Navbar = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Try Demo
-                </Link>
-                <Link
-                  to="/assessment"
-                  className="block text-purple-400 font-medium py-3 px-4 rounded-xl hover:bg-purple-500/10 transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Free Assessment
                 </Link>
                 <div className="pt-3 mt-3 border-t border-white/10 space-y-2">
                   <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
