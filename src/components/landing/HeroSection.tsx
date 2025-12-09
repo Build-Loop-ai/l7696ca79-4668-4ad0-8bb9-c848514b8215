@@ -6,21 +6,6 @@ import { motion } from "framer-motion";
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen hero-gradient grain-overlay overflow-hidden">
-      {/* Wave divider at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-[1] pointer-events-none">
-        <svg 
-          viewBox="0 0 1440 120" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto block"
-          preserveAspectRatio="none"
-        >
-          <path 
-            d="M0 120V60C240 20 480 0 720 20C960 40 1200 80 1440 60V120H0Z" 
-            className="fill-background"
-          />
-        </svg>
-      </div>
 
       {/* Grid pattern overlay */}
       <div 
