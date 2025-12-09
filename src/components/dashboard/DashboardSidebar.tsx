@@ -34,7 +34,13 @@ const DashboardSidebar = () => {
       {/* Logo */}
       <div className="p-4 border-b border-sidebar-border">
         <Link to="/dashboard" className="flex items-center gap-2">
-          {config.logoUrl ? (
+          {config.logoUrlDark ? (
+            <img 
+              src={config.logoUrlDark} 
+              alt={config.name} 
+              className="h-10 w-auto object-contain"
+            />
+          ) : config.logoUrl ? (
             <img 
               src={config.logoUrl} 
               alt={config.name} 

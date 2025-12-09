@@ -9,7 +9,8 @@ export const siteConfig = {
   // Brand
   name: "Callisto",
   tagline: "Your AI receptionist, always ready",
-  logoUrl: "",
+  logoUrl: "", // Logo for dark backgrounds (light logo)
+  logoUrlDark: "", // Logo for light backgrounds (dark logo)
   description: "Never miss a call again. AI that answers, books, and delights your customers 24/7.",
   
   // Contact

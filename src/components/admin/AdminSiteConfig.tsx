@@ -17,8 +17,10 @@ export default function AdminSiteConfig() {
   const { data: config, isLoading } = useSiteConfig();
   const updateConfig = useUpdateSiteConfig();
   const [formData, setFormData] = useState<Partial<SiteConfig>>({});
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingLight, setUploadingLight] = useState(false);
+  const [uploadingDark, setUploadingDark] = useState(false);
+  const lightLogoInputRef = useRef<HTMLInputElement>(null);
+  const darkLogoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (config) {
@@ -40,26 +42,30 @@ export default function AdminSiteConfig() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "light" | "dark"
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file");
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Image must be less than 2MB");
       return;
     }
 
+    const setUploading = type === "light" ? setUploadingLight : setUploadingDark;
+    const field = type === "light" ? "logo_url" : "logo_url_dark";
+
     setUploading(true);
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `site-logo-${Date.now()}.${fileExt}`;
+      const fileName = `site-logo-${type}-${Date.now()}.${fileExt}`;
       const filePath = `public/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -72,8 +78,8 @@ export default function AdminSiteConfig() {
         .from("site-assets")
         .getPublicUrl(filePath);
 
-      updateField("logo_url", publicUrl);
-      toast.success("Logo uploaded successfully");
+      updateField(field, publicUrl);
+      toast.success(`${type === "light" ? "Light" : "Dark"} logo uploaded successfully`);
     } catch (error: any) {
       console.error("Upload error:", error);
       toast.error(error.message || "Failed to upload logo");
@@ -82,8 +88,8 @@ export default function AdminSiteConfig() {
     }
   };
 
-  const removeLogo = () => {
-    updateField("logo_url", null);
+  const removeLogo = (type: "light" | "dark") => {
+    updateField(type === "light" ? "logo_url" : "logo_url_dark", null);
   };
 
   if (isLoading) {
@@ -107,67 +113,132 @@ export default function AdminSiteConfig() {
         <SaveStatusIndicator status={saveStatus} />
       </div>
 
-      {/* Logo */}
+      {/* Logos */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Image className="h-5 w-5 text-primary" />
-            <CardTitle>Logo</CardTitle>
+            <CardTitle>Logos</CardTitle>
           </div>
-          <CardDescription>Your site logo used across all pages</CardDescription>
+          <CardDescription>Upload both light and dark versions of your logo for optimal display</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-start gap-6">
-            {formData.logo_url ? (
-              <div className="relative">
-                <img
-                  src={formData.logo_url}
-                  alt="Site logo"
-                  className="h-20 w-auto max-w-[200px] object-contain rounded-lg border border-border bg-background p-2"
+        <CardContent className="space-y-6">
+          {/* Light Logo (for dark backgrounds) */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium">Light Logo (for dark backgrounds)</Label>
+            <p className="text-xs text-muted-foreground">Used on the landing page navbar and admin panel</p>
+            <div className="flex items-start gap-6">
+              <div className="relative flex h-20 w-40 items-center justify-center rounded-lg bg-slate-900 p-3">
+                {formData.logo_url ? (
+                  <>
+                    <img
+                      src={formData.logo_url}
+                      alt="Light logo"
+                      className="h-full w-auto max-w-full object-contain"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6"
+                      onClick={() => removeLogo("light")}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </>
+                ) : (
+                  <Image className="h-8 w-8 text-slate-600" />
+                )}
+              </div>
+              <div className="space-y-2">
+                <input
+                  ref={lightLogoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleLogoUpload(e, "light")}
+                  className="hidden"
                 />
                 <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6"
-                  onClick={removeLogo}
+                  variant="outline"
+                  onClick={() => lightLogoInputRef.current?.click()}
+                  disabled={uploadingLight}
                 >
-                  <X className="h-3 w-3" />
+                  <Upload className="mr-2 h-4 w-4" />
+                  {uploadingLight ? "Uploading..." : "Upload Light Logo"}
                 </Button>
+                <p className="text-xs text-muted-foreground">
+                  PNG or SVG with transparent background, max 2MB
+                </p>
               </div>
-            ) : (
-              <div className="flex h-20 w-32 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50">
-                <Image className="h-8 w-8 text-muted-foreground/50" />
-              </div>
-            )}
+            </div>
             <div className="space-y-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
+              <Label htmlFor="logo_url">Or enter URL directly</Label>
+              <Input
+                id="logo_url"
+                value={formData.logo_url || ""}
+                onChange={(e) => updateField("logo_url", e.target.value)}
+                placeholder="https://example.com/logo-light.png"
               />
-              <Button
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                {uploading ? "Uploading..." : "Upload Logo"}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Recommended: PNG or SVG, max 2MB
-              </p>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="logo_url">Or enter URL directly</Label>
-            <Input
-              id="logo_url"
-              value={formData.logo_url || ""}
-              onChange={(e) => updateField("logo_url", e.target.value)}
-              placeholder="https://example.com/logo.png"
-            />
+
+          <div className="border-t border-border" />
+
+          {/* Dark Logo (for light backgrounds) */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium">Dark Logo (for light backgrounds)</Label>
+            <p className="text-xs text-muted-foreground">Used on the dashboard sidebar</p>
+            <div className="flex items-start gap-6">
+              <div className="relative flex h-20 w-40 items-center justify-center rounded-lg bg-white border border-border p-3">
+                {formData.logo_url_dark ? (
+                  <>
+                    <img
+                      src={formData.logo_url_dark}
+                      alt="Dark logo"
+                      className="h-full w-auto max-w-full object-contain"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6"
+                      onClick={() => removeLogo("dark")}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </>
+                ) : (
+                  <Image className="h-8 w-8 text-slate-300" />
+                )}
+              </div>
+              <div className="space-y-2">
+                <input
+                  ref={darkLogoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleLogoUpload(e, "dark")}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => darkLogoInputRef.current?.click()}
+                  disabled={uploadingDark}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {uploadingDark ? "Uploading..." : "Upload Dark Logo"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  PNG or SVG with transparent background, max 2MB
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="logo_url_dark">Or enter URL directly</Label>
+              <Input
+                id="logo_url_dark"
+                value={formData.logo_url_dark || ""}
+                onChange={(e) => updateField("logo_url_dark", e.target.value)}
+                placeholder="https://example.com/logo-dark.png"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
