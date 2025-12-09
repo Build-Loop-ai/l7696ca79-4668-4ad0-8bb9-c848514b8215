@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { siteConfig } from "@/lib/site-config";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -51,7 +52,7 @@ const Navbar = () => {
             {/* Logo - just text, minimal */}
             <Link to="/" className="group">
               <span className="font-serif text-xl font-medium text-white tracking-tight">
-                callisto
+                {siteConfig.name.toLowerCase()}
               </span>
             </Link>
 

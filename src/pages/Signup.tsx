@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { signupSchema } from "@/lib/validations";
 import { z } from "zod";
+import { siteConfig } from "@/lib/site-config";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -115,7 +116,7 @@ const Signup = () => {
         <div className="relative z-10 text-center max-w-md">
           <h2 className="text-4xl font-serif text-white mb-6">
             Start your{" "}
-            <span className="italic text-teal-light">14-day free trial</span>
+            <span className="italic text-teal-light">{siteConfig.trialDays}-day free trial</span>
           </h2>
           <p className="text-white/70 text-lg mb-8">
             No credit card required. Setup in 5 minutes. Cancel anytime.
@@ -147,7 +148,7 @@ const Signup = () => {
               <Phone className="w-5 h-5 text-white" />
             </div>
             <span className="font-serif text-2xl font-medium text-foreground">
-              Callisto
+              {siteConfig.name}
             </span>
           </Link>
 

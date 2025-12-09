@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ELEVENLABS_VOICES, SUPPORTED_LANGUAGES } from "@/lib/voice-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { siteConfig } from "@/lib/site-config";
 
 interface DemoResult {
   audioContent: string;
@@ -142,7 +143,7 @@ const Demo = () => {
   return (
     <>
       <Helmet>
-        <title>Hear Your AI Receptionist | Callisto Demo</title>
+        <title>Hear Your AI Receptionist | {siteConfig.name} Demo</title>
         <meta
           name="description"
           content="Generate a personalized AI receptionist demo in 30 seconds. Hear how your business will sound with an AI answering calls."
@@ -194,7 +195,7 @@ const Demo = () => {
                 <ArrowLeft className="w-4 h-4" />
                 <span className="text-sm font-medium">Home</span>
               </Link>
-              <span className="font-serif text-lg text-white">callisto</span>
+              <span className="font-serif text-lg text-white">{siteConfig.name.toLowerCase()}</span>
               <Link 
                 to="/signup"
                 className="flex items-center gap-1 text-sm font-medium text-teal hover:text-teal-light transition-colors"
