@@ -328,6 +328,21 @@ const HeroSection = () => {
         </div>
       </div>
 
+      {/* Wave transition to next section */}
+      <div className="absolute bottom-0 left-0 right-0">
+        <svg 
+          viewBox="0 0 1440 120" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-auto block"
+          preserveAspectRatio="none"
+        >
+          <path 
+            d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z" 
+            className="fill-background"
+          />
+        </svg>
+      </div>
     </section>
   );
 };
