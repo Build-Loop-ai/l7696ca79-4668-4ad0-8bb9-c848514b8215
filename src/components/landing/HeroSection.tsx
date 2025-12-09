@@ -6,23 +6,23 @@ import { motion } from "framer-motion";
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen overflow-x-clip" style={{ backgroundColor: 'hsl(220 60% 10%)' }}>
-      {/* Turquoise gradient glow */}
+      {/* Subtle turquoise ambient glow */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
           background: `
-            radial-gradient(ellipse 80% 50% at 50% 0%, hsl(var(--teal) / 0.15) 0%, transparent 50%),
-            radial-gradient(ellipse 60% 40% at 80% 20%, hsl(var(--teal) / 0.1) 0%, transparent 40%),
-            radial-gradient(ellipse 50% 30% at 20% 30%, hsl(var(--teal-light) / 0.08) 0%, transparent 40%)
+            radial-gradient(ellipse 120% 60% at 50% -10%, rgba(45, 212, 191, 0.08) 0%, transparent 60%),
+            radial-gradient(ellipse 80% 50% at 85% 10%, rgba(45, 212, 191, 0.05) 0%, transparent 50%),
+            radial-gradient(ellipse 60% 40% at 15% 20%, rgba(94, 234, 212, 0.04) 0%, transparent 45%)
           `,
         }}
       />
       
-      {/* Grain texture overlay */}
+      {/* Grain texture overlay - very subtle */}
       <div 
-        className="absolute inset-0 pointer-events-none opacity-[0.15]"
+        className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           backgroundRepeat: 'repeat',
         }}
       />
