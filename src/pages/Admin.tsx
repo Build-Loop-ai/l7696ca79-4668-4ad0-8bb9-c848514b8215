@@ -280,18 +280,16 @@ const Admin = () => {
                   className="h-11 w-auto object-contain"
                 />
               ) : (
-                <>
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center shadow-lg shadow-primary/25">
-                    <Shield className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <span className="font-serif text-lg font-medium text-foreground block">
-                      Admin
-                    </span>
-                    <span className="text-xs text-muted-foreground">Control Center</span>
-                  </div>
-                </>
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center shadow-lg shadow-primary/25">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
               )}
+              <div>
+                <span className="font-serif text-lg font-medium text-foreground block">
+                  Admin
+                </span>
+                <span className="text-xs text-muted-foreground">Control Center</span>
+              </div>
             </div>
 
             {/* Navigation */}
@@ -348,13 +346,11 @@ const Admin = () => {
                   className="h-9 w-auto object-contain"
                 />
               ) : (
-                <>
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="font-serif text-lg font-medium text-foreground">Admin</span>
-                </>
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-white" />
+                </div>
               )}
+              <span className="font-serif text-lg font-medium text-foreground">Admin</span>
               </div>
               <Link 
                 to="/dashboard"
