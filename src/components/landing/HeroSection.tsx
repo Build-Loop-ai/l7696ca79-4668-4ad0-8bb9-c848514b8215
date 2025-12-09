@@ -177,13 +177,13 @@ const HeroSection = () => {
                           {/* Caller avatar with ring animation */}
                           <div className="relative mb-4">
                             <motion.div
-                              className="absolute inset-0 rounded-full bg-teal/30"
-                              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                              className="absolute inset-0 rounded-full bg-teal/10"
+                              animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0, 0.15] }}
                               transition={{ duration: 2, repeat: Infinity }}
                             />
                             <motion.div
-                              className="absolute inset-0 rounded-full bg-teal/20"
-                              animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
+                              className="absolute inset-0 rounded-full bg-teal/5"
+                              animate={{ scale: [1, 1.25, 1], opacity: [0.1, 0, 0.1] }}
                               transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
                             />
                             <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-teal to-teal-dark flex items-center justify-center">
