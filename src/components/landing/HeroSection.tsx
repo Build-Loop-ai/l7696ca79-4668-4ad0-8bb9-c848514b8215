@@ -6,6 +6,13 @@ import { motion } from "framer-motion";
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen hero-gradient grain-overlay overflow-hidden">
+      {/* Bottom fade to light - smooth transition to next section */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-[1]"
+        style={{
+          background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--background)) 100%)',
+        }}
+      />
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div 
