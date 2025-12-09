@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Sparkles, Phone, Check, ChevronRight, Mic, Volume2, Building2, MessageSquare, User, Globe } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +56,25 @@ const Demo = () => {
   const maleVoices = ELEVENLABS_VOICES.filter((v) => v.gender === "male").slice(0, 4);
   const displayedVoices = selectedGender === "female" ? femaleVoices : maleVoices;
 
+  const canProceed = useCallback(() => {
+    if (step === 0) return formData.businessName.trim().length > 0;
+    return true;
+  }, [step, formData.businessName]);
+
+  // Handle Enter key to advance steps
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !isLoading && !demoResult && canProceed()) {
+        e.preventDefault();
+        if (step < 4) setStep(step + 1);
+        else handleSubmit();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [step, isLoading, demoResult, canProceed]);
+
   const handleSubmit = async () => {
     setIsLoading(true);
 
@@ -110,11 +129,6 @@ const Demo = () => {
   const nextStep = () => {
     if (step < 4) setStep(step + 1);
     else handleSubmit();
-  };
-
-  const canProceed = () => {
-    if (step === 0) return formData.businessName.trim().length > 0;
-    return true;
   };
 
   const steps = [
