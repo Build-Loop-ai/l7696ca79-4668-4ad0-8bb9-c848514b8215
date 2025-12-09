@@ -1,6 +1,6 @@
 import { Building2, Users, Phone, CreditCard, PhoneCall, TrendingUp } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface AdminMetricsHeroProps {
   metrics: {
@@ -19,34 +19,54 @@ const MetricCard = ({
   label, 
   value, 
   subValue,
-  loading 
+  loading,
+  accent = false,
 }: { 
   icon: React.ElementType;
   label: string;
   value: string | number;
   subValue?: string;
   loading: boolean;
+  accent?: boolean;
 }) => (
-  <Card className="relative overflow-hidden p-5 bg-card border border-border card-hover">
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
+  <div className={cn(
+    "relative overflow-hidden rounded-xl p-5 transition-all duration-300",
+    "bg-card/50 backdrop-blur-sm border border-border/50",
+    "hover:bg-card/70 hover:border-border/70 hover:shadow-lg hover:shadow-purple-500/5",
+    accent && "bg-gradient-to-br from-purple-500/10 to-violet-500/5 border-purple-500/20"
+  )}>
+    {/* Subtle gradient overlay */}
+    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+    
+    <div className="relative flex items-start justify-between">
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
         {loading ? (
-          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-20 bg-muted/50" />
         ) : (
           <>
-            <p className="text-2xl font-semibold text-foreground tabular-nums">{value}</p>
+            <p className={cn(
+              "text-2xl font-semibold tabular-nums",
+              accent ? "text-purple-300" : "text-foreground"
+            )}>
+              {value}
+            </p>
             {subValue && (
-              <p className="text-xs text-muted-foreground mt-0.5">{subValue}</p>
+              <p className="text-xs text-muted-foreground">{subValue}</p>
             )}
           </>
         )}
       </div>
-      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-        <Icon className="h-5 w-5 text-primary" />
+      <div className={cn(
+        "h-10 w-10 rounded-xl flex items-center justify-center",
+        accent 
+          ? "bg-purple-500/20 text-purple-400" 
+          : "bg-white/5 text-muted-foreground"
+      )}>
+        <Icon className="h-5 w-5" />
       </div>
     </div>
-  </Card>
+  </div>
 );
 
 export const AdminMetricsHero = ({ metrics, loading }: AdminMetricsHeroProps) => {
@@ -63,7 +83,7 @@ export const AdminMetricsHero = ({ metrics, loading }: AdminMetricsHeroProps) =>
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       <MetricCard
         icon={Building2}
         label="Organizations"
@@ -100,6 +120,7 @@ export const AdminMetricsHero = ({ metrics, loading }: AdminMetricsHeroProps) =>
         label="Est. MRR"
         value={metrics ? formatCurrency(metrics.monthlyRevenue) : '-'}
         loading={loading}
+        accent
       />
     </div>
   );
