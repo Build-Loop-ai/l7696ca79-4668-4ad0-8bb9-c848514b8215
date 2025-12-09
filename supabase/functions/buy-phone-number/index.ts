@@ -8,6 +8,8 @@ const corsHeaders = {
 
 const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
 const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
+const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
+const TWILIO_API_SECRET = Deno.env.get("TWILIO_API_SECRET");
 const VAPI_API_KEY = Deno.env.get("VAPI_API_KEY");
 
 serve(async (req) => {
@@ -200,18 +202,32 @@ serve(async (req) => {
         // If not found, import it
         if (!vapiPhoneId) {
           console.log("Importing number to Vapi...");
+          
+          // Build the import payload - use API Key/Secret if available, fallback to Auth Token
+          const importPayload: Record<string, string> = {
+            provider: "twilio",
+            number: numberToBuy,
+            twilioAccountSid: TWILIO_ACCOUNT_SID!,
+          };
+          
+          if (TWILIO_API_KEY && TWILIO_API_SECRET) {
+            // Preferred: Use API Key authentication (required by Vapi)
+            importPayload.twilioApiKey = TWILIO_API_KEY;
+            importPayload.twilioApiSecret = TWILIO_API_SECRET;
+            console.log("Using Twilio API Key authentication for Vapi import");
+          } else if (TWILIO_AUTH_TOKEN) {
+            // Fallback: Try Auth Token (may not work with all Vapi configurations)
+            importPayload.twilioAuthToken = TWILIO_AUTH_TOKEN;
+            console.log("Using Twilio Auth Token authentication for Vapi import (fallback)");
+          }
+          
           const vapiRes = await fetch("https://api.vapi.ai/phone-number", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${VAPI_API_KEY}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              provider: "twilio",
-              number: numberToBuy,
-              twilioAccountSid: TWILIO_ACCOUNT_SID,
-              twilioAuthToken: TWILIO_AUTH_TOKEN,
-            }),
+            body: JSON.stringify(importPayload),
           });
 
           const vapiNumber = await vapiRes.json();
