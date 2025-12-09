@@ -3,10 +3,11 @@ import { Link } from "react-router-dom";
 import { Phone, Twitter, Linkedin, Instagram, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 import ContactDialog from "./ContactDialog";
-import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 const Footer = () => {
   const [contactOpen, setContactOpen] = useState(false);
+  const { config } = useSiteConfigTransformed();
 
   const footerLinks = {
     Product: [
@@ -49,11 +50,11 @@ const Footer = () => {
                 <Phone className="w-5 h-5 text-white" />
               </div>
               <span className="font-serif text-2xl font-medium text-foreground">
-                {siteConfig.name}
+                {config.name}
               </span>
             </Link>
             <p className="text-muted-foreground text-sm mb-6 max-w-xs leading-relaxed">
-              {siteConfig.description}
+              {config.description}
             </p>
             <div className="flex gap-3">
               {[
@@ -108,7 +109,7 @@ const Footer = () => {
         {/* Bottom bar */}
         <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+            © {new Date().getFullYear()} {config.name}. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground flex items-center gap-1">
             Made with <span className="text-destructive">❤</span> using Lovable

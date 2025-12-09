@@ -9,11 +9,12 @@ import { useRef, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ContactDialog from "./ContactDialog";
-import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 const FAQSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [contactOpen, setContactOpen] = useState(false);
+  const { config } = useSiteConfigTransformed();
 
   const faqs = [
     {
@@ -27,9 +28,9 @@ const FAQSection = () => {
         "Yes! The AI integrates with popular calendar systems like Google Calendar. It checks real-time availability, asks for patient information, confirms the booking, and sends confirmation notifications. You can set buffer times, appointment types, and duration rules.",
     },
     {
-      question: `What languages does ${siteConfig.name} support?`,
+      question: `What languages does ${config.name} support?`,
       answer:
-        `${siteConfig.name} supports 20+ languages including English, Dutch, German, French, Spanish, Portuguese, Italian, and more. The AI can automatically detect the caller's language and respond accordingly, or you can set a primary language for your clinic.`,
+        `${config.name} supports 20+ languages including English, Dutch, German, French, Spanish, Portuguese, Italian, and more. The AI can automatically detect the caller's language and respond accordingly, or you can set a primary language for your clinic.`,
     },
     {
       question: "How long does setup take?",
@@ -39,7 +40,7 @@ const FAQSection = () => {
     {
       question: "Can I keep my existing phone number?",
       answer:
-        `Absolutely! You have two options: forward your existing number to your ${siteConfig.name} AI number, or port your number directly to ${siteConfig.name}. We provide step-by-step instructions for both options, and our support team can help with the process.`,
+        `Absolutely! You have two options: forward your existing number to your ${config.name} AI number, or port your number directly to ${config.name}. We provide step-by-step instructions for both options, and our support team can help with the process.`,
     },
     {
       question: "What happens if the AI can't handle a call?",
@@ -81,7 +82,7 @@ const FAQSection = () => {
             <span className="italic text-gradient">questions</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Everything you need to know about {siteConfig.name}. Can't find an answer?
+            Everything you need to know about {config.name}. Can't find an answer?
             Contact our support team.
           </p>
         </motion.div>

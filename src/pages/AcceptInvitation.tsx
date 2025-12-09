@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 interface InvitationDetails {
   id: string;
@@ -25,6 +25,7 @@ const AcceptInvitation = () => {
   const [searchParams] = useSearchParams();
   const { signUp, user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const { config } = useSiteConfigTransformed();
   
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
@@ -214,7 +215,7 @@ const AcceptInvitation = () => {
             You've been invited!
           </h2>
           <p className="text-white/70 text-lg mb-8">
-            {invitation?.inviter_name} has invited you to join their team on {siteConfig.name}.
+            {invitation?.inviter_name} has invited you to join their team on {config.name}.
           </p>
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-left">
             <div className="flex items-center gap-3 mb-4">
@@ -248,7 +249,7 @@ const AcceptInvitation = () => {
               <Phone className="w-5 h-5 text-white" />
             </div>
             <span className="font-serif text-2xl font-medium text-foreground">
-              {siteConfig.name}
+              {config.name}
             </span>
           </Link>
 

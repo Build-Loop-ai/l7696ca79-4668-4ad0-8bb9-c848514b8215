@@ -1,9 +1,10 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 const FeaturesSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { config } = useSiteConfigTransformed();
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start end", "end start"]
@@ -46,7 +47,7 @@ const FeaturesSection = () => {
             viewport={{ once: true }}
             className="text-sm uppercase tracking-[0.3em] text-primary mb-6"
           >
-            Why {siteConfig.name}
+            Why {config.name}
           </motion.p>
           <motion.h2
             initial={{ opacity: 0, y: 40 }}
