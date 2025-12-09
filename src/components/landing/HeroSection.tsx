@@ -6,53 +6,20 @@ import { motion } from "framer-motion";
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen hero-gradient grain-overlay overflow-hidden">
-      {/* Horizon transition - glowing edge with floating elements */}
+      {/* Wave divider at bottom */}
       <div className="absolute bottom-0 left-0 right-0 z-[1] pointer-events-none">
-        {/* Main glow line */}
-        <div className="relative h-px w-full">
-          <div 
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(90deg, transparent 0%, hsl(166 76% 45% / 0.6) 20%, hsl(166 76% 55% / 0.8) 50%, hsl(166 76% 45% / 0.6) 80%, transparent 100%)',
-              boxShadow: '0 0 60px 20px hsl(166 76% 45% / 0.3), 0 0 100px 40px hsl(166 76% 45% / 0.15)',
-            }}
+        <svg 
+          viewBox="0 0 1440 120" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-auto block"
+          preserveAspectRatio="none"
+        >
+          <path 
+            d="M0 120V60C240 20 480 0 720 20C960 40 1200 80 1440 60V120H0Z" 
+            className="fill-background"
           />
-        </div>
-        {/* Soft ambient glow above the line */}
-        <div 
-          className="absolute bottom-0 left-0 right-0 h-32"
-          style={{
-            background: 'radial-gradient(ellipse 80% 100% at 50% 100%, hsl(166 76% 45% / 0.08) 0%, transparent 70%)',
-          }}
-        />
-        {/* Floating glass shards */}
-        <motion.div 
-          className="absolute -bottom-2 left-[15%] w-16 h-16 rounded-full"
-          style={{
-            background: 'radial-gradient(circle, hsl(166 76% 50% / 0.15) 0%, transparent 70%)',
-            filter: 'blur(8px)',
-          }}
-          animate={{ y: [-5, 5, -5], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div 
-          className="absolute -bottom-1 left-[40%] w-24 h-24 rounded-full"
-          style={{
-            background: 'radial-gradient(circle, hsl(166 76% 50% / 0.12) 0%, transparent 70%)',
-            filter: 'blur(12px)',
-          }}
-          animate={{ y: [-8, 4, -8], opacity: [0.4, 0.7, 0.4] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-        />
-        <motion.div 
-          className="absolute -bottom-3 right-[25%] w-20 h-20 rounded-full"
-          style={{
-            background: 'radial-gradient(circle, hsl(166 76% 50% / 0.1) 0%, transparent 70%)',
-            filter: 'blur(10px)',
-          }}
-          animate={{ y: [-6, 6, -6], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        />
+        </svg>
       </div>
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden">
