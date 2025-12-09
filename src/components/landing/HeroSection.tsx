@@ -6,6 +6,26 @@ import { motion } from "framer-motion";
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen overflow-x-clip" style={{ backgroundColor: 'hsl(220 60% 10%)' }}>
+      {/* Turquoise gradient glow */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse 80% 50% at 50% 0%, hsl(var(--teal) / 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse 60% 40% at 80% 20%, hsl(var(--teal) / 0.1) 0%, transparent 40%),
+            radial-gradient(ellipse 50% 30% at 20% 30%, hsl(var(--teal-light) / 0.08) 0%, transparent 40%)
+          `,
+        }}
+      />
+      
+      {/* Grain texture overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.15]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat',
+        }}
+      />
 
       <div className="container relative z-10 mx-auto px-4 md:px-6 pt-32 pb-20">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[calc(100vh-8rem)]">
