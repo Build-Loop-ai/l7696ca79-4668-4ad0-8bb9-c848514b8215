@@ -3,13 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { SaveStatusIndicator } from "@/components/ui/save-status";
 import { Button } from "@/components/ui/button";
 import { useSiteConfig, useUpdateSiteConfig, SiteConfig } from "@/hooks/useSiteConfig";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { Globe, Mail, Share2, DollarSign, Megaphone, FileText, Image, Upload, X } from "lucide-react";
+import { Globe, Mail, Share2, FileText, Image, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -357,139 +357,6 @@ export default function AdminSiteConfig() {
                 value={formData.social_instagram || ""}
                 onChange={(e) => updateField("social_instagram", e.target.value)}
                 placeholder="https://instagram.com/..."
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pricing & Features */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
-            <CardTitle>Pricing & Features</CardTitle>
-          </div>
-          <CardDescription>Trial period and discount settings</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="space-y-2">
-              <Label htmlFor="trial_days">Trial Days</Label>
-              <Input
-                id="trial_days"
-                type="number"
-                value={formData.trial_days || 14}
-                onChange={(e) => updateField("trial_days", parseInt(e.target.value) || 14)}
-                min={0}
-                max={90}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="annual_discount">Annual Discount (%)</Label>
-              <Input
-                id="annual_discount"
-                type="number"
-                value={formData.annual_discount || 20}
-                onChange={(e) => updateField("annual_discount", parseInt(e.target.value) || 0)}
-                min={0}
-                max={100}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency Code</Label>
-              <Input
-                id="currency"
-                value={formData.currency || "EUR"}
-                onChange={(e) => updateField("currency", e.target.value.toUpperCase())}
-                placeholder="EUR"
-                maxLength={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="currency_symbol">Currency Symbol</Label>
-              <Input
-                id="currency_symbol"
-                value={formData.currency_symbol || "€"}
-                onChange={(e) => updateField("currency_symbol", e.target.value)}
-                placeholder="€"
-                maxLength={3}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Social Proof */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Megaphone className="h-5 w-5 text-primary" />
-            <CardTitle>Social Proof</CardTitle>
-          </div>
-          <CardDescription>Customer count shown on landing page</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="social_proof_count">Customer Count</Label>
-              <Input
-                id="social_proof_count"
-                value={formData.social_proof_count || ""}
-                onChange={(e) => updateField("social_proof_count", e.target.value)}
-                placeholder="500+"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="social_proof_label">Customer Label</Label>
-              <Input
-                id="social_proof_label"
-                value={formData.social_proof_label || ""}
-                onChange={(e) => updateField("social_proof_label", e.target.value)}
-                placeholder="businesses worldwide"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Demo Page */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <CardTitle>Demo Page</CardTitle>
-          </div>
-          <CardDescription>Configuration for the public demo page</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Demo Page Enabled</Label>
-              <p className="text-sm text-muted-foreground">Show the public demo page at /demo</p>
-            </div>
-            <Switch
-              checked={formData.demo_enabled ?? true}
-              onCheckedChange={(checked) => updateField("demo_enabled", checked)}
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="demo_title">Demo Title</Label>
-              <Input
-                id="demo_title"
-                value={formData.demo_title || ""}
-                onChange={(e) => updateField("demo_title", e.target.value)}
-                placeholder="Hear Your AI Receptionist"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="demo_subtitle">Demo Subtitle</Label>
-              <Input
-                id="demo_subtitle"
-                value={formData.demo_subtitle || ""}
-                onChange={(e) => updateField("demo_subtitle", e.target.value)}
-                placeholder="Experience the future..."
               />
             </div>
           </div>
