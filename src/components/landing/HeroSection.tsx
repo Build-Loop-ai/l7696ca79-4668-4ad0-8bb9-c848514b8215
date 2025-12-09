@@ -133,11 +133,6 @@ const HeroSection = () => {
             className="relative flex justify-center lg:justify-end"
           >
             <div className="relative">
-              {/* Glow behind phone */}
-              <div className="absolute inset-0 blur-[100px] opacity-50">
-                <div className="absolute inset-10 bg-gradient-to-br from-teal/40 via-teal-dark/30 to-transparent rounded-full" />
-              </div>
-
               {/* iPhone 15 Pro style mockup */}
               <motion.div 
                 className="relative"
