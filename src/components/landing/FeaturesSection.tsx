@@ -34,7 +34,7 @@ const FeaturesSection = () => {
   ];
 
   return (
-    <section id="features" ref={containerRef} className="relative pt-12 pb-32 md:pt-16 md:pb-48 overflow-hidden bg-background">
+    <section id="features" ref={containerRef} className="relative pt-24 pb-32 md:pt-32 md:pb-48 overflow-hidden bg-background">
       {/* Floating gradient orbs */}
       <motion.div 
         style={{ y: y1, opacity }}
