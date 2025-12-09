@@ -343,13 +343,50 @@ function buildSystemPrompt(org: any, settings: any): string {
   const personality = settings?.ai_config?.personality || "friendly";
   const language = settings?.ai_config?.language || "en";
 
+  // Language names - include full locale codes for proper lookup
   const languageNames: Record<string, string> = {
+    // Full locale codes (stored format)
+    "en-US": "English",
+    "en-GB": "English",
+    "en-AU": "English",
+    "en-NZ": "English",
+    "en-IN": "English",
+    "nl-NL": "Dutch",
+    "nl-BE": "Dutch (Belgian)",
+    "de-DE": "German",
+    "de-CH": "German (Swiss)",
+    "es-ES": "Spanish",
+    "es-419": "Spanish (Latin American)",
+    "fr-FR": "French",
+    "fr-CA": "French (Canadian)",
+    "it-IT": "Italian",
+    "pt-PT": "Portuguese",
+    "pt-BR": "Portuguese (Brazilian)",
+    "da-DK": "Danish",
+    "sv-SE": "Swedish",
+    "no-NO": "Norwegian",
+    "fi-FI": "Finnish",
+    "pl-PL": "Polish",
+    "ja-JP": "Japanese",
+    "ko-KR": "Korean",
+    "zh-CN": "Chinese (Simplified)",
+    "zh-TW": "Chinese (Traditional)",
+    "tr-TR": "Turkish",
+    "ru-RU": "Russian",
+    "ar-SA": "Arabic",
+    "hi-IN": "Hindi",
+    // Base language codes (fallback)
     en: "English",
     nl: "Dutch",
     de: "German",
     es: "Spanish",
     fr: "French",
+    it: "Italian",
+    pt: "Portuguese",
   };
+
+  // Get language name, falling back through locale -> base -> English
+  const languageName = languageNames[language] || languageNames[language.split("-")[0]] || "English";
 
   // Include business description if available
   const descriptionSection = org.description 
@@ -405,7 +442,13 @@ ALWAYS use the current year (${today.getFullYear()}) unless the user explicitly 
 For example: if today is ${currentDateFormatted}, "tomorrow" means ${new Date(today.getTime() + 86400000).toISOString().split('T')[0]}.
 
 ## Language
-Speak in ${languageNames[language] || "English"}.`;
+Speak in ${languageName} at all times.
+
+IMPORTANT LANGUAGE INSTRUCTION:
+You MUST speak ONLY in ${languageName}. Never switch to English or any other language, even if the caller speaks a different language.
+- Say all numbers, dates, times, and proper nouns in ${languageName}.
+- If the caller speaks a different language, politely respond in ${languageName}.
+- This is critical: DO NOT switch languages mid-conversation under any circumstances.`;
 }
 
 function formatBusinessHours(hours: any): string {
