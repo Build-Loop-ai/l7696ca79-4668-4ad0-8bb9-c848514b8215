@@ -520,7 +520,7 @@ const Demo = () => {
                                 >
                                   <div className="text-center mb-4">
                                     <h4 className="text-white font-medium mb-1">Choose a voice</h4>
-                                    <p className="text-xs text-white/50">Select who answers your calls</p>
+                                    <p className="text-xs text-white/50">All voices speak your selected language fluently</p>
                                   </div>
                                   
                                   {/* Gender Toggle */}

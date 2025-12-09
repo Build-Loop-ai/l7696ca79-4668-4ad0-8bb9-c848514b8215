@@ -343,8 +343,6 @@ function generateDemoScript(data: DemoRequest): string {
   const demoScript = `
 ${toneStyle.greeting} ${businessName}. ${language.startsWith('en') ? "I'm your AI receptionist. How can I help you today?" : ""}
 
-[pause]
-
 ${businessScript.answer}
 
 ${services ? `${language.startsWith('en') ? `By the way, we also offer ${services.split(',').slice(0, 2).join(' and ')}.` : ''}` : ''}
