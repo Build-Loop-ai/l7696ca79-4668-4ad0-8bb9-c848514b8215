@@ -83,6 +83,12 @@ const Navbar = () => {
               >
                 Try Demo
               </Link>
+              <Link
+                to="/assessment"
+                className="px-4 py-2 text-sm font-medium text-purple-400 hover:text-purple-300 rounded-xl hover:bg-purple-500/10 transition-all duration-200"
+              >
+                Free Assessment
+              </Link>
             </div>
 
             {/* CTA Buttons */}
@@ -153,6 +159,13 @@ const Navbar = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Try Demo
+                </Link>
+                <Link
+                  to="/assessment"
+                  className="block text-purple-400 font-medium py-3 px-4 rounded-xl hover:bg-purple-500/10 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Free Assessment
                 </Link>
                 <div className="pt-3 mt-3 border-t border-white/10 space-y-2">
                   <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>

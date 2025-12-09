@@ -77,6 +77,33 @@ export type Database = {
           },
         ]
       }
+      assessment_leads: {
+        Row: {
+          answers: Json
+          company_name: string | null
+          created_at: string | null
+          email: string
+          id: string
+          insights: Json | null
+        }
+        Insert: {
+          answers?: Json
+          company_name?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          insights?: Json | null
+        }
+        Update: {
+          answers?: Json
+          company_name?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          insights?: Json | null
+        }
+        Relationships: []
+      }
       call_logs: {
         Row: {
           caller_number: string | null

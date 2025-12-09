@@ -18,6 +18,7 @@ import DashboardAnalytics from "./pages/DashboardAnalytics";
 import DashboardSettings from "./pages/DashboardSettings";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Demo from "./pages/Demo";
+import Assessment from "./pages/Assessment";
 import AuthCallback from "./pages/AuthCallback";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -34,6 +35,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/demo" element={<Demo />} />
+            <Route path="/assessment" element={<Assessment />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/accept-invitation" element={<AcceptInvitation />} />
