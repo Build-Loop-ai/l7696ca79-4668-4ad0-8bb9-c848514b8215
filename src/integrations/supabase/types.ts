@@ -612,6 +612,7 @@ export type Database = {
           demo_title: string | null
           description: string
           id: string
+          logo_url: string | null
           privacy_url: string | null
           sales_email: string
           site_name: string
@@ -636,6 +637,7 @@ export type Database = {
           demo_title?: string | null
           description?: string
           id?: string
+          logo_url?: string | null
           privacy_url?: string | null
           sales_email?: string
           site_name?: string
@@ -660,6 +662,7 @@ export type Database = {
           demo_title?: string | null
           description?: string
           id?: string
+          logo_url?: string | null
           privacy_url?: string | null
           sales_email?: string
           site_name?: string

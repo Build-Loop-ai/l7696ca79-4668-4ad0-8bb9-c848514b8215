@@ -23,6 +23,7 @@ export interface SiteConfig {
   demo_enabled: boolean | null;
   demo_title: string | null;
   demo_subtitle: string | null;
+  logo_url: string | null;
 }
 
 // Transform database config to match the static config structure
@@ -53,6 +54,7 @@ export function transformToStaticFormat(dbConfig: SiteConfig) {
       title: dbConfig.demo_title || "Hear Your AI Receptionist",
       subtitle: dbConfig.demo_subtitle || "Experience the future of customer service in 30 seconds",
     },
+    logoUrl: dbConfig.logo_url || "",
   };
 }
 
