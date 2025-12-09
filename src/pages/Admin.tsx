@@ -13,6 +13,7 @@ import { AdminRecentActivity } from '@/components/admin/AdminRecentActivity';
 import { AdminEmailsTable } from '@/components/admin/AdminEmailsTable';
 import { AdminEmailSettings } from '@/components/admin/AdminEmailSettings';
 import { AdminPlansTable } from '@/components/admin/AdminPlansTable';
+import { AdminContactRequests } from '@/components/admin/AdminContactRequests';
 import { cn } from '@/lib/utils';
 import { 
   Shield, 
@@ -24,7 +25,8 @@ import {
   Settings,
   ArrowLeft,
   CreditCard,
-  Sparkles
+  Sparkles,
+  MessageSquare
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
@@ -42,6 +44,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Overview', value: 'overview' },
   { icon: Building2, label: 'Organizations', value: 'organizations' },
   { icon: Users, label: 'Users', value: 'users' },
+  { icon: MessageSquare, label: 'Contacts', value: 'contacts' },
   { icon: Mail, label: 'Emails', value: 'emails' },
   { icon: CreditCard, label: 'Plans', value: 'plans' },
   { icon: Settings, label: 'Settings', value: 'settings' },
@@ -374,6 +377,7 @@ const Admin = () => {
                   {activeTab === 'overview' && 'Monitor your platform performance and insights'}
                   {activeTab === 'organizations' && 'Manage all organizations on the platform'}
                   {activeTab === 'users' && 'View and manage user accounts'}
+                  {activeTab === 'contacts' && 'View and respond to contact form submissions'}
                   {activeTab === 'emails' && 'Track email delivery and logs'}
                   {activeTab === 'plans' && 'Configure pricing plans and features'}
                   {activeTab === 'settings' && 'Platform configuration and email settings'}
@@ -407,6 +411,10 @@ const Admin = () => {
 
               {activeTab === 'users' && (
                 <AdminUsersTable users={users} loading={loading} />
+              )}
+
+              {activeTab === 'contacts' && (
+                <AdminContactRequests />
               )}
 
               {activeTab === 'emails' && (
