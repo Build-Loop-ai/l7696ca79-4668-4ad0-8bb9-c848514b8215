@@ -107,12 +107,14 @@ const HeroSection = () => {
             transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex justify-center lg:justify-center lg:pr-8"
           >
-            <div className="relative">
+            <Link to="/demo" className="relative block cursor-pointer">
               {/* iPhone 15 Pro style mockup */}
               <motion.div 
                 className="relative"
                 animate={{ y: [0, -12, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 {/* Phone outer frame - titanium style */}
                 <div 
@@ -323,7 +325,7 @@ const HeroSection = () => {
                   </div>
                 </div>
               </motion.div>
-            </div>
+            </Link>
           </motion.div>
         </div>
       </div>
