@@ -157,7 +157,7 @@
       hsl(var(--background));
   }
   .hero-gradient {
-    background: linear-gradient(180deg, hsl(220 60% 12%) 0%, hsl(220 60% 8%) 100%);
+    background: hsl(220 60% 10%);
   }
   .grain-overlay {
     position: relative;
