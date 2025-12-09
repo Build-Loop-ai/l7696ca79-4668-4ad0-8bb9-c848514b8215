@@ -61,6 +61,8 @@ In your Lovable project, go to **Settings → Backend → Secrets** and add:
 | `VAPI_PUBLIC_KEY` | Vapi.ai public key (for browser calls) | Same as above |
 | `TWILIO_ACCOUNT_SID` | Twilio Account SID | [Twilio Console](https://console.twilio.com) |
 | `TWILIO_AUTH_TOKEN` | Twilio Auth Token | Twilio Console → Account Info |
+| `TWILIO_API_KEY` | Twilio API Key SID | Twilio Console → Account → API Keys → Create new |
+| `TWILIO_API_SECRET` | Twilio API Secret | Created with API Key (shown once, save it!) |
 | `ELEVENLABS_API_KEY` | ElevenLabs API key | [ElevenLabs](https://elevenlabs.io) → Profile → API Keys |
 | `STRIPE_SECRET_KEY` | Stripe secret key | [Stripe Dashboard](https://dashboard.stripe.com/apikeys) |
 | `RESEND_API_KEY` | Resend API key | [Resend](https://resend.com) → API Keys |
