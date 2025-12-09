@@ -5,13 +5,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import ContactDialog from "./ContactDialog";
 const FAQSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [contactOpen, setContactOpen] = useState(false);
 
   const faqs = [
     {
@@ -123,12 +124,19 @@ const FAQSection = () => {
               <p className="font-medium text-foreground">Still have questions?</p>
               <p className="text-sm text-muted-foreground">Our team is here to help.</p>
             </div>
-            <Button variant="outline" size="lg" className="ml-0 sm:ml-4">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="ml-0 sm:ml-4"
+              onClick={() => setContactOpen(true)}
+            >
               Contact Support
             </Button>
           </div>
         </motion.div>
       </div>
+      
+      <ContactDialog open={contactOpen} onOpenChange={setContactOpen} />
     </section>
   );
 };
