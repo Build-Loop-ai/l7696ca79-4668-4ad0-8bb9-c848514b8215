@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Phone, Twitter, Linkedin, Instagram, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
+import ContactDialog from "./ContactDialog";
 
 const Footer = () => {
+  const [contactOpen, setContactOpen] = useState(false);
+
   const footerLinks = {
     Product: [
       { name: "Features", href: "#features" },
@@ -14,7 +18,7 @@ const Footer = () => {
       { name: "About", href: "#" },
       { name: "Blog", href: "#" },
       { name: "Careers", href: "#" },
-      { name: "Contact", href: "#" },
+      { name: "Contact", href: "#", onClick: () => setContactOpen(true) },
     ],
     Resources: [
       { name: "Documentation", href: "#" },
@@ -77,13 +81,23 @@ const Footer = () => {
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.name}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200 inline-flex items-center gap-1 group"
-                    >
-                      {link.name}
-                      <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-50 group-hover:translate-y-0 group-hover:translate-x-0 transition-all duration-200" />
-                    </a>
+                    {'onClick' in link && link.onClick ? (
+                      <button
+                        onClick={link.onClick}
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200 inline-flex items-center gap-1 group"
+                      >
+                        {link.name}
+                        <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-50 group-hover:translate-y-0 group-hover:translate-x-0 transition-all duration-200" />
+                      </button>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200 inline-flex items-center gap-1 group"
+                      >
+                        {link.name}
+                        <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-50 group-hover:translate-y-0 group-hover:translate-x-0 transition-all duration-200" />
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -101,6 +115,8 @@ const Footer = () => {
           </p>
         </div>
       </div>
+
+      <ContactDialog open={contactOpen} onOpenChange={setContactOpen} />
     </footer>
   );
 };
