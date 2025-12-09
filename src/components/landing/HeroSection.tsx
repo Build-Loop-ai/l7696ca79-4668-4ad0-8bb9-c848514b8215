@@ -21,56 +21,6 @@ const HeroSection = () => {
           />
         </svg>
       </div>
-      {/* Animated background orbs */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div 
-          className="absolute top-1/4 -left-32 w-[600px] h-[600px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, hsl(166 76% 36% / 0.15) 0%, transparent 70%)',
-          }}
-          animate={{
-            x: [0, 50, 0],
-            y: [0, 30, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div 
-          className="absolute bottom-1/4 -right-32 w-[500px] h-[500px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, hsl(166 76% 40% / 0.1) 0%, transparent 70%)',
-          }}
-          animate={{
-            x: [0, -40, 0],
-            y: [0, -50, 0],
-            scale: [1, 1.15, 1],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, hsl(220 60% 20% / 0.3) 0%, transparent 60%)',
-          }}
-          animate={{
-            scale: [1, 1.05, 1],
-            rotate: [0, 5, 0],
-          }}
-          transition={{
-            duration: 30,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </div>
 
       {/* Grid pattern overlay */}
       <div 
