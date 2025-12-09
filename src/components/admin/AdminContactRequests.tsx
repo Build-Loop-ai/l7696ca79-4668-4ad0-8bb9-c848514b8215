@@ -4,8 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
-import { Mail, Phone, Building2, MessageSquare, Check, Clock, Trash2 } from 'lucide-react';
+import { Mail, Phone, Building2, MessageSquare, Check, Clock, Trash2, Sparkles, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -18,6 +19,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface ContactRequest {
   id: string;
@@ -37,6 +46,9 @@ export const AdminContactRequests = () => {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [replyRequest, setReplyRequest] = useState<ContactRequest | null>(null);
+  const [guidance, setGuidance] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     fetchRequests();
@@ -97,6 +109,43 @@ export const AdminContactRequests = () => {
       toast.error('Failed to delete request');
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const sendAIReply = async () => {
+    if (!replyRequest || !guidance.trim()) {
+      toast.error('Please provide guidance for the AI');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-contact-reply', {
+        body: {
+          contactRequestId: replyRequest.id,
+          guidance: guidance.trim(),
+        },
+      });
+
+      if (error) throw error;
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success('Email sent successfully!');
+      setRequests(requests.map(r => 
+        r.id === replyRequest.id 
+          ? { ...r, status: 'responded', responded_at: new Date().toISOString() } 
+          : r
+      ));
+      setReplyRequest(null);
+      setGuidance('');
+    } catch (error: any) {
+      console.error('Error sending AI reply:', error);
+      toast.error(error.message || 'Failed to send email');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -205,6 +254,20 @@ export const AdminContactRequests = () => {
                           <Button 
                             size="sm" 
                             variant="ghost" 
+                            className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                            onClick={() => {
+                              setReplyRequest(request);
+                              setGuidance('');
+                            }}
+                            title="AI Reply"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {request.status !== 'responded' && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
                             className="h-8 px-2 text-success hover:text-success hover:bg-success/10"
                             onClick={() => updateStatus(request.id, 'responded')}
                           >
@@ -243,6 +306,11 @@ export const AdminContactRequests = () => {
                               Responded on {format(new Date(request.responded_at), 'MMM d, yyyy HH:mm')}
                             </p>
                           )}
+                          {request.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Notes: {request.notes}
+                            </p>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -273,6 +341,68 @@ export const AdminContactRequests = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!replyRequest} onOpenChange={() => setReplyRequest(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              AI-Powered Reply
+            </DialogTitle>
+            <DialogDescription>
+              Provide guidance for the AI to generate a professional email response.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {replyRequest && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                <p className="font-medium text-foreground mb-1">To: {replyRequest.name}</p>
+                <p className="text-muted-foreground text-xs">{replyRequest.email}</p>
+                <div className="mt-2 pt-2 border-t border-border">
+                  <p className="text-muted-foreground text-xs mb-1">Their message:</p>
+                  <p className="text-foreground text-sm line-clamp-3">{replyRequest.message}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Your guidance for the AI
+                </label>
+                <Textarea
+                  placeholder="e.g., Thank them for their interest, mention we'll schedule a demo call, highlight our 14-day trial..."
+                  value={guidance}
+                  onChange={(e) => setGuidance(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  The AI will craft a professional email incorporating your points.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReplyRequest(null)}>
+              Cancel
+            </Button>
+            <Button onClick={sendAIReply} disabled={sending || !guidance.trim()}>
+              {sending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating & Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Generate & Send
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
