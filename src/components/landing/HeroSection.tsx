@@ -105,7 +105,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, scale: 0.9, y: 40 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex justify-center lg:justify-end"
+            className="relative flex justify-center lg:justify-center lg:pr-8"
           >
             <div className="relative">
               {/* iPhone 15 Pro style mockup */}
@@ -299,7 +299,7 @@ const HeroSection = () => {
                 initial={{ opacity: 0, x: 40, y: -20 }}
                 animate={{ opacity: 1, x: 0, y: 0 }}
                 transition={{ delay: 1.3, duration: 0.6 }}
-                className="absolute right-0 md:right-4 bottom-1/3 hidden sm:block"
+                className="absolute -right-12 md:-right-28 bottom-1/3 hidden sm:block"
               >
                 <div 
                   className="rounded-2xl p-4 max-w-[180px]"
