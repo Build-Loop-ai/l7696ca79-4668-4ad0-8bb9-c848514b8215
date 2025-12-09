@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
-import { Mail, Phone, Building2, MessageSquare, Check, Clock, Trash2, Sparkles, Send, Loader2 } from 'lucide-react';
+import { Mail, Phone, Building2, MessageSquare, Check, Clock, Trash2, Sparkles, Send, Loader2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -41,13 +41,18 @@ interface ContactRequest {
   notes: string | null;
 }
 
+type ReplyStep = 'guidance' | 'preview';
+
 export const AdminContactRequests = () => {
   const [requests, setRequests] = useState<ContactRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [replyRequest, setReplyRequest] = useState<ContactRequest | null>(null);
+  const [replyStep, setReplyStep] = useState<ReplyStep>('guidance');
   const [guidance, setGuidance] = useState('');
+  const [generatedEmail, setGeneratedEmail] = useState('');
+  const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
@@ -112,9 +117,39 @@ export const AdminContactRequests = () => {
     }
   };
 
-  const sendAIReply = async () => {
+  const generateEmail = async () => {
     if (!replyRequest || !guidance.trim()) {
       toast.error('Please provide guidance for the AI');
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-contact-reply', {
+        body: {
+          mode: 'generate',
+          contactRequestId: replyRequest.id,
+          guidance: guidance.trim(),
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setGeneratedEmail(data.generatedEmail);
+      setReplyStep('preview');
+      toast.success('Email generated! Review and edit if needed.');
+    } catch (error: any) {
+      console.error('Error generating email:', error);
+      toast.error(error.message || 'Failed to generate email');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const sendEmail = async () => {
+    if (!replyRequest || !generatedEmail.trim()) {
+      toast.error('Email content is empty');
       return;
     }
 
@@ -122,16 +157,15 @@ export const AdminContactRequests = () => {
     try {
       const { data, error } = await supabase.functions.invoke('ai-contact-reply', {
         body: {
+          mode: 'send',
           contactRequestId: replyRequest.id,
+          emailContent: generatedEmail.trim(),
           guidance: guidance.trim(),
         },
       });
 
       if (error) throw error;
-      
-      if (data?.error) {
-        throw new Error(data.error);
-      }
+      if (data?.error) throw new Error(data.error);
 
       toast.success('Email sent successfully!');
       setRequests(requests.map(r => 
@@ -139,14 +173,20 @@ export const AdminContactRequests = () => {
           ? { ...r, status: 'responded', responded_at: new Date().toISOString() } 
           : r
       ));
-      setReplyRequest(null);
-      setGuidance('');
+      closeReplyDialog();
     } catch (error: any) {
-      console.error('Error sending AI reply:', error);
+      console.error('Error sending email:', error);
       toast.error(error.message || 'Failed to send email');
     } finally {
       setSending(false);
     }
+  };
+
+  const closeReplyDialog = () => {
+    setReplyRequest(null);
+    setReplyStep('guidance');
+    setGuidance('');
+    setGeneratedEmail('');
   };
 
   const getStatusBadge = (status: string) => {
@@ -257,7 +297,9 @@ export const AdminContactRequests = () => {
                             className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/10"
                             onClick={() => {
                               setReplyRequest(request);
+                              setReplyStep('guidance');
                               setGuidance('');
+                              setGeneratedEmail('');
                             }}
                             title="AI Reply"
                           >
@@ -342,64 +384,132 @@ export const AdminContactRequests = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!replyRequest} onOpenChange={() => setReplyRequest(null)}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={!!replyRequest} onOpenChange={() => closeReplyDialog()}>
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              AI-Powered Reply
+              {replyStep === 'guidance' ? 'AI-Powered Reply' : 'Review & Send'}
             </DialogTitle>
             <DialogDescription>
-              Provide guidance for the AI to generate a professional email response.
+              {replyStep === 'guidance' 
+                ? 'Provide guidance for the AI to generate a professional email response.'
+                : 'Review the generated email, make any edits, then send.'}
             </DialogDescription>
           </DialogHeader>
           
           {replyRequest && (
             <div className="space-y-4">
+              {/* Contact info - always visible */}
               <div className="rounded-lg bg-muted/50 p-3 text-sm">
                 <p className="font-medium text-foreground mb-1">To: {replyRequest.name}</p>
                 <p className="text-muted-foreground text-xs">{replyRequest.email}</p>
-                <div className="mt-2 pt-2 border-t border-border">
-                  <p className="text-muted-foreground text-xs mb-1">Their message:</p>
-                  <p className="text-foreground text-sm line-clamp-3">{replyRequest.message}</p>
-                </div>
+                {replyStep === 'guidance' && (
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-muted-foreground text-xs mb-1">Their message:</p>
+                    <p className="text-foreground text-sm line-clamp-3">{replyRequest.message}</p>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">
-                  Your guidance for the AI
-                </label>
-                <Textarea
-                  placeholder="e.g., Thank them for their interest, mention we'll schedule a demo call, highlight our 14-day trial..."
-                  value={guidance}
-                  onChange={(e) => setGuidance(e.target.value)}
-                  rows={4}
-                  className="resize-none"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  The AI will craft a professional email incorporating your points.
-                </p>
-              </div>
+              {/* Step 1: Guidance */}
+              {replyStep === 'guidance' && (
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Your guidance for the AI
+                  </label>
+                  <Textarea
+                    placeholder="e.g., Thank them for their interest, mention we'll schedule a demo call, highlight our 14-day trial..."
+                    value={guidance}
+                    onChange={(e) => setGuidance(e.target.value)}
+                    rows={4}
+                    className="resize-none"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The AI will craft a professional email incorporating your points.
+                  </p>
+                </div>
+              )}
+
+              {/* Step 2: Preview & Edit */}
+              {replyStep === 'preview' && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-foreground">
+                      Generated Email
+                    </label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 text-xs"
+                      onClick={() => generateEmail()}
+                      disabled={generating}
+                    >
+                      {generating ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                      )}
+                      Regenerate
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={generatedEmail}
+                    onChange={(e) => setGeneratedEmail(e.target.value)}
+                    rows={10}
+                    className="resize-none font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Edit the email above if needed before sending.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReplyRequest(null)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {replyStep === 'preview' && (
+              <Button 
+                variant="ghost" 
+                onClick={() => setReplyStep('guidance')}
+                className="sm:mr-auto"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            )}
+            <Button variant="outline" onClick={closeReplyDialog}>
               Cancel
             </Button>
-            <Button onClick={sendAIReply} disabled={sending || !guidance.trim()}>
-              {sending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating & Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Generate & Send
-                </>
-              )}
-            </Button>
+            {replyStep === 'guidance' ? (
+              <Button onClick={generateEmail} disabled={generating || !guidance.trim()}>
+                {generating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Email
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button onClick={sendEmail} disabled={sending || !generatedEmail.trim()}>
+                {sending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Email
+                  </>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
