@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,14 +6,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SaveStatusIndicator } from "@/components/ui/save-status";
+import { Button } from "@/components/ui/button";
 import { useSiteConfig, useUpdateSiteConfig, SiteConfig } from "@/hooks/useSiteConfig";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { Globe, Mail, Share2, DollarSign, Megaphone, FileText } from "lucide-react";
+import { Globe, Mail, Share2, DollarSign, Megaphone, FileText, Image, Upload, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function AdminSiteConfig() {
   const { data: config, isLoading } = useSiteConfig();
   const updateConfig = useUpdateSiteConfig();
   const [formData, setFormData] = useState<Partial<SiteConfig>>({});
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (config) {
@@ -31,8 +36,54 @@ export default function AdminSiteConfig() {
     debounceMs: 1500,
   });
 
-  const updateField = (field: keyof SiteConfig, value: string | number | boolean) => {
+  const updateField = (field: keyof SiteConfig, value: string | number | boolean | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be less than 2MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `site-logo-${Date.now()}.${fileExt}`;
+      const filePath = `public/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("site-assets")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("site-assets")
+        .getPublicUrl(filePath);
+
+      updateField("logo_url", publicUrl);
+      toast.success("Logo uploaded successfully");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload logo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeLogo = () => {
+    updateField("logo_url", null);
   };
 
   if (isLoading) {
@@ -55,6 +106,71 @@ export default function AdminSiteConfig() {
         </div>
         <SaveStatusIndicator status={saveStatus} />
       </div>
+
+      {/* Logo */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Image className="h-5 w-5 text-primary" />
+            <CardTitle>Logo</CardTitle>
+          </div>
+          <CardDescription>Your site logo used across all pages</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start gap-6">
+            {formData.logo_url ? (
+              <div className="relative">
+                <img
+                  src={formData.logo_url}
+                  alt="Site logo"
+                  className="h-20 w-auto max-w-[200px] object-contain rounded-lg border border-border bg-background p-2"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6"
+                  onClick={removeLogo}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex h-20 w-32 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50">
+                <Image className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+            )}
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {uploading ? "Uploading..." : "Upload Logo"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Recommended: PNG or SVG, max 2MB
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="logo_url">Or enter URL directly</Label>
+            <Input
+              id="logo_url"
+              value={formData.logo_url || ""}
+              onChange={(e) => updateField("logo_url", e.target.value)}
+              placeholder="https://example.com/logo.png"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Branding */}
       <Card>
