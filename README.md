@@ -91,9 +91,44 @@ In your Lovable project, go to **Settings → Backend → Secrets** and add:
      - `customer.subscription.deleted`
      - `invoice.payment_failed`
 
-### 5. Configure Your Brand
+### 5. First Steps After Remix
 
-Edit `src/lib/site-config.ts` to customize:
+After remixing this template, complete these steps to make it your own:
+
+#### A. Customize SEO & Branding (index.html)
+Edit `index.html` to update:
+- `<title>` - Your brand name and tagline
+- `<meta name="description">` - Your business description
+- `og:title` and `og:description` - Social sharing text
+- `og:image` and `twitter:image` - Your OG image URL (1200x630px recommended)
+
+#### B. Set Up Your First Admin User
+After your first user signs up, run this SQL in the Supabase SQL Editor:
+
+```sql
+-- Replace with your user's ID (found in auth.users table)
+INSERT INTO public.system_roles (user_id, role)
+VALUES ('your-user-uuid-here', 'super_admin');
+```
+
+#### C. Configure Your Brand in Admin Panel
+1. Sign in as the admin user
+2. Go to `/admin`
+3. Navigate to the **Site Config** tab
+4. Update:
+   - Site Name
+   - Tagline
+   - Support/Sales emails
+   - Upload your logo (light and dark versions)
+
+#### D. Configure Pricing Plans
+1. In the admin panel, go to the **Plans** tab
+2. Create your pricing plans with Stripe price IDs
+3. Click "Sync to Stripe" to create products in your Stripe account
+
+### 6. Optional: Update Static Fallbacks
+
+Edit `src/lib/site-config.ts` to change the fallback values used when the database is unavailable:
 
 ```typescript
 export const siteConfig = {
@@ -103,26 +138,6 @@ export const siteConfig = {
   // ... more options
 };
 ```
-
-### 6. Set Up First Admin
-
-After your first user signs up, run this SQL in the Supabase SQL Editor:
-
-```sql
--- Replace with your user's ID (found in auth.users table)
-INSERT INTO public.system_roles (user_id, role)
-VALUES ('your-user-uuid-here', 'super_admin');
-```
-
-Or use the Lovable Cloud database interface to add the record.
-
-### 7. Configure Pricing Plans
-
-1. Sign in as the admin user
-2. Go to `/admin` 
-3. Navigate to the **Plans** tab
-4. Create your pricing plans with Stripe price IDs
-5. Click "Sync to Stripe" to create products in your Stripe account
 
 ## 📁 Project Structure
 
@@ -156,11 +171,12 @@ supabase/
 
 | File | Purpose |
 |------|---------|
-| `src/lib/site-config.ts` | Brand name, tagline, contact info |
+| `src/lib/site-config.ts` | Fallback brand name, tagline, contact info |
 | `src/lib/voice-config.ts` | Available voices and languages |
 | `src/lib/phone-countries.ts` | Supported countries for phone numbers |
 | `tailwind.config.ts` | Theme colors and design tokens |
 | `src/index.css` | CSS variables and global styles |
+| `index.html` | SEO meta tags (customize for your brand) |
 
 ## 🔐 Security Features
 
@@ -182,13 +198,14 @@ Key tables:
 - `phone_numbers` - Provisioned Twilio numbers
 - `appointments` - Booked appointments
 - `organization_settings` - AI and business configuration
+- `site_config` - Platform branding and settings
 
 ## 🎨 Customization
 
 ### Branding
-1. Update `src/lib/site-config.ts` with your brand
-2. Replace logo in `src/components/landing/Navbar.tsx`
-3. Update colors in `tailwind.config.ts` and `src/index.css`
+1. Update brand settings in Admin Panel → Site Config
+2. Upload logos (light for dark backgrounds, dark for light backgrounds)
+3. Customize colors in `tailwind.config.ts` and `src/index.css`
 
 ### Pricing
 Plans are fully dynamic from the database. Use the admin panel to:
@@ -199,6 +216,26 @@ Plans are fully dynamic from the database. Use the admin panel to:
 
 ### Voices & Languages
 Edit `src/lib/voice-config.ts` to customize available voices and languages.
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+**"No phone numbers available"**
+- Ensure your Twilio account has funds
+- Check that the country is enabled in your Twilio settings
+
+**"Google Calendar not connecting"**
+- Verify OAuth redirect URI matches exactly
+- Check that Google Calendar API is enabled
+
+**"Stripe webhooks failing"**
+- Confirm webhook endpoint URL is correct
+- Verify webhook secret is set in Supabase secrets
+
+**"Voice test not working"**
+- Ensure VAPI_PUBLIC_KEY is set (different from VAPI_API_KEY)
+- Check browser permissions for microphone
 
 ## 📞 Support
 

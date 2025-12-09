@@ -1,30 +1,34 @@
 /**
- * Site Configuration
+ * Site Configuration - Fallback Defaults
  * 
- * This file contains all the configurable branding and site settings.
- * Update these values to customize the template for your business.
+ * These values are used as fallbacks when the database config is unavailable.
+ * The actual site configuration is managed in the admin panel (Site Config section)
+ * and stored in the site_config database table.
+ * 
+ * IMPORTANT: After deploying, update these values in the Admin Panel → Site Config
+ * to customize your brand without code changes.
  */
 
 export const siteConfig = {
-  // Brand
-  name: "Callisto",
+  // Brand - Update these in Admin Panel → Site Config
+  name: "AI Receptionist",
   tagline: "Your AI receptionist, always ready",
-  logoUrl: "", // Logo for dark backgrounds (light logo)
-  logoUrlDark: "", // Logo for light backgrounds (dark logo)
+  logoUrl: "", // Logo for dark backgrounds (light logo) - upload in Admin Panel
+  logoUrlDark: "", // Logo for light backgrounds (dark logo) - upload in Admin Panel
   description: "Never miss a call again. AI that answers, books, and delights your customers 24/7.",
   
-  // Contact
-  supportEmail: "support@callisto.ai",
-  salesEmail: "sales@callisto.ai",
+  // Contact - Update in Admin Panel → Site Config
+  supportEmail: "support@example.com",
+  salesEmail: "sales@example.com",
   
-  // Social (leave empty to hide)
+  // Social links - Leave empty to hide, configure in Admin Panel
   social: {
-    twitter: "https://twitter.com/callisto",
-    linkedin: "https://linkedin.com/company/callisto",
+    twitter: "",
+    linkedin: "",
     instagram: "",
   },
   
-  // Legal
+  // Legal pages
   privacyUrl: "/privacy",
   termsUrl: "/terms",
   
@@ -39,7 +43,7 @@ export const siteConfig = {
   // Social proof (set to empty string to hide)
   socialProof: {
     customerCount: "500+",
-    customerLabel: "clinics worldwide",
+    customerLabel: "businesses worldwide",
   },
   
   // Demo page
