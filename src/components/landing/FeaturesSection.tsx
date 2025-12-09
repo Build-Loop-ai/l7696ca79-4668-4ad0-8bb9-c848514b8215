@@ -1,5 +1,6 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import { siteConfig } from "@/lib/site-config";
 
 const FeaturesSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,7 +46,7 @@ const FeaturesSection = () => {
             viewport={{ once: true }}
             className="text-sm uppercase tracking-[0.3em] text-primary mb-6"
           >
-            Why Callisto
+            Why {siteConfig.name}
           </motion.p>
           <motion.h2
             initial={{ opacity: 0, y: 40 }}

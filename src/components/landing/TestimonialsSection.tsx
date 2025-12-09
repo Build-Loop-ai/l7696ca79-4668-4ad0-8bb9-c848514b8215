@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
+import { siteConfig } from "@/lib/site-config";
 
 const TestimonialsSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -15,7 +16,7 @@ const TestimonialsSection = () => {
 
   const testimonials = [
     {
-      quote: "Callisto has completely transformed how we handle patient calls. We went from missing 30% of calls to zero. The ROI was positive within two weeks.",
+      quote: `${siteConfig.name} has completely transformed how we handle patient calls. We went from missing 30% of calls to zero. The ROI was positive within two weeks.`,
       author: "Dr. Sarah van den Berg",
       role: "Owner & Lead Dentist",
       clinic: "Amsterdam Dental Care",
@@ -80,7 +81,7 @@ const TestimonialsSection = () => {
             className="text-4xl md:text-6xl font-serif leading-[1.1] text-foreground"
           >
             Loved by{" "}
-            <span className="italic text-gradient">500+ clinics</span>
+            <span className="italic text-gradient">{siteConfig.socialProof.customerCount} {siteConfig.socialProof.customerLabel}</span>
           </motion.h2>
         </div>
 
