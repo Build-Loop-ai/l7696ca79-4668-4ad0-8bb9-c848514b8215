@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen overflow-hidden" style={{ backgroundColor: 'hsl(220 60% 10%)' }}>
+    <section className="relative min-h-screen overflow-x-clip" style={{ backgroundColor: 'hsl(220 60% 10%)' }}>
 
       <div className="container relative z-10 mx-auto px-4 md:px-6 pt-32 pb-20">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[calc(100vh-8rem)]">
@@ -299,7 +299,7 @@ const HeroSection = () => {
                 initial={{ opacity: 0, x: 40, y: -20 }}
                 animate={{ opacity: 1, x: 0, y: 0 }}
                 transition={{ delay: 1.3, duration: 0.6 }}
-                className="absolute -right-8 md:-right-20 bottom-1/3 hidden sm:block"
+                className="absolute right-0 md:right-4 bottom-1/3 hidden sm:block"
               >
                 <div 
                   className="rounded-2xl p-4 max-w-[180px]"
