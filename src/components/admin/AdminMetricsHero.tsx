@@ -32,8 +32,8 @@ const MetricCard = ({
   <div className={cn(
     "relative overflow-hidden rounded-xl p-5 transition-all duration-300",
     "bg-card/50 backdrop-blur-sm border border-border/50",
-    "hover:bg-card/70 hover:border-border/70 hover:shadow-lg hover:shadow-purple-500/5",
-    accent && "bg-gradient-to-br from-purple-500/10 to-violet-500/5 border-purple-500/20"
+    "hover:bg-card/70 hover:border-border/70 hover:shadow-lg hover:shadow-primary/5",
+    accent && "bg-gradient-to-br from-primary/10 to-teal-dark/5 border-primary/20"
   )}>
     {/* Subtle gradient overlay */}
     <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
@@ -47,7 +47,7 @@ const MetricCard = ({
           <>
             <p className={cn(
               "text-2xl font-semibold tabular-nums",
-              accent ? "text-purple-300" : "text-foreground"
+              accent ? "text-primary" : "text-foreground"
             )}>
               {value}
             </p>
@@ -60,7 +60,7 @@ const MetricCard = ({
       <div className={cn(
         "h-10 w-10 rounded-xl flex items-center justify-center",
         accent 
-          ? "bg-purple-500/20 text-purple-400" 
+          ? "bg-primary/20 text-primary" 
           : "bg-white/5 text-muted-foreground"
       )}>
         <Icon className="h-5 w-5" />

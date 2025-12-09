@@ -236,16 +236,16 @@ const Admin = () => {
       </Helmet>
       
       <div className="admin-theme min-h-screen flex w-full">
-        {/* Premium gradient background */}
+        {/* Premium gradient background - navy/teal theme */}
         <div className="fixed inset-0 pointer-events-none">
           <div 
             className="absolute inset-0"
             style={{
               background: `
-                radial-gradient(ellipse 80% 50% at 20% 0%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
-                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
-                radial-gradient(ellipse 50% 30% at 50% 80%, rgba(192, 132, 252, 0.06) 0%, transparent 40%),
-                hsl(220 25% 8%)
+                radial-gradient(ellipse 80% 50% at 20% 0%, hsl(166 76% 46% / 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 20%, hsl(200 70% 40% / 0.08) 0%, transparent 40%),
+                radial-gradient(ellipse 50% 30% at 50% 80%, hsl(166 60% 30% / 0.06) 0%, transparent 40%),
+                hsl(220 60% 6%)
               `,
             }}
           />
@@ -264,7 +264,7 @@ const Admin = () => {
           <div className="flex-1 flex flex-col bg-card/40 backdrop-blur-xl border-r border-border/50 m-3 mr-0 rounded-2xl overflow-hidden">
             {/* Logo */}
             <div className="p-5 flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center shadow-lg shadow-primary/25">
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -286,17 +286,17 @@ const Admin = () => {
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 w-full group",
                       isActive
-                        ? "bg-gradient-to-r from-purple-500/20 to-violet-500/10 text-purple-300 border border-purple-500/20"
+                        ? "bg-gradient-to-r from-primary/20 to-teal-dark/10 text-primary border border-primary/20"
                         : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                     )}
                   >
                     <item.icon className={cn(
                       "w-5 h-5 flex-shrink-0 transition-colors",
-                      isActive ? "text-purple-400" : "text-muted-foreground group-hover:text-foreground"
+                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                     )} />
                     <span className="font-medium text-sm">{item.label}</span>
                     {isActive && (
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400" />
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
                     )}
                   </button>
                 );
@@ -322,7 +322,7 @@ const Admin = () => {
           <header className="md:hidden border-b border-border/50 bg-card/60 backdrop-blur-xl sticky top-0 z-50 px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center">
                   <Shield className="w-4 h-4 text-white" />
                 </div>
                 <span className="font-serif text-lg font-medium text-foreground">Admin</span>
@@ -347,7 +347,7 @@ const Admin = () => {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
                       isActive
-                        ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                        ? "bg-primary/20 text-primary border border-primary/30"
                         : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                     )}
                   >
@@ -363,7 +363,7 @@ const Admin = () => {
             <div className="space-y-6 animate-fade-in">
               {/* Page header */}
               <div className="mb-2">
-                <div className="flex items-center gap-2 text-purple-400/80 text-sm mb-1">
+                <div className="flex items-center gap-2 text-primary/80 text-sm mb-1">
                   <Sparkles className="w-4 h-4" />
                   <span>Platform Admin</span>
                 </div>
