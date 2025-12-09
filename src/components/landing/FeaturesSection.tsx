@@ -35,15 +35,6 @@ const FeaturesSection = () => {
 
   return (
     <section id="features" ref={containerRef} className="relative pt-24 pb-32 md:pt-32 md:pb-48 overflow-hidden bg-background">
-      {/* Floating gradient orbs */}
-      <motion.div 
-        style={{ y: y1, opacity }}
-        className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-teal/10 to-transparent blur-3xl"
-      />
-      <motion.div 
-        style={{ y: y2, opacity }}
-        className="absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-primary/8 to-transparent blur-3xl"
-      />
 
       <div className="container mx-auto px-4 md:px-6 relative z-10">
         {/* Section header - Editorial style */}
