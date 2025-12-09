@@ -177,13 +177,13 @@ const HeroSection = () => {
                           {/* Caller avatar with ring animation */}
                           <div className="relative mb-4">
                             <motion.div
-                              className="absolute inset-0 rounded-full bg-teal/10"
-                              animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0, 0.15] }}
+                              className="absolute inset-0 rounded-full bg-teal/30"
+                              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
                               transition={{ duration: 2, repeat: Infinity }}
                             />
                             <motion.div
-                              className="absolute inset-0 rounded-full bg-teal/5"
-                              animate={{ scale: [1, 1.25, 1], opacity: [0.1, 0, 0.1] }}
+                              className="absolute inset-0 rounded-full bg-teal/20"
+                              animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
                               transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
                             />
                             <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-teal to-teal-dark flex items-center justify-center">
@@ -328,21 +328,6 @@ const HeroSection = () => {
         </div>
       </div>
 
-      {/* Wave transition to next section */}
-      <div className="absolute bottom-0 left-0 right-0">
-        <svg 
-          viewBox="0 0 1440 120" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto block"
-          preserveAspectRatio="none"
-        >
-          <path 
-            d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z" 
-            className="fill-background"
-          />
-        </svg>
-      </div>
     </section>
   );
 };
