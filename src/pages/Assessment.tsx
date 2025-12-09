@@ -377,100 +377,84 @@ export default function Assessment() {
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.95 }}
-                          className="p-6 h-full overflow-y-auto"
+                          className="p-4 h-full flex flex-col"
                         >
-                          <div className="text-center mb-6">
+                          <div className="text-center mb-3">
                             <motion.div
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
                               transition={{ type: "spring", delay: 0.2 }}
-                              className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center"
+                              className="w-12 h-12 mx-auto mb-2 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center"
                             >
-                              <Sparkles className="w-8 h-8 text-white" />
+                              <Sparkles className="w-6 h-6 text-white" />
                             </motion.div>
-                            <h2 className="text-xl font-bold mb-2">Your Results</h2>
-                            <p className="text-sm text-white/60">Here's what you could gain</p>
+                            <h2 className="text-lg font-bold mb-1">Your Results</h2>
+                            <p className="text-xs text-white/60">Here's what you could gain</p>
                           </div>
 
-                          <div className="space-y-4">
+                          <div className="space-y-2 flex-1">
                             {/* Missed Calls */}
                             <motion.div
-                              initial={{ opacity: 0, y: 20 }}
+                              initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: 0.3 }}
-                              className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20"
+                              className="p-3 rounded-xl bg-red-500/10 border border-red-500/20"
                             >
-                              <div className="flex items-start gap-3">
-                                <Phone className="w-5 h-5 text-red-400 mt-0.5" />
-                                <div>
-                                  <div className="text-2xl font-bold text-red-400">
-                                    ~{insights?.missedCallsPerMonth}
-                                  </div>
-                                  <div className="text-sm text-white/60">missed calls per month</div>
-                                </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-4 h-4 text-red-400" />
+                                <div className="text-lg font-bold text-red-400">~{insights?.missedCallsPerMonth}</div>
+                                <div className="text-xs text-white/60">missed calls/mo</div>
                               </div>
                             </motion.div>
 
                             {/* Revenue */}
                             <motion.div
-                              initial={{ opacity: 0, y: 20 }}
+                              initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: 0.4 }}
-                              className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20"
+                              className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
                             >
-                              <div className="flex items-start gap-3">
-                                <DollarSign className="w-5 h-5 text-amber-400 mt-0.5" />
-                                <div>
-                                  <div className="text-2xl font-bold text-amber-400">
-                                    €{insights?.potentialRevenueLost?.toLocaleString()}+
-                                  </div>
-                                  <div className="text-sm text-white/60">potential revenue at risk</div>
-                                </div>
+                              <div className="flex items-center gap-2">
+                                <DollarSign className="w-4 h-4 text-amber-400" />
+                                <div className="text-lg font-bold text-amber-400">€{insights?.potentialRevenueLost?.toLocaleString()}+</div>
+                                <div className="text-xs text-white/60">at risk</div>
                               </div>
                             </motion.div>
 
                             {/* Staff Hours */}
                             <motion.div
-                              initial={{ opacity: 0, y: 20 }}
+                              initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: 0.5 }}
-                              className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/20"
+                              className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20"
                             >
-                              <div className="flex items-start gap-3">
-                                <Timer className="w-5 h-5 text-teal-400 mt-0.5" />
-                                <div>
-                                  <div className="text-2xl font-bold text-teal-400">
-                                    {insights?.staffHoursSaved} hrs
-                                  </div>
-                                  <div className="text-sm text-white/60">staff hours saved monthly</div>
-                                </div>
+                              <div className="flex items-center gap-2">
+                                <Timer className="w-4 h-4 text-teal-400" />
+                                <div className="text-lg font-bold text-teal-400">{insights?.staffHoursSaved} hrs</div>
+                                <div className="text-xs text-white/60">saved/mo</div>
                               </div>
                             </motion.div>
 
                             {/* After Hours */}
                             <motion.div
-                              initial={{ opacity: 0, y: 20 }}
+                              initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: 0.6 }}
-                              className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20"
+                              className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20"
                             >
-                              <div className="flex items-start gap-3">
-                                <Moon className="w-5 h-5 text-purple-400 mt-0.5" />
-                                <div>
-                                  <div className="text-2xl font-bold text-purple-400">
-                                    {insights?.afterHoursOpportunity}
-                                  </div>
-                                  <div className="text-sm text-white/60">after-hours calls captured</div>
-                                </div>
+                              <div className="flex items-center gap-2">
+                                <Moon className="w-4 h-4 text-purple-400" />
+                                <div className="text-lg font-bold text-purple-400">{insights?.afterHoursOpportunity}</div>
+                                <div className="text-xs text-white/60">after-hours captured</div>
                               </div>
                             </motion.div>
                           </div>
 
                           {/* CTAs */}
-                          <div className="mt-6 space-y-3">
+                          <div className="mt-3 space-y-2">
                             <Button
                               onClick={() => navigate("/signup")}
-                              className="w-full h-12 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white font-medium rounded-xl"
+                              className="w-full h-10 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white text-sm font-medium rounded-xl"
                             >
                               Start Free Trial
                               <ArrowRight className="w-4 h-4 ml-2" />
@@ -478,7 +462,7 @@ export default function Assessment() {
                             <Button
                               onClick={() => navigate("/demo")}
                               variant="ghost"
-                              className="w-full h-12 text-white/60 hover:text-white hover:bg-white/5 rounded-xl"
+                              className="w-full h-10 text-white/60 hover:text-white hover:bg-white/5 rounded-xl text-sm"
                             >
                               Hear Your AI First
                             </Button>
