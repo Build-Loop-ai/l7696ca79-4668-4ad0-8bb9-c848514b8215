@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { AdminMetricsHero } from '@/components/admin/AdminMetricsHero';
 import { AdminOrgsTable } from '@/components/admin/AdminOrgsTable';
 import { AdminUsersTable } from '@/components/admin/AdminUsersTable';
@@ -30,8 +31,12 @@ import {
   CreditCard,
   Sparkles,
   MessageSquare,
-  Globe
+  Globe,
+  Trash2,
+  Phone
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { format, subDays } from 'date-fns';
 
 interface Metrics {
@@ -55,6 +60,65 @@ const navItems = [
   { icon: Settings, label: 'Email Settings', value: 'settings' },
   { icon: BarChart3, label: 'Analytics', value: 'analytics' },
 ];
+
+// Temporary Vapi Cleanup Tool Component
+const VapiCleanupTool = () => {
+  const [vapiPhoneId, setVapiPhoneId] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleCleanup = async () => {
+    if (!vapiPhoneId.trim()) {
+      toast.error('Please enter a Vapi Phone ID');
+      return;
+    }
+    
+    setIsDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cleanup-vapi-phone', {
+        body: { vapiPhoneId: vapiPhoneId.trim() }
+      });
+      
+      if (error) throw error;
+      
+      toast.success(`Deleted Vapi phone: ${vapiPhoneId}`);
+      setVapiPhoneId('');
+    } catch (err: any) {
+      console.error('Cleanup error:', err);
+      toast.error(err.message || 'Failed to delete Vapi phone number');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Phone className="w-5 h-5 text-destructive" />
+        <h3 className="font-medium text-foreground">Vapi Phone Cleanup Tool</h3>
+        <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded-full">Temporary</span>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Delete orphaned or corrupted phone numbers directly from Vapi.
+      </p>
+      <div className="flex gap-3">
+        <Input
+          placeholder="Enter Vapi Phone ID (e.g. 9c6f3bb0-...)"
+          value={vapiPhoneId}
+          onChange={(e) => setVapiPhoneId(e.target.value)}
+          className="flex-1 bg-background/50"
+        />
+        <Button 
+          variant="destructive" 
+          onClick={handleCleanup}
+          disabled={isDeleting || !vapiPhoneId.trim()}
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          {isDeleting ? 'Deleting...' : 'Delete'}
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const Admin = () => {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -453,7 +517,12 @@ const Admin = () => {
               )}
 
               {activeTab === 'settings' && (
-                <AdminEmailSettings />
+                <div className="space-y-6">
+                  <AdminEmailSettings />
+                  
+                  {/* Temporary Vapi Cleanup Tool */}
+                  <VapiCleanupTool />
+                </div>
               )}
 
               {activeTab === 'analytics' && (
