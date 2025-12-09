@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Phone, Check, ChevronRight, Mic, Volume2, Building2, MessageSquare, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import DemoForm from "@/components/demo/DemoForm";
 import DemoAudioPlayer from "@/components/demo/DemoAudioPlayer";
 import { Helmet } from "react-helmet";
 import { motion, AnimatePresence } from "framer-motion";
+import { ELEVENLABS_VOICES } from "@/lib/voice-config";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface DemoResult {
   audioContent: string;
@@ -14,18 +16,41 @@ interface DemoResult {
   businessName: string;
 }
 
+const businessTypes = [
+  { value: "dental_clinic", label: "Dental Clinic", icon: "🦷" },
+  { value: "medical_practice", label: "Medical Practice", icon: "⚕️" },
+  { value: "salon", label: "Hair Salon", icon: "💇" },
+  { value: "spa", label: "Spa & Wellness", icon: "🧖" },
+  { value: "restaurant", label: "Restaurant", icon: "🍽️" },
+  { value: "fitness", label: "Fitness Studio", icon: "💪" },
+  { value: "other", label: "Other", icon: "🏢" },
+];
+
+const toneOptions = [
+  { value: "professional", label: "Professional", emoji: "👔" },
+  { value: "friendly", label: "Friendly", emoji: "😊" },
+  { value: "casual", label: "Casual", emoji: "✌️" },
+];
+
 const Demo = () => {
+  const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [demoResult, setDemoResult] = useState<DemoResult | null>(null);
+  
+  const [formData, setFormData] = useState({
+    businessName: "",
+    businessType: "dental_clinic",
+    tone: "friendly",
+    voiceId: "EXAVITQu4vr4xnSDxMaL",
+  });
 
-  const handleSubmit = async (data: {
-    businessName: string;
-    businessType: string;
-    services: string;
-    tone: string;
-    voiceId: string;
-    email: string;
-  }) => {
+  const [selectedGender, setSelectedGender] = useState<"female" | "male">("female");
+
+  const femaleVoices = ELEVENLABS_VOICES.filter((v) => v.gender === "female").slice(0, 4);
+  const maleVoices = ELEVENLABS_VOICES.filter((v) => v.gender === "male").slice(0, 4);
+  const displayedVoices = selectedGender === "female" ? femaleVoices : maleVoices;
+
+  const handleSubmit = async () => {
     setIsLoading(true);
 
     try {
@@ -33,11 +58,11 @@ const Demo = () => {
         "generate-demo-audio",
         {
           body: {
-            businessName: data.businessName,
-            businessType: data.businessType,
-            services: data.services,
-            tone: data.tone,
-            voiceId: data.voiceId,
+            businessName: formData.businessName,
+            businessType: formData.businessType,
+            services: "",
+            tone: formData.tone,
+            voiceId: formData.voiceId,
           },
         }
       );
@@ -51,7 +76,7 @@ const Demo = () => {
       setDemoResult({
         audioContent: result.audioContent,
         transcript: result.script || "",
-        businessName: data.businessName,
+        businessName: formData.businessName,
       });
 
       toast.success("Your AI demo is ready!");
@@ -65,7 +90,31 @@ const Demo = () => {
 
   const handleReset = () => {
     setDemoResult(null);
+    setStep(0);
+    setFormData({
+      businessName: "",
+      businessType: "dental_clinic",
+      tone: "friendly",
+      voiceId: "EXAVITQu4vr4xnSDxMaL",
+    });
   };
+
+  const nextStep = () => {
+    if (step < 3) setStep(step + 1);
+    else handleSubmit();
+  };
+
+  const canProceed = () => {
+    if (step === 0) return formData.businessName.trim().length > 0;
+    return true;
+  };
+
+  const steps = [
+    { icon: Building2, label: "Business" },
+    { icon: MessageSquare, label: "Type" },
+    { icon: User, label: "Tone" },
+    { icon: Mic, label: "Voice" },
+  ];
 
   return (
     <>
@@ -80,7 +129,6 @@ const Demo = () => {
       <div className="min-h-screen bg-[hsl(222,47%,6%)] overflow-hidden relative">
         {/* Animated Background */}
         <div className="fixed inset-0 pointer-events-none">
-          {/* Gradient Orbs */}
           <motion.div
             className="absolute w-[800px] h-[800px] rounded-full"
             style={{
@@ -88,15 +136,8 @@ const Demo = () => {
               top: "-20%",
               right: "-10%",
             }}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
+            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
             className="absolute w-[600px] h-[600px] rounded-full"
@@ -105,48 +146,8 @@ const Demo = () => {
               bottom: "-10%",
               left: "-10%",
             }}
-            animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: 10,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          
-          {/* Floating particles */}
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-teal/30 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0.2, 0.6, 0.2],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-            />
-          ))}
-
-          {/* Grid overlay */}
-          <div 
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: "60px 60px",
-            }}
+            animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
 
@@ -161,7 +162,6 @@ const Demo = () => {
             className="relative rounded-2xl bg-[hsl(222,47%,8%)]/90"
             style={{
               backdropFilter: "blur(40px) saturate(180%)",
-              WebkitBackdropFilter: "blur(40px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.1)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
             }}
@@ -171,9 +171,7 @@ const Demo = () => {
                 <ArrowLeft className="w-4 h-4" />
                 <span className="text-sm font-medium">Home</span>
               </Link>
-              
               <span className="font-serif text-lg text-white">callisto</span>
-              
               <Link 
                 to="/signup"
                 className="flex items-center gap-1 text-sm font-medium text-teal hover:text-teal-light transition-colors"
@@ -191,21 +189,19 @@ const Demo = () => {
             <AnimatePresence mode="wait">
               {!demoResult ? (
                 <motion.div
-                  key="form"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5 }}
-                  className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center"
+                  key="interactive"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16"
                 >
-                  {/* Left - Hero Content */}
-                  <div className="text-center lg:text-left order-1">
+                  {/* Left - Context & Progress */}
+                  <div className="flex-1 text-center lg:text-left order-2 lg:order-1">
                     {/* Badge */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
                       style={{
                         background: "linear-gradient(135deg, hsla(166,76%,36%,0.2) 0%, hsla(166,76%,36%,0.05) 100%)",
                         border: "1px solid hsla(166,76%,36%,0.3)",
@@ -215,109 +211,372 @@ const Demo = () => {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-teal"></span>
                       </span>
-                      <span className="text-sm text-teal font-medium">Free Demo • No Sign Up Required</span>
+                      <span className="text-sm text-teal font-medium">Interactive Demo</span>
                     </motion.div>
 
-                    {/* Headline */}
                     <motion.h1
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="font-serif text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.1] mb-6"
+                      transition={{ delay: 0.1 }}
+                      className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-[1.1] mb-4 text-white"
                     >
-                      <span className="text-white">Hear Your AI</span>
+                      Set up your AI
                       <br />
-                      <span className="text-white">Receptionist in </span>
-                      <span className="relative">
-                        <span 
-                          className="bg-gradient-to-r from-teal via-teal-light to-teal bg-clip-text text-transparent"
-                          style={{ fontStyle: "italic" }}
-                        >
-                          30 Seconds
-                        </span>
-                        <motion.span
-                          className="absolute -bottom-2 left-0 right-0 h-[2px] bg-gradient-to-r from-teal to-transparent"
-                          initial={{ scaleX: 0 }}
-                          animate={{ scaleX: 1 }}
-                          transition={{ delay: 0.8, duration: 0.6 }}
-                        />
-                      </span>
+                      <span className="text-gradient italic">right on the phone</span>
                     </motion.h1>
 
-                    {/* Description */}
                     <motion.p
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
-                      className="text-lg text-white/60 mb-10 max-w-md mx-auto lg:mx-0"
+                      transition={{ delay: 0.2 }}
+                      className="text-white/60 mb-8 max-w-sm mx-auto lg:mx-0"
                     >
-                      Enter your business details and instantly hear how your AI receptionist will greet callers.
+                      Tap through the phone screen to configure your AI receptionist and hear it in action.
                     </motion.p>
 
-                    {/* Features */}
+                    {/* Step Progress */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                      className="flex flex-wrap gap-4 justify-center lg:justify-start"
+                      transition={{ delay: 0.3 }}
+                      className="flex items-center justify-center lg:justify-start gap-3"
                     >
-                      {["Sounds natural", "29 languages", "Instant preview"].map((feature, i) => (
-                        <div
+                      {steps.map((s, i) => (
+                        <motion.div
                           key={i}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10"
+                          className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${
+                            i === step
+                              ? "bg-teal/20 border border-teal/40"
+                              : i < step
+                              ? "bg-teal/10 border border-teal/20"
+                              : "bg-white/5 border border-white/10"
+                          }`}
+                          whileHover={{ scale: 1.02 }}
                         >
-                          <div className="w-1.5 h-1.5 rounded-full bg-teal" />
-                          <span className="text-sm text-white/70">{feature}</span>
-                        </div>
+                          <s.icon className={`w-4 h-4 ${i <= step ? "text-teal" : "text-white/40"}`} />
+                          <span className={`text-xs font-medium hidden sm:inline ${i <= step ? "text-teal" : "text-white/40"}`}>
+                            {s.label}
+                          </span>
+                          {i < step && <Check className="w-3 h-3 text-teal" />}
+                        </motion.div>
                       ))}
-                    </motion.div>
-
-                    {/* Floating Visual Elements */}
-                    <motion.div
-                      className="hidden lg:block absolute -left-20 top-1/4 w-64 h-64"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-                    >
-                      <div className="absolute inset-0 border border-white/5 rounded-full" />
-                      <div className="absolute inset-8 border border-white/5 rounded-full" />
-                      <div className="absolute inset-16 border border-teal/10 rounded-full" />
                     </motion.div>
                   </div>
 
-                  {/* Right - Form */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                    className="order-2"
-                  >
-                    <div 
-                      className="relative rounded-3xl p-1"
-                      style={{
-                        background: "linear-gradient(135deg, hsla(166,76%,36%,0.3) 0%, transparent 50%, hsla(222,47%,50%,0.2) 100%)",
-                      }}
+                  {/* Right - Interactive Phone */}
+                  <div className="order-1 lg:order-2">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9, y: 40 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                      className="relative"
                     >
-                      <div 
-                        className="rounded-[22px] p-6 md:p-8"
+                      {/* Phone Frame */}
+                      <div
+                        className="relative w-[320px] md:w-[360px] rounded-[50px] p-3"
                         style={{
-                          background: "linear-gradient(180deg, hsl(222,47%,11%) 0%, hsl(222,47%,8%) 100%)",
+                          background: "linear-gradient(145deg, #2a2a2e 0%, #1a1a1e 100%)",
+                          boxShadow: "0 50px 100px -20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.1)",
                         }}
                       >
-                        {/* Form Header */}
-                        <div className="flex items-center gap-3 mb-6">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal to-teal-dark flex items-center justify-center">
-                            <Sparkles className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <h2 className="text-lg font-medium text-white">Create Your Demo</h2>
-                            <p className="text-sm text-white/50">Takes less than 30 seconds</p>
-                          </div>
+                        {/* Dynamic Island */}
+                        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[100px] h-[28px] bg-black rounded-full z-20 flex items-center justify-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[#1a1a1e]" />
                         </div>
-                        
-                        <DemoForm onSubmit={handleSubmit} isLoading={isLoading} />
+
+                        {/* Screen */}
+                        <div
+                          className="relative rounded-[38px] overflow-hidden"
+                          style={{
+                            background: "linear-gradient(180deg, hsl(222,47%,12%) 0%, hsl(222,47%,8%) 100%)",
+                            minHeight: "580px",
+                          }}
+                        >
+                          {/* Status Bar */}
+                          <div className="flex items-center justify-between px-8 pt-14 pb-4">
+                            <span className="text-xs text-white/60 font-medium">9:41</span>
+                            <div className="flex items-center gap-1">
+                              <div className="flex gap-0.5">
+                                {[1,2,3,4].map(i => (
+                                  <div key={i} className="w-1 rounded-full bg-white/60" style={{ height: 4 + i * 2 }} />
+                                ))}
+                              </div>
+                              <div className="w-6 h-3 rounded-sm border border-white/60 ml-1 relative">
+                                <div className="absolute inset-0.5 bg-teal rounded-sm" style={{ width: '80%' }} />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Screen Content */}
+                          <div className="px-6 pb-8">
+                            {/* App Header */}
+                            <div className="text-center mb-6">
+                              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-teal to-teal-dark flex items-center justify-center">
+                                <Phone className="w-6 h-6 text-white" />
+                              </div>
+                              <h3 className="text-lg font-medium text-white">AI Receptionist</h3>
+                              <p className="text-xs text-white/50">Step {step + 1} of 4</p>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="h-1 bg-white/10 rounded-full mb-6 overflow-hidden">
+                              <motion.div
+                                className="h-full bg-gradient-to-r from-teal to-teal-light rounded-full"
+                                initial={{ width: "0%" }}
+                                animate={{ width: `${((step + 1) / 4) * 100}%` }}
+                                transition={{ duration: 0.3 }}
+                              />
+                            </div>
+
+                            <AnimatePresence mode="wait">
+                              {/* Step 0: Business Name */}
+                              {step === 0 && (
+                                <motion.div
+                                  key="step0"
+                                  initial={{ opacity: 0, x: 20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: -20 }}
+                                  className="space-y-4"
+                                >
+                                  <div className="text-center mb-6">
+                                    <h4 className="text-white font-medium mb-1">What's your business called?</h4>
+                                    <p className="text-xs text-white/50">This is how the AI will greet callers</p>
+                                  </div>
+                                  <Input
+                                    placeholder="e.g., Bright Smile Dental"
+                                    value={formData.businessName}
+                                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                                    className="h-14 text-center text-lg bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-teal/50 rounded-2xl"
+                                  />
+                                </motion.div>
+                              )}
+
+                              {/* Step 1: Business Type */}
+                              {step === 1 && (
+                                <motion.div
+                                  key="step1"
+                                  initial={{ opacity: 0, x: 20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: -20 }}
+                                  className="space-y-3"
+                                >
+                                  <div className="text-center mb-4">
+                                    <h4 className="text-white font-medium mb-1">What type of business?</h4>
+                                    <p className="text-xs text-white/50">We'll customize the AI for your industry</p>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {businessTypes.map((type) => (
+                                      <motion.button
+                                        key={type.value}
+                                        type="button"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setFormData({ ...formData, businessType: type.value })}
+                                        className={`relative p-3 rounded-2xl border text-center transition-all ${
+                                          formData.businessType === type.value
+                                            ? "border-teal bg-teal/10"
+                                            : "border-white/10 bg-white/5"
+                                        }`}
+                                      >
+                                        <div className="text-2xl mb-1">{type.icon}</div>
+                                        <div className="text-xs font-medium text-white/80">{type.label}</div>
+                                        {formData.businessType === type.value && (
+                                          <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="absolute -top-1 -right-1 w-5 h-5 bg-teal rounded-full flex items-center justify-center"
+                                          >
+                                            <Check className="w-3 h-3 text-white" />
+                                          </motion.div>
+                                        )}
+                                      </motion.button>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+
+                              {/* Step 2: Tone */}
+                              {step === 2 && (
+                                <motion.div
+                                  key="step2"
+                                  initial={{ opacity: 0, x: 20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: -20 }}
+                                  className="space-y-4"
+                                >
+                                  <div className="text-center mb-4">
+                                    <h4 className="text-white font-medium mb-1">Pick your AI's personality</h4>
+                                    <p className="text-xs text-white/50">How should it sound to callers?</p>
+                                  </div>
+                                  <div className="space-y-3">
+                                    {toneOptions.map((tone) => (
+                                      <motion.button
+                                        key={tone.value}
+                                        type="button"
+                                        whileHover={{ scale: 1.01 }}
+                                        whileTap={{ scale: 0.99 }}
+                                        onClick={() => setFormData({ ...formData, tone: tone.value })}
+                                        className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+                                          formData.tone === tone.value
+                                            ? "border-teal bg-teal/10"
+                                            : "border-white/10 bg-white/5"
+                                        }`}
+                                      >
+                                        <span className="text-3xl">{tone.emoji}</span>
+                                        <div className="text-left flex-1">
+                                          <div className="font-medium text-white">{tone.label}</div>
+                                          <div className="text-xs text-white/50">
+                                            {tone.value === "professional" && "Formal and business-like"}
+                                            {tone.value === "friendly" && "Warm and welcoming"}
+                                            {tone.value === "casual" && "Relaxed and approachable"}
+                                          </div>
+                                        </div>
+                                        {formData.tone === tone.value && (
+                                          <div className="w-6 h-6 bg-teal rounded-full flex items-center justify-center">
+                                            <Check className="w-4 h-4 text-white" />
+                                          </div>
+                                        )}
+                                      </motion.button>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+
+                              {/* Step 3: Voice */}
+                              {step === 3 && (
+                                <motion.div
+                                  key="step3"
+                                  initial={{ opacity: 0, x: 20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: -20 }}
+                                  className="space-y-4"
+                                >
+                                  <div className="text-center mb-4">
+                                    <h4 className="text-white font-medium mb-1">Choose a voice</h4>
+                                    <p className="text-xs text-white/50">Select who answers your calls</p>
+                                  </div>
+                                  
+                                  {/* Gender Toggle */}
+                                  <div className="flex gap-2 p-1 bg-white/5 rounded-2xl">
+                                    {["female", "male"].map((g) => (
+                                      <button
+                                        key={g}
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedGender(g as "female" | "male");
+                                          const voices = g === "female" ? femaleVoices : maleVoices;
+                                          setFormData({ ...formData, voiceId: voices[0].id });
+                                        }}
+                                        className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                                          selectedGender === g
+                                            ? "bg-teal text-white"
+                                            : "text-white/50 hover:text-white/80"
+                                        }`}
+                                      >
+                                        {g === "female" ? "Female" : "Male"}
+                                      </button>
+                                    ))}
+                                  </div>
+
+                                  {/* Voice Grid */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {displayedVoices.map((voice) => (
+                                      <motion.button
+                                        key={voice.id}
+                                        type="button"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setFormData({ ...formData, voiceId: voice.id })}
+                                        className={`relative p-4 rounded-2xl border text-center transition-all ${
+                                          formData.voiceId === voice.id
+                                            ? "border-teal bg-teal/10"
+                                            : "border-white/10 bg-white/5"
+                                        }`}
+                                      >
+                                        <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
+                                          <Volume2 className="w-5 h-5 text-white/70" />
+                                        </div>
+                                        <div className="text-sm font-medium text-white/90">{voice.name}</div>
+                                        {voice.recommended && (
+                                          <span className="text-[10px] bg-teal/20 text-teal px-2 py-0.5 rounded-full mt-1 inline-block">★ Best</span>
+                                        )}
+                                        {formData.voiceId === voice.id && (
+                                          <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="absolute -top-1 -right-1 w-5 h-5 bg-teal rounded-full flex items-center justify-center"
+                                          >
+                                            <Check className="w-3 h-3 text-white" />
+                                          </motion.div>
+                                        )}
+                                      </motion.button>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+
+                            {/* Navigation Button */}
+                            <motion.div className="mt-6" whileTap={{ scale: 0.98 }}>
+                              <Button
+                                onClick={nextStep}
+                                disabled={!canProceed() || isLoading}
+                                className="w-full h-14 text-base font-medium rounded-2xl relative overflow-hidden group"
+                                style={{
+                                  background: canProceed()
+                                    ? "linear-gradient(135deg, hsl(166 76% 36%) 0%, hsl(166 76% 28%) 100%)"
+                                    : "rgba(255,255,255,0.1)",
+                                }}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                                
+                                {isLoading ? (
+                                  <span className="flex items-center gap-2">
+                                    <motion.div
+                                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                                      animate={{ rotate: 360 }}
+                                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                    />
+                                    Generating...
+                                  </span>
+                                ) : step === 3 ? (
+                                  <span className="flex items-center gap-2">
+                                    <Sparkles className="w-5 h-5" />
+                                    Hear Your AI
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-2">
+                                    Continue
+                                    <ChevronRight className="w-5 h-5" />
+                                  </span>
+                                )}
+                              </Button>
+                            </motion.div>
+
+                            {/* Back Button */}
+                            {step > 0 && (
+                              <button
+                                onClick={() => setStep(step - 1)}
+                                className="w-full mt-3 py-2 text-sm text-white/50 hover:text-white/80 transition-colors"
+                              >
+                                Go back
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Home Indicator */}
+                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/20 rounded-full" />
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
+
+                      {/* Decorative Ring */}
+                      <motion.div
+                        className="absolute -inset-8 border border-teal/20 rounded-[70px] pointer-events-none"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                      />
+                    </motion.div>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div
@@ -328,7 +587,6 @@ const Demo = () => {
                   transition={{ duration: 0.5 }}
                   className="max-w-2xl mx-auto"
                 >
-                  {/* Success State */}
                   <div className="text-center mb-8">
                     <motion.div
                       initial={{ scale: 0 }}
@@ -346,7 +604,6 @@ const Demo = () => {
                     </p>
                   </div>
 
-                  {/* Player Card */}
                   <div 
                     className="relative rounded-3xl p-1"
                     style={{
@@ -372,9 +629,6 @@ const Demo = () => {
             </AnimatePresence>
           </div>
         </main>
-
-        {/* Bottom gradient fade */}
-        <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[hsl(222,47%,6%)] to-transparent pointer-events-none" />
       </div>
     </>
   );
