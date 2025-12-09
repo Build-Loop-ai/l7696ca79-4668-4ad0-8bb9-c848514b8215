@@ -29,7 +29,18 @@ import {
   Plus,
   Loader2,
   PhoneForwarded,
+  AlertTriangle,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -109,6 +120,8 @@ const DashboardSettings = () => {
   // Dialogs
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [phoneToDelete, setPhoneToDelete] = useState<PhoneNumber | null>(null);
+  const [deletingPhoneId, setDeletingPhoneId] = useState<string | null>(null);
 
   // Form state for editing
   const [formData, setFormData] = useState({
@@ -264,6 +277,38 @@ const DashboardSettings = () => {
     }
   };
 
+  const handleDeletePhone = async (phone: PhoneNumber) => {
+    setDeletingPhoneId(phone.id);
+    try {
+      const { error } = await supabase.functions.invoke('release-phone-number', {
+        body: { 
+          phoneNumberId: phone.id,
+          organizationId: organization?.id 
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Remove from local state
+      setPhoneNumbers(prev => prev.filter(p => p.id !== phone.id));
+      setPhoneToDelete(null);
+      
+      toast({
+        title: "Phone number released",
+        description: "The number has been removed from your account."
+      });
+    } catch (err: any) {
+      console.error("Delete phone error:", err);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to delete phone number"
+      });
+    } finally {
+      setDeletingPhoneId(null);
+    }
+  };
+
   const minutesUsed = subscription?.minutes_used || 0;
   const minutesIncluded = subscription?.minutes_included || 100;
   const usagePercentage = Math.round((minutesUsed / minutesIncluded) * 100);
@@ -410,8 +455,17 @@ const DashboardSettings = () => {
                         >
                           {phone.is_active ? "Active" : "Inactive"}
                         </Badge>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="w-4 h-4 text-muted-foreground" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          disabled={deletingPhoneId === phone.id}
+                          onClick={() => setPhoneToDelete(phone)}
+                        >
+                          {deletingPhoneId === phone.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -563,6 +617,47 @@ const DashboardSettings = () => {
           onSuccess={() => fetchTeamData(organizationId)}
         />
       )}
+
+      {/* Delete Phone Confirmation Dialog */}
+      <AlertDialog open={!!phoneToDelete} onOpenChange={(open) => !open && setPhoneToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Delete Phone Number
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Are you sure you want to delete{" "}
+                <span className="font-mono font-medium text-foreground">
+                  {phoneToDelete?.phone_number}
+                </span>
+                ?
+              </p>
+              <p className="text-destructive">
+                This action cannot be undone. The number will be released and you may not be able to get it back.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!deletingPhoneId}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => phoneToDelete && handleDeletePhone(phoneToDelete)}
+              disabled={!!deletingPhoneId}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingPhoneId ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Number"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
