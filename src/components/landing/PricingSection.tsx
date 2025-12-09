@@ -133,8 +133,8 @@ const PricingSection = () => {
         </motion.div>
 
         {/* Pricing cards - Horizontal scroll on mobile, grid on desktop */}
-        <div className="relative">
-          <div className="flex md:grid md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="relative flex justify-center">
+          <div className="flex md:grid md:grid-cols-3 gap-6 md:gap-8 max-w-5xl overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x-mandatory scrollbar-hide px-4 md:px-0">
             {plans.map((plan, idx) => (
               <motion.div
                 key={idx}
