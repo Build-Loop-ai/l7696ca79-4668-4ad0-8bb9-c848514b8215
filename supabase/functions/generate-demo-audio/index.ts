@@ -97,31 +97,31 @@ const languageScripts: Record<string, {
     businessScripts: {
       dental_clinic: {
         question: "Heeft u deze week nog plek voor een gebitsreiniging?",
-        answer: "Ik help u graag met het inplannen van een gebitsreiniging. Even kijken in onze agenda. We hebben donderdag om 14:00 en vrijdag om 10:00 plek. Welke tijd komt u het beste uit?",
+        answer: "Ik help u graag met het inplannen van een gebitsreiniging. Even kijken in onze agenda. We hebben donderdag om 14 uur en vrijdag om 10 uur plek. Welke tijd komt u het beste uit?",
       },
       medical_practice: {
         question: "Ik zou graag de dokter willen spreken over aanhoudende hoofdpijn.",
-        answer: "Ik begrijp het. Ik kan u helpen met het maken van een afspraak. We hebben morgenmiddag om 15:00 plek, of donderdagochtend om 9:00. Past een van deze tijden?",
+        answer: "Ik begrijp het. Ik kan u helpen met het maken van een afspraak. We hebben morgenmiddag om 15 uur plek, of donderdagochtend om 9 uur. Past een van deze tijden?",
       },
       salon: {
         question: "Kan ik een afspraak maken voor een knipbeurt zaterdag?",
-        answer: "Natuurlijk! Even de agenda van zaterdag bekijken. We hebben om 11:00 en 14:30 nog plek. Welke tijd heeft uw voorkeur?",
+        answer: "Natuurlijk! Even de agenda van zaterdag bekijken. We hebben om 11 uur en half 3 nog plek. Welke tijd heeft uw voorkeur?",
       },
       restaurant: {
         question: "Heeft u vanavond nog een tafel voor vier personen?",
-        answer: "Even kijken wat er beschikbaar is vanavond. Ja, we hebben een mooie tafel om 19:30. Zal ik die voor u reserveren?",
+        answer: "Even kijken wat er beschikbaar is vanavond. Ja, we hebben een mooie tafel om half 8. Zal ik die voor u reserveren?",
       },
       spa: {
         question: "Ik zou graag een massage willen boeken voor het weekend.",
-        answer: "Wat fijn! We hebben zaterdag om 13:00 plek voor een ontspannende massage van 60 minuten. Schikt dat?",
+        answer: "Wat fijn! We hebben zaterdag om 13 uur plek voor een ontspannende massage van 60 minuten. Schikt dat?",
       },
       fitness: {
         question: "Hoe laat zijn de ochtendlessen?",
-        answer: "We hebben verschillende opties in de ochtend! Yoga om 6:00, spinning om 7:00 en HIIT om 8:00. Zal ik u inschrijven?",
+        answer: "We hebben verschillende opties in de ochtend! Yoga om 6 uur, spinning om 7 uur en HIIT om 8 uur. Zal ik u inschrijven?",
       },
       other: {
         question: "Wat zijn uw openingstijden?",
-        answer: "We zijn open van maandag tot vrijdag van 9:00 tot 18:00, en zaterdag van 10:00 tot 16:00. Wilt u een afspraak maken?",
+        answer: "We zijn open van maandag tot vrijdag van 9 tot 18 uur, en zaterdag van 10 tot 16 uur. Wilt u een afspraak maken?",
       },
     },
     toneAdjustments: {
