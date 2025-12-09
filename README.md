@@ -202,6 +202,12 @@ Key tables:
 
 ## 🎨 Customization
 
+### Favicon
+Replace the default favicon with your own:
+1. Create your favicon (recommended: 32x32 PNG or ICO)
+2. Replace `public/favicon.ico` with your file
+3. Optionally add additional sizes in `index.html` meta tags
+
 ### Branding
 1. Update brand settings in Admin Panel → Site Config
 2. Upload logos (light for dark backgrounds, dark for light backgrounds)
