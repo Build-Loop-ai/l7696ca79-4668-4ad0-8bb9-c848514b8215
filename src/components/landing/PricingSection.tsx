@@ -101,7 +101,7 @@ const PricingSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex items-center justify-center gap-4 mb-16"
+          className="flex items-center justify-center gap-3 mb-16"
         >
           <span
             className={`text-sm font-medium transition-colors ${
@@ -112,11 +112,11 @@ const PricingSection = () => {
           </span>
           <button
             onClick={() => setIsAnnual(!isAnnual)}
-            className="relative w-14 h-8 rounded-full bg-navy p-1 transition-colors"
+            className="relative w-12 h-7 rounded-full bg-primary/20 p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <motion.span
-              className="absolute top-1 w-6 h-6 rounded-full bg-teal shadow-lg"
-              animate={{ x: isAnnual ? 24 : 2 }}
+              className="block w-6 h-6 rounded-full bg-primary shadow-md"
+              animate={{ x: isAnnual ? 20 : 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             />
           </button>
