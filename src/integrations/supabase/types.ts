@@ -613,6 +613,7 @@ export type Database = {
           description: string
           id: string
           logo_url: string | null
+          logo_url_dark: string | null
           privacy_url: string | null
           sales_email: string
           site_name: string
@@ -638,6 +639,7 @@ export type Database = {
           description?: string
           id?: string
           logo_url?: string | null
+          logo_url_dark?: string | null
           privacy_url?: string | null
           sales_email?: string
           site_name?: string
@@ -663,6 +665,7 @@ export type Database = {
           description?: string
           id?: string
           logo_url?: string | null
+          logo_url_dark?: string | null
           privacy_url?: string | null
           sales_email?: string
           site_name?: string

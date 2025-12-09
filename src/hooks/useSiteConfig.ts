@@ -24,6 +24,7 @@ export interface SiteConfig {
   demo_title: string | null;
   demo_subtitle: string | null;
   logo_url: string | null;
+  logo_url_dark: string | null;
 }
 
 // Transform database config to match the static config structure
@@ -54,7 +55,8 @@ export function transformToStaticFormat(dbConfig: SiteConfig) {
       title: dbConfig.demo_title || "Hear Your AI Receptionist",
       subtitle: dbConfig.demo_subtitle || "Experience the future of customer service in 30 seconds",
     },
-    logoUrl: dbConfig.logo_url || "",
+    logoUrl: dbConfig.logo_url || "", // Light logo (for dark backgrounds)
+    logoUrlDark: dbConfig.logo_url_dark || "", // Dark logo (for light backgrounds)
   };
 }
 
