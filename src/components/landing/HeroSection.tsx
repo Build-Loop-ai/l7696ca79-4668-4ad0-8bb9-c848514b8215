@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Play, CheckCircle2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { siteConfig } from "@/lib/site-config";
 
 const HeroSection = () => {
   return (
@@ -42,7 +43,7 @@ const HeroSection = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-teal"></span>
               </span>
-              <span className="text-sm text-white/80 font-medium">Trusted by 500+ clinics worldwide</span>
+              <span className="text-sm text-white/80 font-medium">Trusted by {siteConfig.socialProof.customerCount} {siteConfig.socialProof.customerLabel}</span>
               <Sparkles className="w-3.5 h-3.5 text-teal" />
             </motion.div>
 

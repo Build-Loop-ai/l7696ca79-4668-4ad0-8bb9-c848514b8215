@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { siteConfig } from "@/lib/site-config";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -35,7 +36,7 @@ const DashboardSidebar = () => {
             <Phone className="w-5 h-5 text-white" />
           </div>
           <span className="font-serif text-xl font-medium text-sidebar-foreground">
-            Callisto
+            {siteConfig.name}
           </span>
         </Link>
       </div>

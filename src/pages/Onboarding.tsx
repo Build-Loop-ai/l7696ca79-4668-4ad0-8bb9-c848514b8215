@@ -28,6 +28,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { siteConfig } from "@/lib/site-config";
 import { VoicePreview } from "@/components/VoicePreview";
 import { TestCallButton } from "@/components/TestCallButton";
 
@@ -251,7 +252,7 @@ const Onboarding = () => {
               <Phone className="w-5 h-5 text-white" />
             </div>
             <span className="font-serif text-xl font-medium text-foreground">
-              Callisto
+              {siteConfig.name}
             </span>
           </div>
           <div className="text-sm text-muted-foreground">

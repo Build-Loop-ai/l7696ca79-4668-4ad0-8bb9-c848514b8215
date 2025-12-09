@@ -15,6 +15,7 @@ import { AdminEmailSettings } from '@/components/admin/AdminEmailSettings';
 import { AdminPlansTable } from '@/components/admin/AdminPlansTable';
 import { AdminContactRequests } from '@/components/admin/AdminContactRequests';
 import { cn } from '@/lib/utils';
+import { siteConfig } from '@/lib/site-config';
 import { 
   Shield, 
   LayoutDashboard, 
@@ -235,7 +236,7 @@ const Admin = () => {
   return (
     <>
       <Helmet>
-        <title>Admin Dashboard | Callisto</title>
+        <title>Admin Dashboard | {siteConfig.name}</title>
       </Helmet>
       
       <div className="admin-theme min-h-screen flex w-full">
