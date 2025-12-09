@@ -5,17 +5,7 @@ import { motion } from "framer-motion";
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen hero-gradient grain-overlay overflow-hidden">
-
-      {/* Grid pattern overlay */}
-      <div 
-        className="absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), 
-                           linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '100px 100px'
-        }}
-      />
+    <section className="relative min-h-screen overflow-hidden" style={{ backgroundColor: 'hsl(220 60% 10%)' }}>
 
       <div className="container relative z-10 mx-auto px-4 md:px-6 pt-32 pb-20">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[calc(100vh-8rem)]">
