@@ -17,6 +17,7 @@ import { AdminContactRequests } from '@/components/admin/AdminContactRequests';
 import AdminSiteConfig from '@/components/admin/AdminSiteConfig';
 import { cn } from '@/lib/utils';
 import { siteConfig } from '@/lib/site-config';
+import { useSiteConfigTransformed } from '@/hooks/useSiteConfig';
 import { 
   Shield, 
   LayoutDashboard, 
@@ -66,6 +67,7 @@ const Admin = () => {
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const { config } = useSiteConfigTransformed();
 
   useEffect(() => {
     fetchAllData();
@@ -271,15 +273,25 @@ const Admin = () => {
           <div className="flex-1 flex flex-col bg-card/40 backdrop-blur-xl border-r border-border/50 m-3 mr-0 rounded-2xl overflow-hidden">
             {/* Logo */}
             <div className="p-5 flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center shadow-lg shadow-primary/25">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <span className="font-serif text-lg font-medium text-foreground block">
-                  Admin
-                </span>
-                <span className="text-xs text-muted-foreground">Control Center</span>
-              </div>
+              {config.logoUrl ? (
+                <img 
+                  src={config.logoUrl} 
+                  alt={config.name} 
+                  className="h-11 w-auto object-contain"
+                />
+              ) : (
+                <>
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center shadow-lg shadow-primary/25">
+                    <Shield className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <span className="font-serif text-lg font-medium text-foreground block">
+                      Admin
+                    </span>
+                    <span className="text-xs text-muted-foreground">Control Center</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Navigation */}
@@ -329,10 +341,20 @@ const Admin = () => {
           <header className="md:hidden border-b border-border/50 bg-card/60 backdrop-blur-xl sticky top-0 z-50 px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center">
-                  <Shield className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-serif text-lg font-medium text-foreground">Admin</span>
+              {config.logoUrl ? (
+                <img 
+                  src={config.logoUrl} 
+                  alt={config.name} 
+                  className="h-9 w-auto object-contain"
+                />
+              ) : (
+                <>
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-teal-dark flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="font-serif text-lg font-medium text-foreground">Admin</span>
+                </>
+              )}
               </div>
               <Link 
                 to="/dashboard"

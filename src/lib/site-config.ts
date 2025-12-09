@@ -9,6 +9,7 @@ export const siteConfig = {
   // Brand
   name: "Callisto",
   tagline: "Your AI receptionist, always ready",
+  logoUrl: "",
   description: "Never miss a call again. AI that answers, books, and delights your customers 24/7.",
   
   // Contact
