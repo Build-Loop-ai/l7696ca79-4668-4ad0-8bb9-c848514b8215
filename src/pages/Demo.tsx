@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Sparkles, Phone, Check, ChevronRight, Mic, Volume2, Building2, MessageSquare, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Phone, Check, ChevronRight, Mic, Volume2, Building2, MessageSquare, User, Globe } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DemoAudioPlayer from "@/components/demo/DemoAudioPlayer";
 import { Helmet } from "react-helmet";
 import { motion, AnimatePresence } from "framer-motion";
-import { ELEVENLABS_VOICES } from "@/lib/voice-config";
+import { ELEVENLABS_VOICES, SUPPORTED_LANGUAGES } from "@/lib/voice-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -32,6 +32,11 @@ const toneOptions = [
   { value: "casual", label: "Casual", emoji: "✌️" },
 ];
 
+// Most popular languages for demo
+const popularLanguages = SUPPORTED_LANGUAGES.filter(l => 
+  ["en-US", "en-GB", "nl-NL", "de-DE", "fr-FR", "es-ES", "it-IT", "pt-BR"].includes(l.code)
+);
+
 const Demo = () => {
   const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +45,7 @@ const Demo = () => {
   const [formData, setFormData] = useState({
     businessName: "",
     businessType: "dental_clinic",
+    language: "en-US",
     tone: "friendly",
     voiceId: "EXAVITQu4vr4xnSDxMaL",
   });
@@ -63,6 +69,7 @@ const Demo = () => {
             services: "",
             tone: formData.tone,
             voiceId: formData.voiceId,
+            language: formData.language,
           },
         }
       );
@@ -94,13 +101,14 @@ const Demo = () => {
     setFormData({
       businessName: "",
       businessType: "dental_clinic",
+      language: "en-US",
       tone: "friendly",
       voiceId: "EXAVITQu4vr4xnSDxMaL",
     });
   };
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1);
+    if (step < 4) setStep(step + 1);
     else handleSubmit();
   };
 
@@ -112,6 +120,7 @@ const Demo = () => {
   const steps = [
     { icon: Building2, label: "Business" },
     { icon: MessageSquare, label: "Type" },
+    { icon: Globe, label: "Language" },
     { icon: User, label: "Tone" },
     { icon: Mic, label: "Voice" },
   ];
@@ -315,7 +324,7 @@ const Demo = () => {
                                 <Phone className="w-6 h-6 text-white" />
                               </div>
                               <h3 className="text-lg font-medium text-white">AI Receptionist</h3>
-                              <p className="text-xs text-white/50">Step {step + 1} of 4</p>
+                              <p className="text-xs text-white/50">Step {step + 1} of 5</p>
                             </div>
 
                             {/* Progress Bar */}
@@ -323,7 +332,7 @@ const Demo = () => {
                               <motion.div
                                 className="h-full bg-gradient-to-r from-teal to-teal-light rounded-full"
                                 initial={{ width: "0%" }}
-                                animate={{ width: `${((step + 1) / 4) * 100}%` }}
+                                animate={{ width: `${((step + 1) / 5) * 100}%` }}
                                 transition={{ duration: 0.3 }}
                               />
                             </div>
@@ -395,10 +404,54 @@ const Demo = () => {
                                 </motion.div>
                               )}
 
-                              {/* Step 2: Tone */}
+                              {/* Step 2: Language */}
                               {step === 2 && (
                                 <motion.div
                                   key="step2"
+                                  initial={{ opacity: 0, x: 20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: -20 }}
+                                  className="space-y-3"
+                                >
+                                  <div className="text-center mb-4">
+                                    <h4 className="text-white font-medium mb-1">Choose your language</h4>
+                                    <p className="text-xs text-white/50">The AI will speak in this language</p>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
+                                    {popularLanguages.map((lang) => (
+                                      <motion.button
+                                        key={lang.code}
+                                        type="button"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setFormData({ ...formData, language: lang.code })}
+                                        className={`relative p-3 rounded-2xl border text-left transition-all ${
+                                          formData.language === lang.code
+                                            ? "border-teal bg-teal/10"
+                                            : "border-white/10 bg-white/5"
+                                        }`}
+                                      >
+                                        <div className="text-sm font-medium text-white/90">{lang.nativeName}</div>
+                                        <div className="text-xs text-white/50">{lang.name}</div>
+                                        {formData.language === lang.code && (
+                                          <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="absolute -top-1 -right-1 w-5 h-5 bg-teal rounded-full flex items-center justify-center"
+                                          >
+                                            <Check className="w-3 h-3 text-white" />
+                                          </motion.div>
+                                        )}
+                                      </motion.button>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+
+                              {/* Step 3: Tone */}
+                              {step === 3 && (
+                                <motion.div
+                                  key="step3"
                                   initial={{ opacity: 0, x: 20 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   exit={{ opacity: 0, x: -20 }}
@@ -442,10 +495,10 @@ const Demo = () => {
                                 </motion.div>
                               )}
 
-                              {/* Step 3: Voice */}
-                              {step === 3 && (
+                              {/* Step 4: Voice */}
+                              {step === 4 && (
                                 <motion.div
-                                  key="step3"
+                                  key="step4"
                                   initial={{ opacity: 0, x: 20 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   exit={{ opacity: 0, x: -20 }}
@@ -539,7 +592,7 @@ const Demo = () => {
                                     />
                                     Generating...
                                   </span>
-                                ) : step === 3 ? (
+                              ) : step === 4 ? (
                                   <span className="flex items-center gap-2">
                                     <Sparkles className="w-5 h-5" />
                                     Hear Your AI
