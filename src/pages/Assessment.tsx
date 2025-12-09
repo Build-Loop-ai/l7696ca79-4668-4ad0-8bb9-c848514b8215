@@ -267,7 +267,7 @@ export default function Assessment() {
           animate={{ y: 0, opacity: 1 }}
           className="fixed top-6 left-1/2 -translate-x-1/2 z-50"
         >
-          <div className="flex items-center gap-6 px-6 py-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10">
+          <div className="flex items-center justify-center gap-6 px-6 py-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10">
             <button 
               onClick={() => navigate("/")}
               className="text-sm text-white/60 hover:text-white transition-colors"
