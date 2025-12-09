@@ -21,6 +21,26 @@ interface SendRequest {
 
 type ContactReplyRequest = GenerateRequest | SendRequest;
 
+// Get the site name from database for email templates
+async function getSiteName(supabase: any): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('site_config')
+      .select('site_name')
+      .limit(1)
+      .single();
+
+    if (error || !data) {
+      return 'AI Receptionist';
+    }
+
+    return data.site_name || 'AI Receptionist';
+  } catch (err) {
+    console.error('Error fetching site name:', err);
+    return 'AI Receptionist';
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,12 +58,17 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     const body: ContactReplyRequest = await req.json();
 
-    // Fetch the contact request
-    const { data: contactRequest, error: fetchError } = await supabase
-      .from("contact_requests")
-      .select("*")
-      .eq("id", body.contactRequestId)
-      .single();
+    // Fetch the contact request and site name in parallel
+    const [contactResult, siteName] = await Promise.all([
+      supabase
+        .from("contact_requests")
+        .select("*")
+        .eq("id", body.contactRequestId)
+        .single(),
+      getSiteName(supabase)
+    ]);
+
+    const { data: contactRequest, error: fetchError } = contactResult;
 
     if (fetchError || !contactRequest) {
       throw new Error("Contact request not found");
@@ -64,12 +89,12 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are a professional email copywriter for Callisto, an AI receptionist platform for healthcare and service businesses. 
+              content: `You are a professional email copywriter for ${siteName}, an AI receptionist platform for healthcare and service businesses. 
 Write warm, professional, and helpful email responses to contact requests.
 Keep emails concise (2-4 paragraphs max), friendly, and action-oriented.
 Use simple, clear language. Avoid jargon.
 Always address the person by their first name.
-Sign off with "Best regards" followed by "The Callisto Team".
+Sign off with "Best regards" followed by "The ${siteName} Team".
 Output ONLY the email body text, no subject line or headers.`
             },
             {
@@ -134,9 +159,11 @@ Write a warm, professional email response.`
         .select("*")
         .single();
 
-      const fromName = emailConfig?.from_name || "Callisto";
+      const fromName = emailConfig?.from_name || siteName;
       const fromEmail = emailConfig?.from_email || "notifications@resend.dev";
       const replyTo = emailConfig?.reply_to_email || fromEmail;
+
+      const emailSubject = `Re: Your inquiry to ${siteName}`;
 
       // Send the email via Resend API
       const emailResponse = await fetch("https://api.resend.com/emails", {
@@ -149,7 +176,7 @@ Write a warm, professional email response.`
           from: `${fromName} <${fromEmail}>`,
           to: [contactRequest.email],
           reply_to: replyTo,
-          subject: `Re: Your inquiry to Callisto`,
+          subject: emailSubject,
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               ${body.emailContent.split('\n').map((p: string) => p.trim() ? `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #333;">${p}</p>` : '').join('')}
@@ -179,7 +206,7 @@ Write a warm, professional email response.`
       await supabase.from("email_logs").insert({
         email_type: "contact_reply",
         recipient_email: contactRequest.email,
-        subject: "Re: Your inquiry to Callisto",
+        subject: emailSubject,
         status: "sent",
         resend_id: emailResult.id,
         metadata: { 

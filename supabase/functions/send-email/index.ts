@@ -20,8 +20,28 @@ interface EmailRequest {
   sent_by?: string;
 }
 
+// Get the site name from database for email footers
+async function getSiteName(supabase: any): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('site_config')
+      .select('site_name')
+      .limit(1)
+      .single();
+
+    if (error || !data) {
+      return 'AI Receptionist';
+    }
+
+    return data.site_name || 'AI Receptionist';
+  } catch (err) {
+    console.error('Error fetching site name:', err);
+    return 'AI Receptionist';
+  }
+}
+
 // HTML Email Templates
-function getTeamInvitationHtml(data: any): string {
+function getTeamInvitationHtml(data: any, siteName: string): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -46,7 +66,7 @@ function getTeamInvitationHtml(data: any): string {
           This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
         </p>
         <p style="color: #8898aa; font-size: 13px; text-align: center; margin: 8px 0;">
-          © ${new Date().getFullYear()} AI Receptionist. All rights reserved.
+          © ${new Date().getFullYear()} ${siteName}. All rights reserved.
         </p>
       </div>
     </body>
@@ -54,7 +74,7 @@ function getTeamInvitationHtml(data: any): string {
   `;
 }
 
-function getWelcomeHtml(data: any): string {
+function getWelcomeHtml(data: any, siteName: string): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -84,7 +104,7 @@ function getWelcomeHtml(data: any): string {
           Need help? Just reply to this email and we'll get back to you.
         </p>
         <p style="color: #8898aa; font-size: 13px; text-align: center; margin: 8px 0;">
-          © ${new Date().getFullYear()} AI Receptionist. All rights reserved.
+          © ${new Date().getFullYear()} ${siteName}. All rights reserved.
         </p>
       </div>
     </body>
@@ -92,7 +112,7 @@ function getWelcomeHtml(data: any): string {
   `;
 }
 
-function getMissedCallAlertHtml(data: any): string {
+function getMissedCallAlertHtml(data: any, siteName: string): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -129,7 +149,7 @@ function getMissedCallAlertHtml(data: any): string {
           You're receiving this because missed call alerts are enabled for ${data.organizationName}.
         </p>
         <p style="color: #8898aa; font-size: 13px; text-align: center; margin: 8px 0;">
-          © ${new Date().getFullYear()} AI Receptionist. All rights reserved.
+          © ${new Date().getFullYear()} ${siteName}. All rights reserved.
         </p>
       </div>
     </body>
@@ -237,9 +257,12 @@ const handler = async (req: Request): Promise<Response> => {
 
   const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
   
-  // Get email configuration
-  const emailConfig = await getEmailConfig(supabase);
-  console.log(`Using email config: ${emailConfig.from_name} <${emailConfig.from_email}>`);
+  // Get email configuration and site name
+  const [emailConfig, siteName] = await Promise.all([
+    getEmailConfig(supabase),
+    getSiteName(supabase)
+  ]);
+  console.log(`Using email config: ${emailConfig.from_name} <${emailConfig.from_email}>, site: ${siteName}`);
 
   try {
     const { type, to, data, organization_id, sent_by }: EmailRequest = await req.json();
@@ -252,17 +275,17 @@ const handler = async (req: Request): Promise<Response> => {
     switch (type) {
       case "team-invitation":
         subject = `You're invited to join ${data.organizationName}`;
-        html = getTeamInvitationHtml(data);
+        html = getTeamInvitationHtml(data, siteName);
         break;
 
       case "welcome":
-        subject = `Welcome to AI Receptionist - You're all set!`;
-        html = getWelcomeHtml(data);
+        subject = `Welcome to ${siteName} - You're all set!`;
+        html = getWelcomeHtml(data, siteName);
         break;
 
       case "missed-call-alert":
         subject = `Missed call from ${data.callerNumber}`;
-        html = getMissedCallAlertHtml(data);
+        html = getMissedCallAlertHtml(data, siteName);
         break;
 
       default:
