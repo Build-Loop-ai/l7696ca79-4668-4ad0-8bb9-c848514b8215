@@ -13,26 +13,15 @@ const Footer = () => {
     Product: [
       { name: "Features", href: "#features" },
       { name: "Pricing", href: "#pricing" },
-      { name: "Integrations", href: "#" },
-      { name: "API", href: "#" },
+      { name: "Demo", href: "/demo" },
     ],
     Company: [
-      { name: "About", href: "#" },
-      { name: "Blog", href: "#" },
-      { name: "Careers", href: "#" },
+      { name: "Assessment", href: "/assessment" },
       { name: "Contact", href: "#", onClick: () => setContactOpen(true) },
     ],
-    Resources: [
-      { name: "Documentation", href: "#" },
-      { name: "Help Center", href: "#" },
-      { name: "Community", href: "#" },
-      { name: "Status", href: "#" },
-    ],
-    Legal: [
-      { name: "Privacy", href: "#" },
-      { name: "Terms", href: "#" },
-      { name: "Security", href: "#" },
-      { name: "GDPR", href: "#" },
+    Account: [
+      { name: "Login", href: "/login" },
+      { name: "Sign Up", href: "/signup" },
     ],
   };
 
