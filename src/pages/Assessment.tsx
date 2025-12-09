@@ -265,7 +265,7 @@ export default function Assessment() {
         <motion.nav
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="fixed top-6 left-1/2 -translate-x-1/2 z-50"
+          className="fixed top-6 left-0 right-0 z-50 flex justify-center"
         >
           <div className="flex items-center justify-center gap-6 px-6 py-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10">
             <button 
