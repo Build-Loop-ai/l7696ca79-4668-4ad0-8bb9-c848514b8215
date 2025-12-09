@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { config } = useSiteConfigTransformed();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,11 +51,19 @@ const Navbar = () => {
           }}
         >
           <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-3">
-            {/* Logo - just text, minimal */}
-            <Link to="/" className="group">
-              <span className="font-serif text-xl font-medium text-white tracking-tight">
-                {siteConfig.name.toLowerCase()}
-              </span>
+            {/* Logo */}
+            <Link to="/" className="group flex items-center gap-2">
+              {config.logoUrl ? (
+                <img 
+                  src={config.logoUrl} 
+                  alt={config.name} 
+                  className="h-8 w-auto object-contain"
+                />
+              ) : (
+                <span className="font-serif text-xl font-medium text-white tracking-tight">
+                  {config.name.toLowerCase()}
+                </span>
+              )}
             </Link>
 
             {/* Desktop Navigation - centered */}
