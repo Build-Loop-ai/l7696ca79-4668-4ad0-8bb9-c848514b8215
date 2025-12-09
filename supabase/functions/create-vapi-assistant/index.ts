@@ -244,11 +244,11 @@ serve(async (req) => {
           },
         },
 
-        // Turn detection - when to stop speaking if user interrupts
+        // Turn detection - when to stop speaking if user interrupts (very responsive)
         stopSpeakingPlan: {
-          numWords: 2,
-          voiceSeconds: 0.2,
-          backoffSeconds: 1,
+          numWords: 1,        // Stop on first word
+          voiceSeconds: 0.1,  // 100ms voice detection
+          backoffSeconds: 0.4, // Quick recovery
         },
 
         // Server URL for webhooks
