@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminMetricsHero } from '@/components/admin/AdminMetricsHero';
 import { AdminOrgsTable } from '@/components/admin/AdminOrgsTable';
@@ -12,8 +12,7 @@ import { AdminAIInsights } from '@/components/admin/AdminAIInsights';
 import { AdminRecentActivity } from '@/components/admin/AdminRecentActivity';
 import { AdminEmailsTable } from '@/components/admin/AdminEmailsTable';
 import { AdminEmailSettings } from '@/components/admin/AdminEmailSettings';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import { AdminPlansTable } from '@/components/admin/AdminPlansTable';
 import { cn } from '@/lib/utils';
 import { 
   Shield, 
@@ -24,9 +23,9 @@ import {
   Mail,
   Settings,
   ArrowLeft,
-  CreditCard
+  CreditCard,
+  Sparkles
 } from 'lucide-react';
-import { AdminPlansTable } from '@/components/admin/AdminPlansTable';
 import { format, subDays } from 'date-fns';
 
 interface Metrics {
@@ -225,110 +224,165 @@ const Admin = () => {
     }
   };
 
+  const getPageTitle = () => {
+    const current = navItems.find(item => item.value === activeTab);
+    return current?.label || 'Overview';
+  };
+
   return (
     <>
       <Helmet>
         <title>Admin Dashboard | Callisto</title>
       </Helmet>
       
-      <div className="admin-theme min-h-screen flex w-full bg-background gradient-mesh">
+      <div className="admin-theme min-h-screen flex w-full">
+        {/* Premium gradient background */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `
+                radial-gradient(ellipse 80% 50% at 20% 0%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(ellipse 50% 30% at 50% 80%, rgba(192, 132, 252, 0.06) 0%, transparent 40%),
+                hsl(220 25% 8%)
+              `,
+            }}
+          />
+          {/* Subtle grain texture */}
+          <div 
+            className="absolute inset-0 opacity-[0.015]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'repeat',
+            }}
+          />
+        </div>
+
         {/* Sidebar */}
-        <aside className="bg-sidebar border-r border-sidebar-border h-screen sticky top-0 transition-all duration-300 flex flex-col hidden md:flex w-64">
-          {/* Logo */}
-          <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-800 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+        <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 z-40">
+          <div className="flex-1 flex flex-col bg-card/40 backdrop-blur-xl border-r border-border/50 m-3 mr-0 rounded-2xl overflow-hidden">
+            {/* Logo */}
+            <div className="p-5 flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="font-serif text-lg font-medium text-foreground block">
+                  Admin
+                </span>
+                <span className="text-xs text-muted-foreground">Control Center</span>
+              </div>
             </div>
-            <span className="font-serif text-xl font-medium text-sidebar-foreground">
-              Admin
-            </span>
-          </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            {navItems.map((item) => {
-              const isActive = activeTab === item.value;
-              return (
-                <button
-                  key={item.value}
-                  onClick={() => setActiveTab(item.value)}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 w-full",
-                    isActive
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+            {/* Navigation */}
+            <nav className="flex-1 px-3 py-4 space-y-1">
+              {navItems.map((item) => {
+                const isActive = activeTab === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    onClick={() => setActiveTab(item.value)}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 w-full group",
+                      isActive
+                        ? "bg-gradient-to-r from-purple-500/20 to-violet-500/10 text-purple-300 border border-purple-500/20"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    )}
+                  >
+                    <item.icon className={cn(
+                      "w-5 h-5 flex-shrink-0 transition-colors",
+                      isActive ? "text-purple-400" : "text-muted-foreground group-hover:text-foreground"
+                    )} />
+                    <span className="font-medium text-sm">{item.label}</span>
+                    {isActive && (
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
 
-          {/* Back to Dashboard */}
-          <div className="p-4 border-t border-sidebar-border">
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all w-full"
-            >
-              <ArrowLeft className="w-5 h-5 flex-shrink-0" />
-              <span className="font-medium">Back to App</span>
-            </Link>
+            {/* Back to Dashboard */}
+            <div className="p-3 mt-auto">
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all w-full group"
+              >
+                <ArrowLeft className="w-5 h-5 flex-shrink-0 group-hover:-translate-x-1 transition-transform" />
+                <span className="font-medium text-sm">Back to App</span>
+              </Link>
+            </div>
           </div>
         </aside>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col min-h-screen">
+        <div className="flex-1 flex flex-col min-h-screen relative z-10">
           {/* Mobile header */}
-          <header className="md:hidden border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50 p-4">
+          <header className="md:hidden border-b border-border/50 bg-card/60 backdrop-blur-xl sticky top-0 z-50 px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-800 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
                   <Shield className="w-4 h-4 text-white" />
                 </div>
                 <span className="font-serif text-lg font-medium text-foreground">Admin</span>
               </div>
-              <Link to="/dashboard">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
+              <Link 
+                to="/dashboard"
+                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
               </Link>
+            </div>
+            
+            {/* Mobile tabs */}
+            <div className="flex gap-1 mt-3 overflow-x-auto pb-1 scrollbar-hide">
+              {navItems.map((item) => {
+                const isActive = activeTab === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    onClick={() => setActiveTab(item.value)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                      isActive
+                        ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    )}
+                  >
+                    <item.icon className="w-3.5 h-3.5" />
+                    {item.label}
+                  </button>
+                );
+              })}
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8 max-w-7xl mx-auto w-full">
+          <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
             <div className="space-y-6 animate-fade-in">
               {/* Page header */}
-              <div className="mb-8">
+              <div className="mb-2">
+                <div className="flex items-center gap-2 text-purple-400/80 text-sm mb-1">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Platform Admin</span>
+                </div>
                 <h1 className="text-2xl md:text-3xl font-serif font-medium text-foreground">
-                  Platform Overview
+                  {getPageTitle()}
                 </h1>
-                <p className="text-muted-foreground mt-1">
-                  Monitor your SaaS platform performance and insights
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {activeTab === 'overview' && 'Monitor your platform performance and insights'}
+                  {activeTab === 'organizations' && 'Manage all organizations on the platform'}
+                  {activeTab === 'users' && 'View and manage user accounts'}
+                  {activeTab === 'emails' && 'Track email delivery and logs'}
+                  {activeTab === 'plans' && 'Configure pricing plans and features'}
+                  {activeTab === 'settings' && 'Platform configuration and email settings'}
+                  {activeTab === 'analytics' && 'Deep dive into platform analytics'}
                 </p>
               </div>
 
-              {/* Metrics Hero */}
+              {/* Metrics Hero - always visible */}
               <AdminMetricsHero metrics={metrics} loading={loading} />
-
-              {/* Mobile tabs */}
-              <div className="md:hidden">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="w-full grid grid-cols-4 bg-muted/50">
-                    {navItems.map((item) => (
-                      <TabsTrigger 
-                        key={item.value} 
-                        value={item.value}
-                        className="text-xs px-2"
-                      >
-                        <item.icon className="h-4 w-4" />
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              </div>
 
               {/* Content based on active tab */}
               {activeTab === 'overview' && (
