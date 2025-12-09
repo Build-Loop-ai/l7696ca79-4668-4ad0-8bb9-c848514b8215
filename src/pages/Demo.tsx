@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ELEVENLABS_VOICES, SUPPORTED_LANGUAGES } from "@/lib/voice-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 interface DemoResult {
   audioContent: string;
@@ -42,6 +42,7 @@ const Demo = () => {
   const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [demoResult, setDemoResult] = useState<DemoResult | null>(null);
+  const { config } = useSiteConfigTransformed();
   
   const [formData, setFormData] = useState({
     businessName: "",
@@ -143,7 +144,7 @@ const Demo = () => {
   return (
     <>
       <Helmet>
-        <title>Hear Your AI Receptionist | {siteConfig.name} Demo</title>
+        <title>Hear Your AI Receptionist | {config.name} Demo</title>
         <meta
           name="description"
           content="Generate a personalized AI receptionist demo in 30 seconds. Hear how your business will sound with an AI answering calls."
@@ -195,7 +196,7 @@ const Demo = () => {
                 <ArrowLeft className="w-4 h-4" />
                 <span className="text-sm font-medium">Home</span>
               </Link>
-              <span className="font-serif text-lg text-white">{siteConfig.name.toLowerCase()}</span>
+              <span className="font-serif text-lg text-white">{config.name.toLowerCase()}</span>
               <Link 
                 to="/signup"
                 className="flex items-center gap-1 text-sm font-medium text-teal hover:text-teal-light transition-colors"

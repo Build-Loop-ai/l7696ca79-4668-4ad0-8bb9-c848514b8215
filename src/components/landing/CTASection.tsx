@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Phone, Sparkles } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 const CTASection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const { config } = useSiteConfigTransformed();
 
   return (
     <section ref={ref} className="py-24 md:py-40 relative overflow-hidden">
@@ -70,7 +71,7 @@ const CTASection = () => {
           >
             <Phone className="w-4 h-4 text-teal-light" />
             <span className="text-sm text-white/80">
-              Join {siteConfig.socialProof.customerCount} {siteConfig.socialProof.customerLabel} already using {siteConfig.name}
+              Join {config.socialProof.customerCount} {config.socialProof.customerLabel} already using {config.name}
             </span>
             <Sparkles className="w-4 h-4 text-teal-light" />
           </motion.div>
@@ -92,7 +93,7 @@ const CTASection = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-12"
           >
-            Start your {siteConfig.trialDays}-day free trial today. No credit card required, no
+            Start your {config.trialDays}-day free trial today. No credit card required, no
             commitment. See the difference AI can make.
           </motion.p>
 

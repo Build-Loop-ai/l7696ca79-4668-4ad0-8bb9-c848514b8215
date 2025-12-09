@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Play, CheckCircle2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 const HeroSection = () => {
+  const { config } = useSiteConfigTransformed();
+  
   return (
     <section className="relative min-h-screen overflow-x-clip" style={{ backgroundColor: 'hsl(220 60% 10%)' }}>
       {/* Subtle turquoise ambient glow */}
@@ -43,7 +45,7 @@ const HeroSection = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-teal"></span>
               </span>
-              <span className="text-sm text-white/80 font-medium">Trusted by {siteConfig.socialProof.customerCount} {siteConfig.socialProof.customerLabel}</span>
+              <span className="text-sm text-white/80 font-medium">Trusted by {config.socialProof.customerCount} {config.socialProof.customerLabel}</span>
               <Sparkles className="w-3.5 h-3.5 text-teal" />
             </motion.div>
 

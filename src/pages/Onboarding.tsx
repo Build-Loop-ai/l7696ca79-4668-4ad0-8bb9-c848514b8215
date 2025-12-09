@@ -28,7 +28,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 import { VoicePreview } from "@/components/VoicePreview";
 import { TestCallButton } from "@/components/TestCallButton";
 
@@ -69,6 +69,7 @@ const Onboarding = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const { config } = useSiteConfigTransformed();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -252,7 +253,7 @@ const Onboarding = () => {
               <Phone className="w-5 h-5 text-white" />
             </div>
             <span className="font-serif text-xl font-medium text-foreground">
-              {siteConfig.name}
+              {config.name}
             </span>
           </div>
           <div className="text-sm text-muted-foreground">

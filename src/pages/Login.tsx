@@ -8,12 +8,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { loginSchema } from "@/lib/validations";
 import { z } from "zod";
-import { siteConfig } from "@/lib/site-config";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 const Login = () => {
   const navigate = useNavigate();
   const { signIn, signInWithGoogle, user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const { config } = useSiteConfigTransformed();
   
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -116,7 +117,7 @@ const Login = () => {
               <Phone className="w-5 h-5 text-white" />
             </div>
             <span className="font-serif text-2xl font-medium text-foreground">
-              {siteConfig.name}
+              {config.name}
             </span>
           </Link>
 
@@ -262,7 +263,7 @@ const Login = () => {
             <span className="italic text-teal-light">waiting</span>
           </h2>
           <p className="text-white/70 text-lg">
-            Join {siteConfig.socialProof.customerCount} {siteConfig.socialProof.customerLabel} that never miss a call. Sign in to manage your AI
+            Join {config.socialProof.customerCount} {config.socialProof.customerLabel} that never miss a call. Sign in to manage your AI
             assistant.
           </p>
         </div>
