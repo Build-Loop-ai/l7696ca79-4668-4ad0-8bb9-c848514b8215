@@ -601,6 +601,81 @@ export type Database = {
           },
         ]
       }
+      site_config: {
+        Row: {
+          annual_discount: number
+          created_at: string | null
+          currency: string
+          currency_symbol: string
+          demo_enabled: boolean | null
+          demo_subtitle: string | null
+          demo_title: string | null
+          description: string
+          id: string
+          privacy_url: string | null
+          sales_email: string
+          site_name: string
+          social_instagram: string | null
+          social_linkedin: string | null
+          social_proof_count: string | null
+          social_proof_label: string | null
+          social_twitter: string | null
+          support_email: string
+          tagline: string
+          terms_url: string | null
+          trial_days: number
+          updated_at: string | null
+        }
+        Insert: {
+          annual_discount?: number
+          created_at?: string | null
+          currency?: string
+          currency_symbol?: string
+          demo_enabled?: boolean | null
+          demo_subtitle?: string | null
+          demo_title?: string | null
+          description?: string
+          id?: string
+          privacy_url?: string | null
+          sales_email?: string
+          site_name?: string
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_proof_count?: string | null
+          social_proof_label?: string | null
+          social_twitter?: string | null
+          support_email?: string
+          tagline?: string
+          terms_url?: string | null
+          trial_days?: number
+          updated_at?: string | null
+        }
+        Update: {
+          annual_discount?: number
+          created_at?: string | null
+          currency?: string
+          currency_symbol?: string
+          demo_enabled?: boolean | null
+          demo_subtitle?: string | null
+          demo_title?: string | null
+          description?: string
+          id?: string
+          privacy_url?: string | null
+          sales_email?: string
+          site_name?: string
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_proof_count?: string | null
+          social_proof_label?: string | null
+          social_twitter?: string | null
+          support_email?: string
+          tagline?: string
+          terms_url?: string | null
+          trial_days?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
