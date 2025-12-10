@@ -302,12 +302,21 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
 
   console.log("Booking appointment for org:", orgId, args);
 
-  // Fetch settings for Google Calendar integration
+  // Fetch settings for Google Calendar integration and organization details
   const { data: settings } = await supabase
     .from("organization_settings")
     .select("google_calendar_connected, google_calendar_refresh_token, google_calendar_id")
     .eq("organization_id", orgId)
     .single();
+
+  // Fetch organization timezone
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("timezone")
+    .eq("id", orgId)
+    .single();
+  
+  const timezone = org?.timezone || 'UTC';
 
   try {
     let googleEventId = null;
@@ -315,7 +324,7 @@ async function bookAppointment(args: any, payload: any, supabase: any) {
     // Create Google Calendar event if connected
     if (settings?.google_calendar_connected && settings?.google_calendar_refresh_token) {
       try {
-        googleEventId = await createCalendarEvent(datetime, patientName, service, notes, settings);
+        googleEventId = await createCalendarEvent(datetime, patientName, service, notes, settings, timezone);
         console.log("Created Google Calendar event:", googleEventId);
       } catch (calError) {
         console.error("Failed to create calendar event:", calError);
@@ -365,7 +374,8 @@ async function createCalendarEvent(
   patientName: string, 
   service: string, 
   notes: string,
-  settings: any
+  settings: any,
+  timezone: string = 'UTC'
 ): Promise<string | null> {
   const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID');
   const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET');
@@ -411,11 +421,11 @@ async function createCalendarEvent(
         description: notes || `Appointment booked via AI receptionist for ${patientName}`,
         start: {
           dateTime: startTime.toISOString(),
-          timeZone: 'Europe/Amsterdam',
+          timeZone: timezone,
         },
         end: {
           dateTime: endTime.toISOString(),
-          timeZone: 'Europe/Amsterdam',
+          timeZone: timezone,
         },
       }),
     }
