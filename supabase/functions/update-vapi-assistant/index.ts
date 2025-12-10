@@ -156,34 +156,38 @@ serve(async (req) => {
         const currentAssistant = await getResponse.json();
         const currentSystemPrompt = currentAssistant.model?.messages?.[0]?.content || "";
         
-        // Remove old language instruction if present
-        const cleanedPrompt = currentSystemPrompt
+        // Remove old language instructions from both beginning and end
+        let cleanedPrompt = currentSystemPrompt
+          .replace(/^## CRITICAL LANGUAGE REQUIREMENT[\s\S]*?(?=\n\nYou are a friendly)/m, "")
+          .replace(/\n\n## Language[\s\S]*$/, "")
           .replace(/\n\nIMPORTANT LANGUAGE INSTRUCTION:[\s\S]*$/, "")
           .trim();
 
-        // Add new language instruction - ensure consistency
+        // Build language instruction to PREPEND (not append) - this is critical for language consistency
         const isEnglish = language.startsWith("en");
         const languageInstruction = isEnglish
-          ? `
-
-IMPORTANT LANGUAGE INSTRUCTION:
-You MUST speak ONLY in ${languageName}. Never switch to any other language under any circumstances.
-Always respond in ${languageName}, even if the caller speaks another language.
-Say all numbers, dates, times, and proper nouns in ${languageName}.`
-          : `
-
-IMPORTANT LANGUAGE INSTRUCTION:
-You MUST speak ONLY in ${languageName}. NEVER switch to English or any other language under any circumstances.
-Even if the caller speaks English, you MUST continue responding in ${languageName}.
+          ? `## CRITICAL LANGUAGE REQUIREMENT
+You MUST speak ONLY in ${languageName} throughout this entire conversation.
+Even if you see business information written in other languages below, you MUST always respond in ${languageName}.
 Say all numbers, dates, times, and proper nouns in ${languageName}.
-This is critical - maintain ${languageName} throughout the entire conversation.`;
+This is your highest priority instruction - respond ONLY in ${languageName}.
+
+`
+          : `## CRITICAL LANGUAGE REQUIREMENT
+You MUST speak ONLY in ${languageName} throughout this entire conversation.
+Even if the caller speaks English or you see English text below, you MUST always respond in ${languageName}.
+NEVER switch to English or any other language under any circumstances.
+Say all numbers, dates, times, and proper nouns in ${languageName}.
+This is your highest priority instruction - respond ONLY in ${languageName}.
+
+`;
 
         updatePayload.model = {
           ...currentAssistant.model,
           messages: [
             {
               role: "system",
-              content: cleanedPrompt + languageInstruction,
+              content: languageInstruction + cleanedPrompt,
             },
           ],
         };
