@@ -393,7 +393,8 @@ function buildSystemPrompt(org: any, settings: any): string {
     : "Not available";
 
   const personality = settings?.ai_config?.personality || "friendly";
-  const language = settings?.ai_config?.language || "en";
+  // Read language from correct field (language, not ai_config.language)
+  const language = settings?.language || settings?.ai_config?.language || "en-US";
 
   // Language names - include full locale codes for proper lookup
   const languageNames: Record<string, string> = {
@@ -497,10 +498,14 @@ For example: if today is ${currentDateFormatted}, "tomorrow" means ${new Date(to
 Speak in ${languageName} at all times.
 
 IMPORTANT LANGUAGE INSTRUCTION:
-You MUST speak ONLY in ${languageName}. Never switch to English or any other language, even if the caller speaks a different language.
-- Say all numbers, dates, times, and proper nouns in ${languageName}.
-- If the caller speaks a different language, politely respond in ${languageName}.
-- This is critical: DO NOT switch languages mid-conversation under any circumstances.`;
+${language.startsWith("en") 
+  ? `You MUST speak ONLY in ${languageName}. Never switch to any other language under any circumstances.
+Always respond in ${languageName}, even if the caller speaks another language.
+Say all numbers, dates, times, and proper nouns in ${languageName}.`
+  : `You MUST speak ONLY in ${languageName}. NEVER switch to English or any other language under any circumstances.
+Even if the caller speaks English, you MUST continue responding in ${languageName}.
+Say all numbers, dates, times, and proper nouns in ${languageName}.
+This is critical - maintain ${languageName} throughout the entire conversation.`}`;
 }
 
 function formatBusinessHours(hours: any): string {
