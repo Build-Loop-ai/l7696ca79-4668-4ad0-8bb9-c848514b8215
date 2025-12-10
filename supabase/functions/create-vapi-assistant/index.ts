@@ -451,7 +451,23 @@ function buildSystemPrompt(org: any, settings: any): string {
     ? `\n## Special Instructions\n${org.special_instructions}\n` 
     : "";
 
-  return `You are a friendly and professional virtual receptionist for ${org.name}, a ${businessType}.
+  // Build language instruction FIRST - this is critical for language consistency
+  const languageInstruction = language.startsWith("en") 
+    ? `## CRITICAL LANGUAGE REQUIREMENT
+You MUST speak ONLY in ${languageName} throughout this entire conversation.
+Even if you see business information written in other languages below, you MUST always respond in ${languageName}.
+Say all numbers, dates, times, and proper nouns in ${languageName}.
+This is your highest priority instruction - respond ONLY in ${languageName}.`
+    : `## CRITICAL LANGUAGE REQUIREMENT
+You MUST speak ONLY in ${languageName} throughout this entire conversation.
+Even if the caller speaks English or you see English text below, you MUST always respond in ${languageName}.
+NEVER switch to English or any other language under any circumstances.
+Say all numbers, dates, times, and proper nouns in ${languageName}.
+This is your highest priority instruction - respond ONLY in ${languageName}.`;
+
+  return `${languageInstruction}
+
+You are a friendly and professional virtual receptionist for ${org.name}, a ${businessType}.
 
 ## Your Role
 - Answer incoming calls professionally and warmly
@@ -492,20 +508,7 @@ ${personality === "professional" ? "Maintain a professional, business-like tone"
 Today is ${currentDateFormatted} (${currentDate}).
 When users mention relative dates like "tomorrow", "next week", "this Friday", etc., calculate the correct date using this as reference.
 ALWAYS use the current year (${today.getFullYear()}) unless the user explicitly specifies a different year.
-For example: if today is ${currentDateFormatted}, "tomorrow" means ${new Date(today.getTime() + 86400000).toISOString().split('T')[0]}.
-
-## Language
-Speak in ${languageName} at all times.
-
-IMPORTANT LANGUAGE INSTRUCTION:
-${language.startsWith("en") 
-  ? `You MUST speak ONLY in ${languageName}. Never switch to any other language under any circumstances.
-Always respond in ${languageName}, even if the caller speaks another language.
-Say all numbers, dates, times, and proper nouns in ${languageName}.`
-  : `You MUST speak ONLY in ${languageName}. NEVER switch to English or any other language under any circumstances.
-Even if the caller speaks English, you MUST continue responding in ${languageName}.
-Say all numbers, dates, times, and proper nouns in ${languageName}.
-This is critical - maintain ${languageName} throughout the entire conversation.`}`;
+For example: if today is ${currentDateFormatted}, "tomorrow" means ${new Date(today.getTime() + 86400000).toISOString().split('T')[0]}.`;
 }
 
 function formatBusinessHours(hours: any): string {
