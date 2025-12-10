@@ -161,13 +161,22 @@ serve(async (req) => {
           .replace(/\n\nIMPORTANT LANGUAGE INSTRUCTION:[\s\S]*$/, "")
           .trim();
 
-        // Add new language instruction
-        const languageInstruction = `
+        // Add new language instruction - ensure consistency
+        const isEnglish = language.startsWith("en");
+        const languageInstruction = isEnglish
+          ? `
 
 IMPORTANT LANGUAGE INSTRUCTION:
-You MUST speak ONLY in ${languageName}. Never switch to English or any other language.
+You MUST speak ONLY in ${languageName}. Never switch to any other language under any circumstances.
+Always respond in ${languageName}, even if the caller speaks another language.
+Say all numbers, dates, times, and proper nouns in ${languageName}.`
+          : `
+
+IMPORTANT LANGUAGE INSTRUCTION:
+You MUST speak ONLY in ${languageName}. NEVER switch to English or any other language under any circumstances.
+Even if the caller speaks English, you MUST continue responding in ${languageName}.
 Say all numbers, dates, times, and proper nouns in ${languageName}.
-If the caller speaks a different language, politely respond in ${languageName} and ask if they need assistance in that language.`;
+This is critical - maintain ${languageName} throughout the entire conversation.`;
 
         updatePayload.model = {
           ...currentAssistant.model,
