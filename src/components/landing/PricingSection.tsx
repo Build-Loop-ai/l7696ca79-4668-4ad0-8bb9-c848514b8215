@@ -61,9 +61,10 @@ const PricingSection = () => {
     return Math.round(cents / 100);
   };
 
-  const getAnnualPrice = (plan: Plan) => {
+  const getAnnualMonthlyPrice = (plan: Plan) => {
     if (plan.price_annual_cents) {
-      return formatPrice(plan.price_annual_cents);
+      // Show monthly equivalent of annual price
+      return Math.round(plan.price_annual_cents / 100 / 12);
     }
     // Calculate with discount if no annual price set
     return Math.round(formatPrice(plan.price_monthly_cents) * (1 - siteConfig.annualDiscount / 100));
@@ -199,7 +200,7 @@ const PricingSection = () => {
                           animate={{ opacity: 1, y: 0 }}
                           className={`text-5xl font-serif ${plan.is_popular ? "text-white" : "text-foreground"}`}
                         >
-                          {isAnnual ? getAnnualPrice(plan) : formatPrice(plan.price_monthly_cents)}
+                          {isAnnual ? getAnnualMonthlyPrice(plan) : formatPrice(plan.price_monthly_cents)}
                         </motion.span>
                         <span className={`text-sm ${plan.is_popular ? "text-white/60" : "text-muted-foreground"}`}>
                           /mo
