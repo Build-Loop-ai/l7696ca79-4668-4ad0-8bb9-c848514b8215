@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { VoicePreview } from "@/components/VoicePreview";
 import { TestCallButton } from "@/components/TestCallButton";
-import { getDefaultGreeting, getDefaultVoiceId, migrateOldVoiceId } from "@/lib/voice-config";
+import { getDefaultGreeting, getDefaultVoiceId, migrateOldVoiceId, getLanguageByCode } from "@/lib/voice-config";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { SaveStatusIndicator } from "@/components/ui/save-status";
 
@@ -62,8 +62,13 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
       .eq("organization_id", organizationId)
       .single();
 
+    // Get the correct transcriber language from voice-config
+    const langConfig = getLanguageByCode(data.language);
+    const transcriberLang = langConfig?.transcriberLang || data.language.split("-")[0];
+
     const settingsPayload = {
       language: data.language,
+      transcriber_language: transcriberLang,
       voice_id: data.voiceId,
       voice_provider: "elevenlabs",
       custom_greeting: data.customGreeting,
@@ -89,7 +94,10 @@ export function AIAssistantSettings({ organizationId: propOrgId }: AIAssistantSe
 
     // Sync to Vapi assistant
     if (data.assistantId) {
-      const transcriberLang = data.language.split("-")[0];
+      // Get the correct transcriber language from voice-config
+      const langConfig = getLanguageByCode(data.language);
+      const transcriberLang = langConfig?.transcriberLang || data.language.split("-")[0];
+      
       await supabase.functions.invoke("update-vapi-assistant", {
         body: {
           organizationId,
