@@ -21,7 +21,13 @@ serve(async (req) => {
     console.log(`Google Calendar Auth - Action: ${action}`);
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-      throw new Error('Google OAuth credentials not configured');
+      return new Response(
+        JSON.stringify({ 
+          error: "Google Calendar is not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Settings → Backend → Secrets.",
+          missing: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"].filter(k => !Deno.env.get(k))
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Action: get-auth-url - Generate OAuth URL for user to authorize

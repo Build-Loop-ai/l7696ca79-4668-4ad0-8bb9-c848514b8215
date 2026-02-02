@@ -246,13 +246,13 @@ const Signup = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="clinicName">Clinic Name</Label>
+              <Label htmlFor="clinicName">Business Name</Label>
               <div className="relative">
                 <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="clinicName"
                   type="text"
-                  placeholder="Amsterdam Dental Care"
+                  placeholder="Your Business Name"
                   className={`pl-10 ${errors.clinicName ? 'border-destructive' : ''}`}
                   value={formData.clinicName}
                   onChange={(e) =>
@@ -312,13 +312,13 @@ const Signup = () => {
                 className="text-sm text-muted-foreground leading-tight"
               >
                 I agree to the{" "}
-                <a href="#" className="text-primary hover:underline">
+                <Link to="/terms" className="text-primary hover:underline">
                   Terms of Service
-                </a>{" "}
+                </Link>{" "}
                 and{" "}
-                <a href="#" className="text-primary hover:underline">
+                <Link to="/privacy" className="text-primary hover:underline">
                   Privacy Policy
-                </a>
+                </Link>
               </label>
             </div>
             {errors.agreeTerms && (

@@ -65,3 +65,6 @@ verify_jwt = true
 
 [functions.cleanup-vapi-phone]
 verify_jwt = true
+
+[functions.health-check]
+verify_jwt = true
