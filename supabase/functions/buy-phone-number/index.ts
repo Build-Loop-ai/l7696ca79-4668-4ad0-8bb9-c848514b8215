@@ -29,7 +29,13 @@ serve(async (req) => {
     }
 
     if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
-      throw new Error("Twilio credentials are not configured");
+      return new Response(
+        JSON.stringify({ 
+          error: "Twilio is not configured. Please add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in Settings → Backend → Secrets.",
+          missing: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"].filter(k => !Deno.env.get(k))
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const supabase = createClient(

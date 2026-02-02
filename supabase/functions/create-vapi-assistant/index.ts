@@ -40,7 +40,13 @@ serve(async (req) => {
     const vapiApiKey = settings?.vapi_api_key || Deno.env.get("VAPI_API_KEY");
 
     if (!vapiApiKey) {
-      throw new Error("VAPI_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ 
+          error: "Voice AI is not configured. Please add VAPI_API_KEY in Settings → Backend → Secrets.",
+          missing: ["VAPI_API_KEY"]
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Check if assistant already exists

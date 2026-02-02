@@ -15,6 +15,7 @@ import { AdminEmailsTable } from '@/components/admin/AdminEmailsTable';
 import { AdminEmailSettings } from '@/components/admin/AdminEmailSettings';
 import { AdminPlansTable } from '@/components/admin/AdminPlansTable';
 import { AdminContactRequests } from '@/components/admin/AdminContactRequests';
+import { AdminIntegrationStatus } from '@/components/admin/AdminIntegrationStatus';
 import AdminSiteConfig from '@/components/admin/AdminSiteConfig';
 import { cn } from '@/lib/utils';
 import { siteConfig } from '@/lib/site-config';
@@ -518,6 +519,7 @@ const Admin = () => {
 
               {activeTab === 'settings' && (
                 <div className="space-y-6">
+                  <AdminIntegrationStatus />
                   <AdminEmailSettings />
                   
                   {/* Temporary Vapi Cleanup Tool */}
