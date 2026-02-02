@@ -24,20 +24,19 @@ import {
   ArrowLeft,
   Sparkles,
   Loader2,
+  Plus,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 import { VoicePreview } from "@/components/VoicePreview";
-import { TestCallButton } from "@/components/TestCallButton";
 
 const STEPS = [
   { id: 1, title: "Business Basics", icon: Building },
   { id: 2, title: "Opening Hours", icon: Clock },
   { id: 3, title: "Services", icon: Stethoscope },
   { id: 4, title: "AI Personality", icon: Mic },
-  { id: 5, title: "Phone Setup", icon: Phone },
 ];
 
 const DAYS = [
@@ -50,18 +49,63 @@ const DAYS = [
   "Sunday",
 ];
 
-const DENTAL_SERVICES = [
-  "Checkup",
-  "Cleaning",
-  "Filling",
-  "Root Canal",
-  "Whitening",
-  "Emergency",
-  "Implants",
-  "Orthodontics",
-  "Crown",
-  "Extraction",
-];
+// Dynamic services based on business type
+const SERVICES_BY_TYPE: Record<string, string[]> = {
+  dental_clinic: [
+    "Checkup",
+    "Cleaning",
+    "Filling",
+    "Root Canal",
+    "Whitening",
+    "Emergency",
+    "Implants",
+    "Orthodontics",
+    "Crown",
+    "Extraction",
+  ],
+  medical_practice: [
+    "Consultation",
+    "Follow-up",
+    "Physical Exam",
+    "Vaccination",
+    "Blood Test",
+    "X-Ray",
+    "Specialist Referral",
+    "Prescription Renewal",
+    "Health Screening",
+    "Urgent Care",
+  ],
+  salon: [
+    "Haircut",
+    "Hair Coloring",
+    "Styling",
+    "Manicure",
+    "Pedicure",
+    "Facial",
+    "Massage",
+    "Waxing",
+    "Makeup",
+    "Extensions",
+  ],
+  restaurant: [
+    "Table Reservation",
+    "Private Event",
+    "Catering Inquiry",
+    "Takeout Order",
+    "Birthday Party",
+    "Corporate Event",
+    "Wedding Reception",
+    "Menu Question",
+  ],
+  other: [
+    "Consultation",
+    "Appointment",
+    "Follow-up",
+    "General Inquiry",
+    "Quote Request",
+    "Callback Request",
+  ],
+};
 
 type BusinessType = 'dental_clinic' | 'medical_practice' | 'salon' | 'restaurant' | 'other';
 
@@ -74,6 +118,7 @@ const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [customService, setCustomService] = useState("");
 
   // Form state
   const [businessData, setBusinessData] = useState({
@@ -98,11 +143,8 @@ const Onboarding = () => {
     )
   );
 
-  const [services, setServices] = useState<string[]>([
-    "Checkup",
-    "Cleaning",
-    "Filling",
-  ]);
+  const [services, setServices] = useState<string[]>([]);
+  const [suggestedServices, setSuggestedServices] = useState<string[]>(SERVICES_BY_TYPE.dental_clinic);
 
   const [aiConfig, setAiConfig] = useState({
     voice: "en-US-AriaNeural",
@@ -111,12 +153,15 @@ const Onboarding = () => {
     greeting: "Hello! Thank you for calling. How can I help you today?",
   });
 
-  const [phoneSetup, setPhoneSetup] = useState({
-    option: "new",
-    areaCode: "+31",
-  });
-
   const [assistantId, setAssistantId] = useState<string | null>(null);
+
+  // Update suggested services when business type changes
+  useEffect(() => {
+    const newSuggestions = SERVICES_BY_TYPE[businessData.type] || SERVICES_BY_TYPE.other;
+    setSuggestedServices(newSuggestions);
+    // Reset selected services to first 3 of new type
+    setServices(newSuggestions.slice(0, 3));
+  }, [businessData.type]);
 
   // Load saved clinic name from signup
   useEffect(() => {
@@ -153,8 +198,20 @@ const Onboarding = () => {
     checkOnboardingStatus();
   }, [user, navigate]);
 
+  const handleAddCustomService = () => {
+    const trimmed = customService.trim();
+    if (trimmed && !services.includes(trimmed)) {
+      setServices([...services, trimmed]);
+      // Also add to suggested services so it shows up in the grid
+      if (!suggestedServices.includes(trimmed)) {
+        setSuggestedServices([...suggestedServices, trimmed]);
+      }
+      setCustomService("");
+    }
+  };
+
   const handleNext = () => {
-    if (currentStep < 5) {
+    if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     } else {
       handleComplete();
@@ -257,7 +314,7 @@ const Onboarding = () => {
             </span>
           </div>
           <div className="text-sm text-muted-foreground">
-            Step {currentStep} of 5
+            Step {currentStep} of 4
           </div>
         </div>
       </header>
@@ -328,7 +385,7 @@ const Onboarding = () => {
                     <Label htmlFor="businessName">Business Name *</Label>
                     <Input
                       id="businessName"
-                      placeholder="Amsterdam Dental Care"
+                      placeholder="Your Business Name"
                       value={businessData.name}
                       onChange={(e) =>
                         setBusinessData({ ...businessData, name: e.target.value })
@@ -362,7 +419,7 @@ const Onboarding = () => {
                   <Label htmlFor="address">Street Address</Label>
                   <Input
                     id="address"
-                    placeholder="Keizersgracht 123"
+                    placeholder="123 Main Street"
                     value={businessData.address}
                     onChange={(e) =>
                       setBusinessData({ ...businessData, address: e.target.value })
@@ -375,7 +432,7 @@ const Onboarding = () => {
                     <Label htmlFor="city">City</Label>
                     <Input
                       id="city"
-                      placeholder="Amsterdam"
+                      placeholder="Your City"
                       value={businessData.city}
                       onChange={(e) =>
                         setBusinessData({ ...businessData, city: e.target.value })
@@ -386,7 +443,7 @@ const Onboarding = () => {
                     <Label htmlFor="postalCode">Postal Code</Label>
                     <Input
                       id="postalCode"
-                      placeholder="1015 CD"
+                      placeholder="12345"
                       value={businessData.postalCode}
                       onChange={(e) =>
                         setBusinessData({
@@ -403,7 +460,7 @@ const Onboarding = () => {
                     <Label htmlFor="phone">Current Phone Number</Label>
                     <Input
                       id="phone"
-                      placeholder="+31 20 123 4567"
+                      placeholder="+1 555 123 4567"
                       value={businessData.phone}
                       onChange={(e) =>
                         setBusinessData({ ...businessData, phone: e.target.value })
@@ -525,7 +582,7 @@ const Onboarding = () => {
               </p>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-                {DENTAL_SERVICES.map((service) => (
+                {suggestedServices.map((service) => (
                   <label
                     key={service}
                     className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
@@ -552,8 +609,25 @@ const Onboarding = () => {
               </div>
 
               <div className="flex gap-2">
-                <Input placeholder="Add custom service..." />
-                <Button variant="outline">Add</Button>
+                <Input 
+                  placeholder="Add custom service..." 
+                  value={customService}
+                  onChange={(e) => setCustomService(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddCustomService();
+                    }
+                  }}
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={handleAddCustomService}
+                  disabled={!customService.trim()}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add
+                </Button>
               </div>
             </div>
           )}
@@ -601,107 +675,6 @@ const Onboarding = () => {
             </div>
           )}
 
-          {/* Step 5: Phone Setup */}
-          {currentStep === 5 && (
-            <div className="bg-card rounded-3xl p-8 shadow-lg border border-border/50 animate-fade-in-up">
-              <h2 className="text-2xl font-serif text-foreground mb-2">
-                Set up your phone number
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                Choose how you want to connect your AI receptionist.
-              </p>
-
-              <div className="space-y-4">
-                <label
-                  className={`block p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                    phoneSetup.option === "new"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <input
-                      type="radio"
-                      name="phoneOption"
-                      value="new"
-                      checked={phoneSetup.option === "new"}
-                      onChange={() =>
-                        setPhoneSetup({ ...phoneSetup, option: "new" })
-                      }
-                      className="mt-1"
-                    />
-                    <div>
-                      <h3 className="font-medium text-foreground mb-1">
-                        Get a new number
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        We'll provide you with a new local number that's
-                        dedicated to your AI receptionist.
-                      </p>
-                    </div>
-                  </div>
-                </label>
-
-                <label
-                  className={`block p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                    phoneSetup.option === "forward"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <input
-                      type="radio"
-                      name="phoneOption"
-                      value="forward"
-                      checked={phoneSetup.option === "forward"}
-                      onChange={() =>
-                        setPhoneSetup({ ...phoneSetup, option: "forward" })
-                      }
-                      className="mt-1"
-                    />
-                    <div>
-                      <h3 className="font-medium text-foreground mb-1">
-                        Forward my existing number
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Keep your current number and forward calls to your AI
-                        receptionist.
-                      </p>
-                    </div>
-                  </div>
-                </label>
-
-                {phoneSetup.option === "new" && (
-                  <div className="mt-6 p-6 rounded-xl bg-muted/50">
-                    <Label className="mb-3 block">Select Area Code</Label>
-                    <Select
-                      value={phoneSetup.areaCode}
-                      onValueChange={(value) =>
-                        setPhoneSetup({ ...phoneSetup, areaCode: value })
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="+31">
-                          Netherlands (+31)
-                        </SelectItem>
-                        <SelectItem value="+49">Germany (+49)</SelectItem>
-                        <SelectItem value="+32">Belgium (+32)</SelectItem>
-                        <SelectItem value="+44">UK (+44)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      Your new number: <strong>+31 20 XXX XXXX</strong>
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Navigation */}
           <div className="flex justify-between mt-8">
             <Button
@@ -726,7 +699,7 @@ const Onboarding = () => {
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Saving...
                 </>
-              ) : currentStep === 5 ? (
+              ) : currentStep === 4 ? (
                 "Launch Your AI"
               ) : (
                 "Continue"
