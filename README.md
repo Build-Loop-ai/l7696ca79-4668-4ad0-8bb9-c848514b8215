@@ -108,10 +108,16 @@ Edit `index.html` to update:
 After your first user signs up, run this SQL in the Supabase SQL Editor:
 
 ```sql
--- Replace with your user's ID (found in auth.users table)
+-- Replace with your email address
 INSERT INTO public.system_roles (user_id, role)
-VALUES ('your-user-uuid-here', 'super_admin');
+SELECT id, 'super_admin' FROM auth.users WHERE email = 'your-email@example.com'
+ON CONFLICT (user_id, role) DO NOTHING;
 ```
+
+This query will:
+- Find your user by email (easier than looking up the UUID)
+- Grant super_admin role if not already assigned
+- Silently succeed if you're already an admin (no duplicate key error)
 
 #### C. Configure Your Brand in Admin Panel
 1. Sign in as the admin user
