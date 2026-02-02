@@ -255,6 +255,18 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Validate required secrets
+  if (!RESEND_API_KEY) {
+    console.error("RESEND_API_KEY not configured");
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: "Email service not configured. Add RESEND_API_KEY in Settings → Backend → Secrets." 
+      }),
+      { status: 503, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
   const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
   
   // Get email configuration and site name

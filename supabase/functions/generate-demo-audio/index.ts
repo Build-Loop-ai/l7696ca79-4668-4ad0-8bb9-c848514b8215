@@ -359,6 +359,18 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Validate required secrets
+  const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
+  if (!ELEVENLABS_API_KEY) {
+    console.error("ELEVENLABS_API_KEY not configured");
+    return new Response(
+      JSON.stringify({ 
+        error: "Voice synthesis not configured. Add ELEVENLABS_API_KEY in Settings → Backend → Secrets." 
+      }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const data: DemoRequest = await req.json();
     console.log("Demo request received:", { 
@@ -379,16 +391,6 @@ serve(async (req) => {
     // Generate the demo script
     const script = generateDemoScript(data);
     console.log("Generated script:", script);
-
-    // Get ElevenLabs API key
-    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-    if (!ELEVENLABS_API_KEY) {
-      console.error("ELEVENLABS_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ error: "Voice service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     // Call ElevenLabs TTS API
     const ttsResponse = await fetch(
