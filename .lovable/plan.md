@@ -1,143 +1,49 @@
+# Template Quality Improvements - COMPLETED ✓
 
+All template quality improvements have been implemented:
 
-# Remaining Template Quality Improvements
+## Completed Items
 
-Based on my comprehensive audit, here are the remaining issues to fix:
+### ✅ Phase 1: Security
+- Enabled leaked password protection (HIBP)
+- Added Stripe webhook secret validation
+- Reviewed RLS policies (confirmed intentional for public forms)
 
----
+### ✅ Phase 2: Broken Links & Placeholders
+- Fixed Login.tsx placeholder: `you@clinic.com` → `you@business.com`
+- Fixed Signup.tsx placeholder: `Amsterdam Dental Care` → `Your Business Name`
+- Created `/forgot-password` page with email reset flow
+- Created `/reset-password` page for new password entry
+- Created `/terms` Terms of Service page
+- Created `/privacy` Privacy Policy page
 
-## 1. Security: RLS Policies Still Need Attention
+### ✅ Phase 3: Edge Function Error Handling
+- Created shared `_shared/validate-secrets.ts` utility
+- Updated `buy-phone-number` - validates Twilio secrets
+- Updated `create-vapi-assistant` - validates Vapi secrets
+- Updated `google-calendar-auth` - validates Google OAuth secrets
+- Updated `stripe-webhook` - validates Stripe webhook secret
+- Updated `stripe-checkout` - validates STRIPE_SECRET_KEY
+- Updated `stripe-portal` - validates STRIPE_SECRET_KEY
+- Updated `send-email` - validates RESEND_API_KEY
+- Updated `generate-demo-audio` - validates ELEVENLABS_API_KEY
 
-**Problem**: The linter still shows 4 RLS policies with `WITH CHECK (true)` that need review:
+### ✅ Phase 4: Setup Validation System
+- Created `health-check` edge function
+- Created `AdminIntegrationStatus` component
+- Integrated into Admin panel Settings tab
 
-| Table | Policy | Issue |
-|-------|--------|-------|
-| `assessment_leads` | Anyone can submit assessment | `WITH CHECK (true)` - Intentional, public form |
-| `call_logs` | Service can insert call logs | `WITH CHECK (true)` - Intentional, edge function use |
-| `contact_requests` | Anyone can submit contact request | `WITH CHECK (true)` - Intentional, public form |
-| `email_logs` | Service can insert email logs | `WITH CHECK (true)` - Intentional, edge function use |
+### ✅ Phase 5: Documentation
+- Updated README with comprehensive setup guide
+- Added webhook configuration instructions
+- Added admin SQL for first super_admin user
 
-**Assessment**: These are actually **correctly designed** for their purpose:
-- Public forms (`contact_requests`, `assessment_leads`) need unrestricted INSERT
-- Service-level inserts (`call_logs`, `email_logs`) are only called from edge functions using service_role
+## Template Ready Checklist
 
-**No changes needed** - these are false positives from the linter.
-
----
-
-## 2. Leaked Password Protection Still Disabled
-
-**Problem**: The linter shows this is still disabled despite previous configuration attempt.
-
-**Solution**: Need to verify and re-apply the auth configuration for leaked password protection.
-
----
-
-## 3. Minor UI Polish: Email Placeholders
-
-**Problem**: Login page still has clinic-specific placeholder.
-
-| File | Line | Current | Should Be |
-|------|------|---------|-----------|
-| `src/pages/Login.tsx` | 181 | `you@clinic.com` | `you@business.com` |
-
----
-
-## 4. Edge Functions Missing Secret Validation
-
-Several edge functions don't have helpful error messages when secrets are missing:
-
-| Function | Missing Validation |
-|----------|--------------------|
-| `send-email` | RESEND_API_KEY check |
-| `stripe-checkout` | STRIPE_SECRET_KEY check |
-| `stripe-portal` | STRIPE_SECRET_KEY check |
-| `release-phone-number` | Graceful handling exists |
-| `search-phone-numbers` | Has validation ✓ |
-| `generate-demo-audio` | ELEVENLABS_API_KEY check |
-
-**Solution**: Add the `validateSecrets` helper to these functions with user-friendly error messages.
-
----
-
-## 5. Documentation Improvements
-
-The README is good but could use:
-- `STRIPE_WEBHOOK_SECRET` clearly marked as required (currently implied)
-- Link to webhook setup in Stripe dashboard
-
----
-
-## Implementation Summary
-
-| Task | Files | Priority |
-|------|-------|----------|
-| Re-enable leaked password protection | Auth config | High |
-| Update Login.tsx placeholder | 1 file | Low |
-| Add secret validation to remaining edge functions | 4 files | Medium |
-
----
-
-## Changes to Make
-
-### 1. Update Login Page Placeholder
-- `src/pages/Login.tsx` line 181: Change `you@clinic.com` → `you@business.com`
-
-### 2. Add Secret Validation to Edge Functions
-
-**send-email/index.ts:**
-```typescript
-if (!RESEND_API_KEY) {
-  return new Response(JSON.stringify({ 
-    error: "Email service not configured. Add RESEND_API_KEY in Settings → Backend → Secrets." 
-  }), { status: 503, headers: corsHeaders });
-}
-```
-
-**stripe-checkout/index.ts:**
-```typescript
-const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY");
-if (!STRIPE_SECRET_KEY) {
-  throw new Error("Payments not configured. Add STRIPE_SECRET_KEY in Settings → Backend → Secrets.");
-}
-```
-
-**stripe-portal/index.ts:**
-```typescript
-const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY");
-if (!STRIPE_SECRET_KEY) {
-  throw new Error("Payments not configured. Add STRIPE_SECRET_KEY in Settings → Backend → Secrets.");
-}
-```
-
-**generate-demo-audio/index.ts:**
-```typescript
-const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-if (!ELEVENLABS_API_KEY) {
-  return new Response(JSON.stringify({ 
-    error: "Voice synthesis not configured. Add ELEVENLABS_API_KEY in Settings → Backend → Secrets." 
-  }), { status: 503, headers: corsHeaders });
-}
-```
-
-### 3. Re-enable Leaked Password Protection
-- Apply auth configuration to enable hibp (Have I Been Pwned) protection
-
----
-
-## What's Already Working Well
-
-After the previous improvements, the template now has:
-
-- Dynamic services based on business type in onboarding
-- Working "Add custom service" functionality
-- Password reset flow (`/forgot-password`, `/reset-password`)
-- Terms and Privacy pages
-- Health check endpoint for admin integration status
-- Admin Integration Status panel
-- Secret validation in core edge functions (Vapi, Twilio, Google)
-- Simplified onboarding without confusing phone step
-- Improved README with better admin SQL
-
-The remaining items are minor polish to ensure a completely error-free experience for template users.
-
+All remixers will now get:
+1. Clear error messages when secrets are missing (503 with instructions)
+2. Working password reset flow
+3. Legal pages (Terms, Privacy)
+4. Health check to verify integrations
+5. Admin panel showing integration status
+6. No hardcoded business-specific text

@@ -48,7 +48,12 @@ serve(async (req) => {
       throw new Error("No Stripe customer found. Please subscribe to a plan first.");
     }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!STRIPE_SECRET_KEY) {
+      throw new Error("Payments not configured. Add STRIPE_SECRET_KEY in Settings → Backend → Secrets.");
+    }
+
+    const stripe = new Stripe(STRIPE_SECRET_KEY, {
       apiVersion: "2023-10-16",
     });
 

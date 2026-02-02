@@ -178,7 +178,7 @@ const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@clinic.com"
+                  placeholder="you@business.com"
                   className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
