@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getAvailableCountries, getCountryByCode, type PhoneCountry } from "@/lib/phone-countries";
 import { formatPhoneNumber } from "@/lib/phone-utils";
+import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 interface PhoneNumberDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ export function PhoneNumberDialog({
   onSuccess,
 }: PhoneNumberDialogProps) {
   const { toast } = useToast();
+  const { config } = useSiteConfigTransformed();
   const [selectedCountry, setSelectedCountry] = useState("US");
   const [areaCode, setAreaCode] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -190,7 +192,7 @@ export function PhoneNumberDialog({
                         <span className="flex items-center gap-3">
                           <span className="text-2xl">{c.flag}</span>
                           <span className="font-medium">{c.name}</span>
-                          <span className="text-muted-foreground ml-auto">€{c.monthlyPriceEur}/mo</span>
+                          <span className="text-muted-foreground ml-auto">{config.currencySymbol}{c.monthlyPrice}/mo</span>
                         </span>
                       </SelectItem>
                     ))}

@@ -30,6 +30,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
+import { useQueryClient } from "@tanstack/react-query";
 import { VoicePreview } from "@/components/VoicePreview";
 
 const STEPS = [
@@ -114,6 +115,7 @@ const Onboarding = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { config } = useSiteConfigTransformed();
+  const queryClient = useQueryClient();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -251,6 +253,9 @@ const Onboarding = () => {
         title: "Setup complete!",
         description: "Your AI receptionist is ready to go.",
       });
+      
+      // Invalidate profile query so ProtectedRoute sees updated onboarding_completed
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       
       setIsCompleted(true);
     } catch (error: any) {

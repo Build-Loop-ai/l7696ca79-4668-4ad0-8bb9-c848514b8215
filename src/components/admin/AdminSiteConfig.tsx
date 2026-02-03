@@ -3,13 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SaveStatusIndicator } from "@/components/ui/save-status";
 import { Button } from "@/components/ui/button";
 import { useSiteConfig, useUpdateSiteConfig, SiteConfig } from "@/hooks/useSiteConfig";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { Globe, Mail, Share2, FileText, Image, Upload, X } from "lucide-react";
+import { Globe, Mail, Share2, FileText, Image, Upload, X, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -282,6 +288,53 @@ export default function AdminSiteConfig() {
               placeholder="Brief description for SEO and marketing"
               rows={3}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Regional Settings */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-primary" />
+            <CardTitle>Regional Settings</CardTitle>
+          </div>
+          <CardDescription>Currency and locale preferences for pricing display</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="currency">Currency</Label>
+              <Select 
+                value={formData.currency || "EUR"} 
+                onValueChange={(value) => updateField("currency", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                  <SelectItem value="USD">US Dollar (USD)</SelectItem>
+                  <SelectItem value="GBP">British Pound (GBP)</SelectItem>
+                  <SelectItem value="CHF">Swiss Franc (CHF)</SelectItem>
+                  <SelectItem value="AUD">Australian Dollar (AUD)</SelectItem>
+                  <SelectItem value="CAD">Canadian Dollar (CAD)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="currency_symbol">Currency Symbol</Label>
+              <Input
+                id="currency_symbol"
+                value={formData.currency_symbol || "€"}
+                onChange={(e) => updateField("currency_symbol", e.target.value)}
+                placeholder="€"
+                maxLength={3}
+              />
+              <p className="text-xs text-muted-foreground">
+                Displayed before prices (e.g., $, €, £)
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
