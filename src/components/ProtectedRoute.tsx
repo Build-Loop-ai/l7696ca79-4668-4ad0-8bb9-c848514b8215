@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,38 +11,19 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
-  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    const checkOnboardingStatus = async () => {
-      if (!user) {
-        setCheckingOnboarding(false);
-        return;
-      }
-
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('onboarding_completed')
-          .eq('id', user.id)
-          .single();
-
-        setOnboardingCompleted(profile?.onboarding_completed ?? false);
-      } catch (error) {
-        console.error('Error checking onboarding status:', error);
-        setOnboardingCompleted(false);
-      } finally {
-        setCheckingOnboarding(false);
-      }
-    };
-
-    if (!loading && user) {
-      checkOnboardingStatus();
-    } else if (!loading) {
-      setCheckingOnboarding(false);
-    }
-  }, [user, loading]);
+  const { data: onboardingCompleted, isLoading: checkingOnboarding } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', user!.id)
+        .single();
+      return profile?.onboarding_completed ?? false;
+    },
+    enabled: !!user && !loading,
+  });
 
   if (loading || checkingOnboarding) {
     return (
