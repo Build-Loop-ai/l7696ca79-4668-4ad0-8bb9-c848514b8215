@@ -255,7 +255,7 @@ const Onboarding = () => {
       });
       
       // Invalidate profile query so ProtectedRoute sees updated onboarding_completed
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
       
       setIsCompleted(true);
     } catch (error: any) {
