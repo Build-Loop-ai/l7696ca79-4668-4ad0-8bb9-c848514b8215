@@ -254,9 +254,11 @@ const Onboarding = () => {
         description: "Your AI receptionist is ready to go.",
       });
       
-      // Invalidate profile query so ProtectedRoute sees updated onboarding_completed
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
-      
+      // Show the success screen. We intentionally do NOT refetch the profile
+      // query here — a refetch can read a stale `false` (React Query cache or
+      // Supabase read-replica lag) and bounce the user between /dashboard and
+      // /onboarding. The cached flag is set authoritatively in handleLaunch
+      // right before navigating to the dashboard.
       setIsCompleted(true);
     } catch (error: any) {
       console.error('Onboarding error:', error);
@@ -271,6 +273,12 @@ const Onboarding = () => {
   };
 
   const handleLaunch = () => {
+    // Onboarding is done — set the gate flag ProtectedRoute reads so it lets
+    // /dashboard through immediately, instead of bouncing back to /onboarding
+    // on a stale cached value (which white-screened the first dashboard view).
+    if (user) {
+      queryClient.setQueryData(['profile', user.id], true);
+    }
     navigate("/dashboard");
   };
 
