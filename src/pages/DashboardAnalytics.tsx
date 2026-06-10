@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,6 +97,7 @@ const DashboardAnalytics = () => {
         setCalls(data || []);
       } catch (error) {
         console.error("Error fetching analytics:", error);
+        toast.error("Couldn't load your analytics. Please refresh to try again.");
       } finally {
         setLoading(false);
       }

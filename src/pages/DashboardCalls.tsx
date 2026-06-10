@@ -64,6 +64,7 @@ const DashboardCalls = () => {
         setCalls(data || []);
       } catch (error) {
         console.error("Error fetching calls:", error);
+        toast.error("Couldn't load your calls. Please refresh to try again.");
       } finally {
         setLoading(false);
       }

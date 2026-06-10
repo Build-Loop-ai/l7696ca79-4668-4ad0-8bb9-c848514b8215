@@ -487,6 +487,16 @@ const DashboardSettings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {phoneNumbers.length === 0 && (
+                <div className="p-4 rounded-xl border border-primary/20 bg-primary/5">
+                  <p className="text-sm font-medium text-foreground mb-1">Get your AI phone number first</p>
+                  <p className="text-sm text-muted-foreground">
+                    You'll need an AI phone number before you can forward calls to it. Add one in the
+                    "Phone Numbers" section above, then come back here for the forwarding steps.
+                  </p>
+                </div>
+              )}
+
               <div className="p-4 rounded-xl bg-muted/50 space-y-3">
                 <p className="font-medium text-foreground">How to set up call forwarding:</p>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">

@@ -201,8 +201,8 @@ export function TestCallButton({
       vapi.on("error", (error) => {
         console.error("Vapi error:", error);
         setCallStatus("error");
-        addActivity("error", "Browser preview doesn't support live calls");
-        setStatusMessage("Browser calls don't work in preview mode. Call your AI phone number directly to test.");
+        addActivity("error", "Couldn't connect the browser call");
+        setStatusMessage("Couldn't connect the browser call. Check your microphone and connection, or dial your AI phone number directly to test a real call.");
       });
 
       await vapi.start(assistantId);
