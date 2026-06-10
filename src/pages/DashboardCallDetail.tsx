@@ -76,7 +76,7 @@ const DashboardCallDetail = () => {
         .select("*")
         .eq("id", callId)
         .eq("organization_id", profile.organization_id)
-        .single();
+        .maybeSingle();
 
       if (!error && data) {
         setCall(data);

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireAuthenticated, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,10 +12,21 @@ serve(async (req) => {
   }
 
   try {
+    // Calls a paid TTS API — require an authenticated user (this is only used
+    // from the authenticated onboarding/settings voice preview).
+    const access = await requireAuthenticated(req);
+    if (!access.ok) {
+      return unauthorizedResponse(access, corsHeaders);
+    }
+
     const { voiceId, text, language } = await req.json();
 
     if (!voiceId || !text) {
       throw new Error("voiceId and text are required");
+    }
+
+    if (typeof text !== "string" || text.length > 500) {
+      throw new Error("text must be a string of at most 500 characters");
     }
 
     // Try to get ElevenLabs API key from environment

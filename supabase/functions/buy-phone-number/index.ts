@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireOrgAccess, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,6 +27,13 @@ serve(async (req) => {
 
     if (!countryCode) {
       throw new Error("countryCode is required");
+    }
+
+    // Buying a number spends the operator's Twilio balance — require that the
+    // caller is a member of this organization (or an internal service call).
+    const access = await requireOrgAccess(req, organizationId);
+    if (!access.ok) {
+      return unauthorizedResponse(access, corsHeaders);
     }
 
     if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
@@ -79,7 +87,7 @@ serve(async (req) => {
     );
     const existingTwilioData = await existingTwilioRes.json();
 
-    let twilioNumber = existingTwilioData.incoming_phone_numbers?.find(
+    const twilioNumber = existingTwilioData.incoming_phone_numbers?.find(
       (n: any) => n.phone_number && n.capabilities?.voice
     );
 

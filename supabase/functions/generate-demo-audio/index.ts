@@ -388,6 +388,21 @@ serve(async (req) => {
       );
     }
 
+    // This endpoint is intentionally public (used by the landing-page demo) and
+    // calls a paid TTS API, so bound user-controlled input to cap abuse cost.
+    if (typeof data.businessName !== "string" || data.businessName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Invalid business name" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (data.services && (typeof data.services !== "string" || data.services.length > 300)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid services" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Generate the demo script
     const script = generateDemoScript(data);
     console.log("Generated script:", script);

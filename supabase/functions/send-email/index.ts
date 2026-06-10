@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { requireOrgAccess, requireAuthenticated, unauthorizedResponse } from "../_shared/auth.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -278,6 +279,22 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { type, to, data, organization_id, sent_by }: EmailRequest = await req.json();
+
+    // Sends through the operator's Resend account — never allow anonymous use.
+    // Internal callers use the service role key; users must belong to the org.
+    const access = organization_id
+      ? await requireOrgAccess(req, organization_id)
+      : await requireAuthenticated(req);
+    if (!access.ok) {
+      return unauthorizedResponse(access, corsHeaders);
+    }
+
+    if (typeof to !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid recipient email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     console.log(`Sending ${type} email to ${to}`, data);
 

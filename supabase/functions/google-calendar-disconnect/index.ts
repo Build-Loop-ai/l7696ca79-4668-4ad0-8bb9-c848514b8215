@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireOrgAccess, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +18,11 @@ serve(async (req) => {
   try {
     const { organizationId } = await req.json();
     console.log('Disconnecting Google Calendar for organization:', organizationId);
+
+    const access = await requireOrgAccess(req, organizationId);
+    if (!access.ok) {
+      return unauthorizedResponse(access, corsHeaders);
+    }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 

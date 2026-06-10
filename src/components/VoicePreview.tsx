@@ -97,7 +97,8 @@ const VoiceCard: React.FC<VoiceCardProps> = ({
         className="shrink-0 h-8 w-8"
         onClick={(e) => {
           e.stopPropagation();
-          isPlaying ? onStop() : onPlay();
+          if (isPlaying) onStop();
+          else onPlay();
         }}
         disabled={isLoading}
       >
@@ -251,7 +252,7 @@ export function VoicePreview({
     utterance.lang = selectedLanguage;
 
     // Wait for voices to load
-    let synthVoices = window.speechSynthesis.getVoices();
+    const synthVoices = window.speechSynthesis.getVoices();
     
     const langVoices = synthVoices.filter((v) =>
       v.lang.toLowerCase().startsWith(langCode.toLowerCase())

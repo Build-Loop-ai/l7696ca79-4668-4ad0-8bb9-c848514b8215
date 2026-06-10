@@ -15,4 +15,16 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Keep large, rarely-changing libraries in their own cacheable chunks
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "motion": ["framer-motion"],
+          "supabase": ["@supabase/supabase-js"],
+        },
+      },
+    },
+  },
 }));

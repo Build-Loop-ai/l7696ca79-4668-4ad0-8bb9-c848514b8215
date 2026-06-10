@@ -59,6 +59,8 @@ In your Lovable project, go to **Settings → Backend → Secrets** and add:
 |-------------|-------------|--------------|
 | `VAPI_API_KEY` | Vapi.ai secret API key | [Vapi Dashboard](https://dashboard.vapi.ai) → Settings → API Keys |
 | `VAPI_PUBLIC_KEY` | Vapi.ai public key (for browser calls) | Same as above |
+| `VAPI_WEBHOOK_SECRET` | Shared secret that authenticates Vapi webhooks (recommended) | Generate any long random string (e.g. `openssl rand -hex 32`) |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (required for billing) | Stripe Dashboard → Developers → Webhooks → your endpoint |
 | `TWILIO_ACCOUNT_SID` | Twilio Account SID | [Twilio Console](https://console.twilio.com) |
 | `TWILIO_AUTH_TOKEN` | Twilio Auth Token | Twilio Console → Account Info |
 | `TWILIO_API_KEY` | Twilio API Key SID | Twilio Console → Account → API Keys → Create new |

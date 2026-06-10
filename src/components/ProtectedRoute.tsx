@@ -19,7 +19,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         .from('profiles')
         .select('onboarding_completed')
         .eq('id', user!.id)
-        .single();
+        .maybeSingle();
       return profile?.onboarding_completed ?? false;
     },
     enabled: !!user && !loading,

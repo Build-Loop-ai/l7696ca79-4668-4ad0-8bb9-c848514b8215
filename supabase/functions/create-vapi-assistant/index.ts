@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireOrgAccess, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,11 @@ serve(async (req) => {
 
     if (!organizationId) {
       throw new Error("organizationId is required");
+    }
+
+    const access = await requireOrgAccess(req, organizationId);
+    if (!access.ok) {
+      return unauthorizedResponse(access, corsHeaders);
     }
 
     const supabase = createClient(
@@ -342,8 +348,12 @@ function buildAssistantPayload(org: any, settings: any, systemPrompt: string, el
       backoffSeconds: 0.4, // Quick recovery
     },
 
-    // Server URL for webhooks
+    // Server URL for webhooks. The secret is echoed back by Vapi in the
+    // x-vapi-secret header so vapi-webhook can authenticate requests.
     serverUrl: `${Deno.env.get("SUPABASE_URL")}/functions/v1/vapi-webhook`,
+    ...(Deno.env.get("VAPI_WEBHOOK_SECRET")
+      ? { serverUrlSecret: Deno.env.get("VAPI_WEBHOOK_SECRET") }
+      : {}),
 
     // Which events to send to server
     serverMessages: [

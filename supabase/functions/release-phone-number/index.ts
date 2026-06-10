@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireOrgAccess, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,12 +45,11 @@ serve(async (req) => {
       );
     }
 
-    // Verify ownership if organizationId provided
-    if (organizationId && phoneNumber.organization_id !== organizationId) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Derive the owning org from the record itself and verify the caller
+    // belongs to it — never trust an organizationId from the request body.
+    const access = await requireOrgAccess(req, phoneNumber.organization_id);
+    if (!access.ok) {
+      return unauthorizedResponse(access, corsHeaders);
     }
 
     // Delete from Vapi first

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireOrgAccess, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +20,12 @@ serve(async (req) => {
   try {
     const { action, code, redirectUri, organizationId } = await req.json();
     console.log(`Google Calendar Auth - Action: ${action}`);
+
+    // Connecting a Google account to an org is sensitive — verify membership
+    const access = await requireOrgAccess(req, organizationId);
+    if (!access.ok) {
+      return unauthorizedResponse(access, corsHeaders);
+    }
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
       return new Response(

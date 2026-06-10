@@ -68,7 +68,7 @@ export function useSiteConfig() {
         .from("site_config")
         .select("*")
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         // Fallback to static config if database fetch fails
@@ -110,7 +110,7 @@ export function useUpdateSiteConfig() {
         .from("site_config")
         .select("id")
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!current) {
         throw new Error("No site config found");

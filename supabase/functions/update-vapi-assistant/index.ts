@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireOrgAccess, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,11 @@ serve(async (req) => {
 
     if (!organizationId) {
       throw new Error("organizationId is required");
+    }
+
+    const access = await requireOrgAccess(req, organizationId);
+    if (!access.ok) {
+      return unauthorizedResponse(access, corsHeaders);
     }
 
     const supabase = createClient(
@@ -157,7 +163,7 @@ serve(async (req) => {
         const currentSystemPrompt = currentAssistant.model?.messages?.[0]?.content || "";
         
         // Remove old language instructions from both beginning and end
-        let cleanedPrompt = currentSystemPrompt
+        const cleanedPrompt = currentSystemPrompt
           .replace(/^## CRITICAL LANGUAGE REQUIREMENT[\s\S]*?(?=\n\nYou are a friendly)/m, "")
           .replace(/\n\n## Language[\s\S]*$/, "")
           .replace(/\n\nIMPORTANT LANGUAGE INSTRUCTION:[\s\S]*$/, "")

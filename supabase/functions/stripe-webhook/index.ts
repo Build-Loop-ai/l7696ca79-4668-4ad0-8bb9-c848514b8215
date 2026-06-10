@@ -33,14 +33,25 @@ serve(async (req) => {
   
   let event: Stripe.Event;
 
+  // Fail closed: without the signing secret we cannot prove the event came
+  // from Stripe, and forged events could activate subscriptions for free.
+  if (!STRIPE_WEBHOOK_SECRET) {
+    console.error(
+      "STRIPE_WEBHOOK_SECRET is not configured — rejecting webhook. " +
+        "Copy the signing secret from your Stripe webhook endpoint into Settings → Backend → Secrets.",
+    );
+    return new Response(
+      JSON.stringify({ error: "Webhook signing secret not configured" }),
+      { status: 503 },
+    );
+  }
+
+  if (!signature) {
+    return new Response(JSON.stringify({ error: "Missing Stripe-Signature header" }), { status: 400 });
+  }
+
   try {
-    // Verify webhook signature if webhook secret is set
-    if (STRIPE_WEBHOOK_SECRET) {
-      event = stripe.webhooks.constructEvent(body, signature!, STRIPE_WEBHOOK_SECRET);
-    } else {
-      console.warn("STRIPE_WEBHOOK_SECRET is not configured - webhook signatures are not being verified!");
-      event = JSON.parse(body);
-    }
+    event = await stripe.webhooks.constructEventAsync(body, signature, STRIPE_WEBHOOK_SECRET);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Webhook signature verification failed:", message);

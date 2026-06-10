@@ -13,7 +13,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.test-voice]
-verify_jwt = false
+verify_jwt = true
 
 [functions.complete-onboarding]
 verify_jwt = true

@@ -45,6 +45,22 @@ serve(async (req) => {
       throw new Error('Business name is required');
     }
 
+    // Idempotency: if this user already has an organization, return it instead
+    // of creating a duplicate (prevents double-submit and free-trial farming).
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (existingProfile?.organization_id) {
+      console.log('User already has an organization, returning it:', existingProfile.organization_id);
+      return new Response(
+        JSON.stringify({ success: true, organizationId: existingProfile.organization_id }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
     // 1. Create organization using service role (bypasses RLS)
     const { data: org, error: orgError } = await supabaseAdmin
       .from('organizations')

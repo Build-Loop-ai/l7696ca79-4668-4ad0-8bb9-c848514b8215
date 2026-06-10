@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireOrgAccess, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +22,23 @@ serve(async (req) => {
         JSON.stringify({ error: "vapiPhoneId is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Derive the owning org from the phone record and verify the caller
+    // belongs to it before deleting anything from Vapi.
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: phoneRecord } = await supabaseAdmin
+      .from("phone_numbers")
+      .select("organization_id")
+      .eq("vapi_phone_id", vapiPhoneId)
+      .maybeSingle();
+
+    const access = await requireOrgAccess(req, phoneRecord?.organization_id);
+    if (!access.ok) {
+      return unauthorizedResponse(access, corsHeaders);
     }
 
     if (!VAPI_API_KEY) {
