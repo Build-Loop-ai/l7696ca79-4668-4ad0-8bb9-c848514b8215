@@ -19,6 +19,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AcceptInvitation = lazy(() => import("./pages/AcceptInvitation"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const DashboardLaunch = lazy(() => import("./pages/DashboardLaunch"));
 const DashboardCalls = lazy(() => import("./pages/DashboardCalls"));
 const DashboardCallDetail = lazy(() => import("./pages/DashboardCallDetail"));
 const DashboardAnalytics = lazy(() => import("./pages/DashboardAnalytics"));
@@ -72,6 +73,7 @@ const App = () => (
                   </ProtectedRoute>
                 }>
                   <Route index element={<Dashboard />} />
+                  <Route path="launch" element={<DashboardLaunch />} />
                   <Route path="calls" element={<DashboardCalls />} />
                   <Route path="calls/:callId" element={<DashboardCallDetail />} />
                   <Route path="analytics" element={<DashboardAnalytics />} />

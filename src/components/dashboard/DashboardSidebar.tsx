@@ -5,6 +5,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Rocket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +14,7 @@ import { useSiteConfigTransformed } from "@/hooks/useSiteConfig";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: Rocket, label: "Go Live", href: "/dashboard/launch" },
   { icon: Phone, label: "Calls", href: "/dashboard/calls" },
   { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
   { icon: Settings, label: "Settings", href: "/dashboard/settings" },
