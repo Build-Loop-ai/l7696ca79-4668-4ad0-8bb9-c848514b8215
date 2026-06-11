@@ -636,17 +636,19 @@ const DashboardSettings = () => {
               <AlertTriangle className="w-5 h-5 text-destructive" />
               Delete Phone Number
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                Are you sure you want to delete{" "}
-                <span className="font-mono font-medium text-foreground">
-                  {phoneToDelete?.phone_number}
-                </span>
-                ?
-              </p>
-              <p className="text-destructive">
-                This action cannot be undone. The number will be released and you may not be able to get it back.
-              </p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Are you sure you want to delete{" "}
+                  <span className="font-mono font-medium text-foreground">
+                    {phoneToDelete?.phone_number}
+                  </span>
+                  ?
+                </p>
+                <p className="text-destructive">
+                  This action cannot be undone. The number will be released and you may not be able to get it back.
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

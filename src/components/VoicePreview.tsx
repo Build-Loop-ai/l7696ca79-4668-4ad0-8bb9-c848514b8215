@@ -42,10 +42,19 @@ const VoiceCard: React.FC<VoiceCardProps> = ({
   onStop,
 }) => {
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
       onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
-        "relative flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all text-left w-full",
+        "relative flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all text-left w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         isSelected
           ? "border-primary bg-primary/5 ring-1 ring-primary"
           : "border-border hover:border-primary/50 hover:bg-muted/50"
@@ -110,7 +119,7 @@ const VoiceCard: React.FC<VoiceCardProps> = ({
           <Volume2 className="h-4 w-4" />
         )}
       </Button>
-    </button>
+    </div>
   );
 };
 

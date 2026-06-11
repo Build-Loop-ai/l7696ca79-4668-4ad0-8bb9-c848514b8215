@@ -203,8 +203,12 @@ const Dashboard = () => {
     }
   };
 
-  // Check if setup is complete
-  const setupComplete = onboardingCompleted || (hasAssistant && hasPhoneNumber && hasTestCall);
+  // Check if setup is complete. Note: we intentionally do NOT short-circuit on
+  // onboardingCompleted — finishing the onboarding wizard does not guarantee the AI
+  // was actually provisioned (assistant + phone number). Gating on the real capability
+  // state keeps the Get-Started checklist (and the path to go live) visible whenever the
+  // receptionist isn't actually live, instead of stranding the user on an "Offline" dashboard.
+  const setupComplete = hasAssistant && hasPhoneNumber && hasTestCall;
 
   if (loading) {
     return (
