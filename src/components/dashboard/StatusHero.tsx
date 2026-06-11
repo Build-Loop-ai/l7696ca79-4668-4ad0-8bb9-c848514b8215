@@ -54,12 +54,29 @@ const StatusHero = ({
     },
   ];
 
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
     <div className="space-y-6">
       {/* Greeting */}
-      <div className="space-y-1">
-        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
-          {getGreeting()}{userName ? `, ${userName.split(" ")[0]}` : ""}
+      <div className="space-y-1.5">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+          {today}
+        </p>
+        <h1 className="font-serif text-3xl md:text-4xl tracking-tight">
+          {getGreeting()}
+          {userName && (
+            <>
+              ,{" "}
+              <span className="bg-gradient-to-r from-teal to-teal-dark bg-clip-text text-transparent">
+                {userName.split(" ")[0]}
+              </span>
+            </>
+          )}
         </h1>
         <p className="text-muted-foreground">
           Here's how your AI receptionist is performing today
@@ -111,7 +128,9 @@ const StatusHero = ({
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <metric.icon className="w-4 h-4" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal/10 text-teal">
+                    <metric.icon className="w-3.5 h-3.5" />
+                  </div>
                   <span className="text-xs font-medium uppercase tracking-wider">
                     {metric.label}
                   </span>
